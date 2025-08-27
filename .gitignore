@@ -153,6 +153,10 @@ static/uploads/
 *.zip
 !app/static.zip
 
+# Large backup archives
+app*.zip
+rc/*.zip
+
 # Sessions
 .session
 flask_session/
