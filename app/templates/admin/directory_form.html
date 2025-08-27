@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h1>{{ directory.id if directory else 'Новый каталог' }}</h1>
+  <form method="post">
+    {{ form.csrf_token }}
+    <div class="mb-3">
+      {{ form.name.label(class="form-label") }}
+      {{ form.name(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.parent.label(class="form-label") }}
+      {{ form.parent(class="form-select") }}
+    </div>
+    <button type="submit" class="btn btn-success">{{ form.submit.label.text }}</button>
+  </form>
+</div>
+{% endblock %}

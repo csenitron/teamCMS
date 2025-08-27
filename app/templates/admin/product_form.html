@@ -1,0 +1,2574 @@
+{% extends "base.html" %}
+
+{% block title %}{% if product %}Редактирование товара{% else %}Создание товара{% endif %}{% endblock %}
+                productSelect.name = `related_products[${index}][product_id]`;
+            }
+            if (linkTextInput) {
+                linkTextInput.name = `related_products[${index}][link_text]`;
+            }
+            if (sortOrderInput) {
+                sortOrderInput.name = `related_products[${index}][sort_order]`;
+            }
+        });
+    }
+</script>
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">{% if product %}Редактирование товара{% else %}Создание товара{% endif %}</h1>
+                <div class="text-muted small">
+                    {% if product %}
+                    ID: {{ product.id }} | Создан: {{ product.created_at.strftime('%d.%m.%Y') if product.created_at else 'Н/Д' }}
+                    {% else %}
+                    Создание нового товара в каталоге
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.list_products') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Назад к списку
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded shadow-sm p-4">
+    <!-- Основная форма: -->
+    <form method="post">
+        {{ form.csrf_token }}
+
+        <!-- Вкладки (Bootstrap Tabs) -->
+            <ul class="nav nav-tabs mb-4" id="productTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main"
+                        type="button" role="tab" aria-controls="main" aria-selected="true">
+                        <i class="fas fa-info-circle me-2"></i>Основная информация
+                </button>
+            </li>
+                <li class="nav-item" role="presentation">
+                <button class="nav-link" id="seo-tab" data-bs-toggle="tab" data-bs-target="#seo"
+                        type="button" role="tab" aria-controls="seo" aria-selected="false">
+                        <i class="fas fa-search me-2"></i>SEO-настройки
+                </button>
+            </li>
+                <li class="nav-item" role="presentation">
+                <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images"
+                        type="button" role="tab" aria-controls="images" aria-selected="false">
+                        <i class="fas fa-images me-2"></i>Изображения
+                </button>
+            </li>
+                <li class="nav-item" role="presentation">
+                <button class="nav-link" id="attributes-tab" data-bs-toggle="tab" data-bs-target="#attributes"
+                        type="button" role="tab" aria-controls="attributes" aria-selected="false">
+                        <i class="fas fa-list-ul me-2"></i>Атрибуты
+                </button>
+            </li>
+                <li class="nav-item" role="presentation">
+                <button class="nav-link" id="options-tab" data-bs-toggle="tab" data-bs-target="#options"
+                        type="button" role="tab" aria-controls="options" aria-selected="false">
+                        <i class="fas fa-layer-group me-2"></i>Опции
+                </button>
+            </li>
+                <li class="nav-item" role="presentation">
+                <button class="nav-link" id="related-tab" data-bs-toggle="tab" data-bs-target="#related"
+                        type="button" role="tab" aria-controls="related" aria-selected="false">
+                        <i class="fas fa-link me-2"></i>Связанные товары
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- ======================================
+                 1. Основная информация (ProductForm)
+                 ====================================== -->
+            <div class="tab-pane fade show active" id="main" role="tabpanel" aria-labelledby="main-tab">
+                    <div class="row g-4">
+                    <div class="col-md-6">
+                        <!-- Название -->
+                        <div class="mb-3">
+                                {{ form.name.label(class="form-label fw-medium") }}
+                                {{ form.name(class="form-control", placeholder="Введите название товара") }}
+                                <div class="form-text">Название товара, которое будет отображаться на сайте</div>
+                        </div>
+                        <!-- SLUG -->
+                        <div class="mb-3">
+                                {{ form.slug.label(class="form-label fw-medium") }}
+                                {{ form.slug(class="form-control", placeholder="url-товара") }}
+                                <div class="form-text">URL-адрес товара (только латинские буквы, цифры и дефисы)</div>
+                        </div>
+                        <!-- Категория -->
+                        <div class="mb-3">
+                                {{ form.category.label(class="form-label fw-medium") }}
+                            {{ form.category(class="form-select") }}
+                                <div class="form-text">Категория, в которой будет отображаться товар</div>
+                        </div>
+
+                        <!-- Размерная сетка -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Размерная сетка</label>
+                            <select name="size_chart_id" class="form-select">
+                                <option value="">Не выбрано</option>
+                                {% for sc in size_charts %}
+                                <option value="{{ sc.id }}" {% if product and product.size_chart_link and product.size_chart_link.size_chart_id == sc.id %}selected{% endif %}>{{ sc.title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Выберите сетку размеров для карточки товара</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <!-- Цена, остаток, бонусные баллы, сортировка -->
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                        <div class="mb-3">
+                                        {{ form.price.label(class="form-label fw-medium") }}
+                                        <div class="input-group">
+                                            {{ form.price(class="form-control", placeholder="0.00") }}
+                                            <span class="input-group-text">₽</span>
+                        </div>
+                                        <div class="form-text">Стоимость товара в рублях</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                        <div class="mb-3">
+                                        {{ form.stock.label(class="form-label fw-medium") }}
+                                        <div class="input-group">
+                                            {{ form.stock(class="form-control", placeholder="0") }}
+                                            <span class="input-group-text">шт.</span>
+                        </div>
+                                        <div class="form-text">Доступное количество товара</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                        <div class="mb-3">
+                                        {{ form.bonus_points.label(class="form-label fw-medium") }}
+                                        {{ form.bonus_points(class="form-control", placeholder="0") }}
+                                        <div class="form-text">Бонусные баллы за покупку</div>
+                        </div>
+                                </div>
+                                <div class="col-md-6">
+                        <div class="mb-3">
+                                        {{ form.sort_order.label(class="form-label fw-medium") }}
+                                        {{ form.sort_order(class="form-control", placeholder="0") }}
+                                        <div class="form-text">Порядок сортировки в списке</div>
+                                    </div>
+                                </div>
+                        </div>
+                        <!-- Индексация -->
+                            <div class="form-check form-switch mb-3">
+                            {{ form.is_indexed(class="form-check-input") }}
+                            {{ form.is_indexed.label(class="form-check-label") }}
+                                <div class="form-text">Разрешить поисковым системам индексировать товар</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Описание (TinyMCE) -->
+                    <div class="mb-3 mt-4">
+                        {{ form.description.label(class="form-label fw-medium") }}
+                        {{ form.description(class="form-control", id="descriptionField", rows="10") }}
+                        <div class="form-text">Подробное описание товара с форматированием</div>
+                </div>
+            </div>
+
+            <!-- ======================================
+                 2. SEO-настройки
+                 ====================================== -->
+            <div class="tab-pane fade" id="seo" role="tabpanel" aria-labelledby="seo-tab">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                <div class="mb-3">
+                                {{ form.meta_title.label(class="form-label fw-medium") }}
+                                {{ form.meta_title(class="form-control", placeholder="Мета-заголовок страницы товара") }}
+                                <div class="form-text">Заголовок страницы товара для поисковых систем</div>
+                </div>
+                        </div>
+                        <div class="col-md-12">
+                <div class="mb-3">
+                                {{ form.meta_keywords.label(class="form-label fw-medium") }}
+                                {{ form.meta_keywords(class="form-control", placeholder="Ключевые слова через запятую") }}
+                                <div class="form-text">Ключевые слова для поисковых систем</div>
+                </div>
+                        </div>
+                        <div class="col-md-12">
+                <div class="mb-3">
+                                {{ form.meta_description.label(class="form-label fw-medium") }}
+                                {{ form.meta_description(class="form-control", rows="5", placeholder="Краткое описание для поисковых систем") }}
+                                <div class="form-text">Краткое описание товара для результатов поиска (рекомендуется до 160 символов)</div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+
+            <!-- ======================================
+                 3. Изображения (главное / доп.)
+                 ====================================== -->
+            <div class="tab-pane fade" id="images" role="tabpanel" aria-labelledby="images-tab">
+                    <div class="row g-4">
+                <!-- Главное изображение -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Главное изображение</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="chosenMainImagePreview" class="text-center p-3 bg-light rounded mb-3">
+                        {% if product and product.main_image %}
+                                        <div class="main-image-wrapper position-relative">
+                        <img src="{{ url_for('static', filename='uploads/' ~ product.main_image.filename) }}"
+                                                 alt="" class="img-fluid mb-2" style="max-height:200px;">
+                                            <div class="mt-2 text-muted small">{{ product.main_image.filename }}</div>
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-main-image"
+                                                    data-image-id="{{ product.main_image.id }}">&times;</button>
+                                        </div>
+                        {% else %}
+                                        <div class="py-5">
+                                            <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                            <div>Изображение не выбрано</div>
+                                        </div>
+                        {% endif %}
+                    </div>
+                                    <button type="button" class="btn btn-outline-primary w-100"
+                            data-bs-toggle="modal" data-bs-target="#chooseImageModal"
+                            data-imagetype="main">
+                                        <i class="fas fa-upload me-2"></i>Выбрать / Загрузить изображение
+                    </button>
+                    {{ form.main_image_id }}  <!-- скрытое поле для ID главного изображения -->
+                                </div>
+                            </div>
+                </div>
+
+                <!-- Доп. изображения -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Дополнительные изображения</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="additionalImagesPreview" class="bg-light rounded p-3 mb-3 min-height-200">
+                        {% if product and product.additional_images %}
+                        {% for image in product.additional_images %}
+                                        <div class="additional-image-wrapper d-inline-block position-relative me-2 mb-2"
+                             data-image-id="{{ image.id }}"
+                             data-order="{{ image.order }}">
+                            <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}" alt=""
+                                                 class="img-thumbnail" style="height:100px; width:100px; object-fit:cover;">
+                            <button type="button"
+                                    class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-additional-image"
+                                    data-image-id="{{ image.id }}">&times;
+                            </button>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                                            <div>Нет загруженных изображений</div>
+                                            <div class="text-muted small mt-2">Перетаскивайте изображения для изменения порядка</div>
+                                        </div>
+                        {% endif %}
+                    </div>
+                                    <button type="button" class="btn btn-outline-primary w-100"
+                            onclick="openMultipleImageSelector('additional')">
+                                        <i class="fas fa-upload me-2"></i>Выбрать / Загрузить изображения
+                    </button>
+                    {{ form.additional_image_ids }}  <!-- скрытое поле со списком ID -->
+                                </div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+
+            <!-- ======================================
+                 4. Атрибуты (добавление/удаление)
+                 ====================================== -->
+            <div class="tab-pane fade" id="attributes" role="tabpanel" aria-labelledby="attributes-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Атрибуты товара</h5>
+                            <button type="button" class="btn btn-primary btn-sm" id="add-attribute">
+                                <i class="fas fa-plus me-2"></i>Добавить атрибут
+                            </button>
+                        </div>
+                        <div class="card-body">
+                    <div id="attributes-container">
+                        {% if product and product.attributes %}
+                        {% for attribute in product.attributes %}
+                                <div class="row mb-3 attribute-row align-items-center">
+                            <div class="col-md-5">
+                                <input type="text"
+                                       name="attributes[{{ loop.index0 }}][name]"
+                                       class="form-control"
+                                       value="{{ attribute.attribute_value.attribute.name }}"
+                                       placeholder="Название атрибута">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text"
+                                       name="attributes[{{ loop.index0 }}][value]"
+                                       class="form-control"
+                                       value="{{ attribute.attribute_value.value }}"
+                                       placeholder="Значение атрибута">
+                            </div>
+                            <div class="col-md-2">
+                                        <button type="button" class="btn btn-outline-danger remove-attribute">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                            
+                            {% if not product or not product.attributes %}
+                            <div id="empty-attributes" class="text-center py-5">
+                                <i class="fas fa-list fa-3x text-muted mb-3"></i>
+                                <h5>Атрибуты не добавлены</h5>
+                                <p class="text-muted">Нажмите кнопку "Добавить атрибут", чтобы добавить характеристики товара</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                </div>
+            </div>
+
+            <!-- ======================================
+     5. Опции + вариации
+     ====================================== -->
+            <div class="tab-pane fade" id="options" role="tabpanel" aria-labelledby="options-tab">
+                    <!-- Уже сохраненные вариации -->
+                {% if product and product.variations and product.variations|length > 0 %}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Существующие вариации</h5>
+                        </div>
+                        <div class="card-body">
+                    <div class="accordion" id="existingVariationsAccordion">
+                        {% for var in product.variations %}
+                                <div class="accordion-item border mb-2">
+                            <h2 class="accordion-header" id="heading-existing-{{ var.id }}">
+                                <button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapse-existing-{{ var.id }}"
+                                        aria-expanded="false"
+                                        aria-controls="collapse-existing-{{ var.id }}">
+                                            <span class="me-2 fw-bold">Вариация #{{ loop.index }}</span>
+                                            <span class="badge bg-light text-dark me-2">SKU: {{ var.sku }}</span>
+                                            <span class="badge bg-primary me-2">{{ var.price }}₽</span>
+                                            <span class="badge bg-{{ var.stock > 0 and 'success' or 'danger' }}">
+                                                {{ var.stock > 0 and 'В наличии: ' ~ var.stock or 'Нет в наличии' }}
+                                            </span>
+                                </button>
+                            </h2>
+                            <div id="collapse-existing-{{ var.id }}" class="accordion-collapse collapse"
+                                 aria-labelledby="heading-existing-{{ var.id }}"
+                                 data-bs-parent="#existingVariationsAccordion">
+                                <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p class="mb-2"><strong>Цена:</strong> {{ var.price }} ₽</p>
+                                                    <p class="mb-2"><strong>Остаток:</strong> {{ var.stock }} шт.</p>
+                                                    <p class="mb-2"><strong>SEO Title:</strong> {{ var.seo_title or 'Не задан' }}</p>
+                                                    <p class="mb-2"><strong>SEO Desc:</strong> {{ var.seo_description or 'Не задано' }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Опции:</strong></p>
+                                                    <div>
+                                        {% for pvo in var.option_values %}
+                                                        <span class="badge bg-info text-dark mb-1">
+                                {{ pvo.option_value.option.name }} = {{ pvo.option_value.value }}
+                            </span>
+                                        {% endfor %}
+                                                    </div>
+                                                    
+                                    {% if var.gallery_images %}
+                                                    <p class="mt-3"><strong>Галерея изображений:</strong></p>
+                                                    <div class="d-flex flex-wrap">
+                                        {% for image in var.gallery_images %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}" alt=""
+                                                             class="img-thumbnail me-2 mb-2" style="width:60px;height:60px;object-fit:cover;">
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    {% if var.variation_image %}
+                                                    <p class="mt-3"><strong>Связанное изображение:</strong></p>
+                                        <img src="{{ url_for('static', filename='uploads/'~var.variation_image.filename) }}"
+                                                         alt="" class="img-thumbnail" style="max-height:60px;">
+                                    {% endif %}
+                                    {% endif %}
+                                                </div>
+                                            </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Внимание!</strong> При нажатии «Сгенерировать вариации» все существующие вариации будут заменены новыми.
+                            </div>
+                        </div>
+                </div>
+                {% endif %}
+
+                    <!-- Добавление опций -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Добавление опций</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-medium">Выбрать существующую опцию</label>
+                            {{ existing_option_form.option(class="form-control", id="existingOptionSelect") }}
+                            <datalist id="option-list">
+                                {% for option in options %}
+                                <option value="{{ option.name }}" data-id="{{ option.id }}"></option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="col-md-4">
+                                    <label class="form-label fw-medium">Тип отображения</label>
+                            {{ existing_option_form.display_type(class="form-select", id="OptionDisplayType") }}
+                        </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-medium">Выбрать значения</label>
+                            {{ existing_option_form.values(class="form-select select2", multiple=True,
+                                    id="existingValuesSelect", style="width: 100%") }}
+                        </div>
+                            </div>
+                            
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="hasIndividualPhotos"
+                                       name="has_individual_photos">
+                                <label class="form-check-label" for="hasIndividualPhotos">
+                                    Нужны отдельные фото для вариаций
+                                </label>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary mt-3" id="addExistingOptionBtn">
+                                <i class="fas fa-plus me-2"></i>Добавить в список опций
+                        </button>
+                    </div>
+                </div>
+
+                    <!-- Список опций для генерации вариаций -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Список опций для генерации вариаций</h5>
+                            <button type="button" class="btn btn-primary btn-sm" id="generate-variations">
+                                <i class="fas fa-cogs me-2"></i>Сгенерировать вариации
+                            </button>
+                        </div>
+                        <div class="card-body">
+                <div id="option_rows">
+                    {% for option in product_options %}
+                    {% set values_list = option['values'] | map(attribute='value') | list %}
+                                <div class="option-row bg-light rounded p-3 mb-3"
+                         data-type="existing"
+                         data-option-name="{{ option['name'] }}"
+                         data-option-values="{{ values_list | join(',') }}"
+                         data-display-type="{{ option['display_type'] }}"
+                                     data-has-individual-photos="{{ 'true' if option['has_individual_photos'] else 'false' }}">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <strong class="text-primary">{{ option['name'] }}</strong>
+                                            <span class="ms-2 badge bg-light text-dark">
+                                                Отдельные фото: {{ 'Да' if option['has_individual_photos'] else 'Нет' }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm edit-option me-2">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm remove-option">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted small">Значения:</span>
+                                        <div class="mt-1">
+                        {% for val in values_list %}
+                                            <span class="value-tag badge bg-secondary me-1 mb-1">
+                {{ val }}
+                                                <button type="button" class="btn-close btn-close-white ms-1 remove-value" 
+                                                        aria-label="Удалить значение" data-value="{{ val }}"></button>
+            </span>
+                        {% endfor %}
+                                        </div>
+                                    </div>
+                        <input type="hidden" name="options[{{ loop.index0 }}][existing_option_id]"
+                               value="{{ option['name'] }}">
+                        <input type="hidden" name="options[{{ loop.index0 }}][values_ids]"
+                               value="{{ values_list | join(',') }}">
+                        <input type="hidden" name="options[{{ loop.index0 }}][display_type]"
+                               value="{{ option['display_type'] }}">
+                        <input type="hidden" name="options[{{ loop.index0 }}][has_individual_photos]"
+                               value="{{ option.has_individual_photos | lower }}">
+                    </div>
+                    {% endfor %}
+                </div>
+
+                            {% if not product_options %}
+                            <div id="empty-options" class="text-center py-5">
+                                <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                                <h5>Список опций пуст</h5>
+                                <p class="text-muted">Добавьте опции с помощью формы выше, чтобы сгенерировать вариации товара</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                </div>
+
+                    <!-- Сгенерированные вариации -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Сгенерированные вариации</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Аккордеон с вариациями (JS) -->
+                            <div class="accordion" id="variationsAccordion">
+                    {% for var_id, var in product_variations.items() %}
+                                <div class="accordion-item mb-2">
+                        <h2 class="accordion-header" id="heading-{{ loop.index0 }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapse-{{ loop.index0 }}" aria-expanded="false"
+                                    aria-controls="collapse-{{ loop.index0 }}">
+                                Вариация {{ loop.index }}
+                            </button>
+                        </h2>
+                        <div id="collapse-{{ loop.index0 }}" class="accordion-collapse collapse"
+                             aria-labelledby="heading-{{ loop.index0 }}"
+                             data-bs-parent="#variationsAccordion">
+                            <div class="accordion-body">
+                                {% set outer_idx = loop.index0 %}
+                                <input type="hidden" name="variations[{{ outer_idx }}][id]" value="{{ var.id }}">
+                                {{ var.combo_html | safe }}
+                                {% if var.combo_ids %}
+                                {% for cid in var.combo_ids %}
+                                <input type="hidden" name="variations[{{ outer_idx }}][combo_ids][{{ loop.index0 }}][option_id]" value="{{ cid.option_id }}">
+                                <input type="hidden" name="variations[{{ outer_idx }}][combo_ids][{{ loop.index0 }}][value_id]" value="{{ cid.value_id }}">
+                                {% endfor %}
+                                {% endif %}
+                                <hr>
+                                            <div class="row g-3">
+                                    <div class="col-md-3">
+                                                    <label class="form-label fw-medium small">SKU</label>
+                                        <input type="text" class="form-control"
+                                               name="variations[{{ loop.index0 }}][sku]"
+                                               placeholder="SKU" value="{{ var.sku if var.sku else '' }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                                    <label class="form-label fw-medium small">Цена</label>
+                                        <input type="number" step="0.01" class="form-control"
+                                               name="variations[{{ loop.index0 }}][price]" placeholder="Цена"
+                                               value="{{ var.price }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                                    <label class="form-label fw-medium small">Количество</label>
+                                        <input type="number" class="form-control"
+                                               name="variations[{{ loop.index0 }}][stock]"
+                                               placeholder="Кол-во" value="{{ var.stock }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                                    <label class="form-label fw-medium small">Slug</label>
+                                        <input type="text" class="form-control"
+                                               name="variations[{{ loop.index0 }}][slug]"
+                                               placeholder="Slug" value="{{ var.slug }}">
+                                    </div>
+                                </div>
+                                            <div class="row g-3 mt-2">
+                                    <div class="col-md-4">
+                                                    <label class="form-label fw-medium small">SEO Title</label>
+                                        <input type="text" class="form-control"
+                                               name="variations[{{ loop.index0 }}][seo_title]"
+                                               placeholder="SEO Title" value="{{ var.seo_title }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                                    <label class="form-label fw-medium small">SEO Keywords</label>
+                                        <input type="text" class="form-control"
+                                               name="variations[{{ loop.index0 }}][seo_keywords]"
+                                               placeholder="SEO Keywords" value="{{ var.seo_keywords }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                                    <label class="form-label fw-medium small">SEO Description</label>
+                                        <input type="text" class="form-control"
+                                               name="variations[{{ loop.index0 }}][seo_description]"
+                                               placeholder="SEO Description" value="{{ var.seo_description }}">
+                                    </div>
+                                </div>
+                                <!-- Выбор изображения для вариации -->
+                                            <div class="mt-4">
+                                    {% if var.has_gallery %}
+                                    <!-- Галерея -->
+                                                <label class="form-label fw-medium">Галерея изображений</label>
+                                                <div id="variation-gallery-preview-{{ loop.index0 }}" class="bg-light rounded p-3 mb-3">
+                                        {% if var.gallery_images %}
+                                                    <div class="d-flex flex-wrap">
+                                        {% for image in var.gallery_images %}
+                                                        <div class="gallery-image-wrapper position-relative me-2 mb-2"
+                                             data-image-id="{{ image.id }}">
+                                            <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}"
+                                                                 alt="" class="img-thumbnail" style="width:80px;height:80px;object-fit:cover;">
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-gallery-image"
+                                                    data-image-id="{{ image.id }}">×
+                                            </button>
+                                        </div>
+                                        {% endfor %}
+                                                    </div>
+                                        {% else %}
+                                                    <div class="text-center py-4">
+                                                        <i class="fas fa-images fa-2x text-muted mb-2"></i>
+                                                        <div class="text-muted">Нет загруженных изображений</div>
+                                                    </div>
+                                        {% endif %}
+                                    </div>
+                                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#chooseImageModal"
+                                            data-imagetype="variation-gallery-{{ loop.index0 }}">
+                                                    <i class="fas fa-upload me-2"></i>Выбрать / Загрузить изображения
+                                    </button>
+                                    <input type="hidden" name="variations[{{ loop.index0 }}][gallery_ids]"
+                                           value="{{ var.gallery_images | map(attribute='id') | join(',') }}">
+                                    {% else %}
+                                    <!-- Одиночное изображение -->
+                                                <label class="form-label fw-medium">Изображение вариации</label>
+                                                <div id="variation-image-preview-{{ loop.index0 }}" class="bg-light rounded p-3 mb-3 text-center">
+                                                    {% if var.variation_image %}
+                                                    <img src="{{ url_for('static', filename='uploads/' ~ var.variation_image.filename) }}"
+                                                         alt="Изображение вариации" class="img-fluid mb-2" style="max-height:120px;">
+                                                    <div class="text-muted small">{{ var.variation_image.filename }}</div>
+                                                    {% else %}
+                                                    <div class="py-4">
+                                                        <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                                                        <div class="text-muted">Изображение не выбрано</div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#chooseImageModal"
+                                            data-imagetype="variation-{{ loop.index0 }}">
+                                                    <i class="fas fa-upload me-2"></i>Выбрать изображение
+                                    </button>
+                                    <input type="hidden" name="variations[{{ loop.index0 }}][image_id]"
+                                           value="{{ var.image_id }}">
+                                    {% endif %}
+                                </div>
+                                <!-- Сохраняем combo (название опции + значение) -->
+                                <input type="hidden" name="variations[{{ loop.index0 }}][combo][0][name]" value="Цвет">
+                                <input type="hidden" name="variations[{{ loop.index0 }}][combo][0][value]"
+                                       value="{{ var.option_values|selectattr('option.name', '==', 'Цвет')|map(attribute='value')|join(', ') }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                            </div>
+                            
+                            {% if not product_variations %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-cubes fa-3x text-muted mb-3"></i>
+                                <h5>Нет сгенерированных вариаций</h5>
+                                <p class="text-muted">Добавьте опции и нажмите кнопку "Сгенерировать вариации"</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                </div>
+            </div>
+
+            <!-- ======================================
+                 6. Связанные товары
+                 ====================================== -->
+            <div class="tab-pane fade" id="related" role="tabpanel" aria-labelledby="related-tab">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Связанные товары</h5>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="addRelatedProduct()">
+                            <i class="fas fa-plus me-2"></i>Добавить связанный товар
+                        </button>
+                    </div>
+                    
+
+                    <div class="card-body">
+                        <div id="related-products-container">
+                            {% if related_products %}
+                            {% for related in related_products %}
+                            <div class="related-product-row bg-light rounded p-3 mb-3" data-related-id="{{ related.id }}">
+                                <div class="row align-items-center">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-medium">Товар</label>
+                                        <select name="related_products[{{ loop.index0 }}][product_id]" class="form-select">
+                                            <option value="">Выберите товар</option>
+                                            {% if all_products %}
+                                                {% for p in all_products %}
+                                                <option value="{{ p.id }}" {% if p.id == related.related_product_id %}selected{% endif %}>
+                                                    {{ p.name }} (ID: {{ p.id }})
+                                                </option>
+                                                {% endfor %}
+                                            {% else %}
+                                                <option value="">Нет доступных товаров</option>
+                                            {% endif %}
+                                        </select>
+                                        <!-- DEBUG: related_product_id = {{ related.related_product_id }}, all_products count = {{ all_products|length }} -->
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-medium">Текст ссылки</label>
+                                        <input type="text" name="related_products[{{ loop.index0 }}][link_text]" 
+                                               class="form-control" value="{{ related.link_text }}" 
+                                               placeholder="например: детям, мужское, женское">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-medium">Порядок</label>
+                                        <input type="number" name="related_products[{{ loop.index0 }}][sort_order]" 
+                                               class="form-control" value="{{ related.sort_order }}" min="0">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-outline-danger mt-4" onclick="removeRelatedProduct(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        {% if not related_products %}
+                        <div id="empty-related" class="text-center py-5">
+                            <i class="fas fa-link fa-3x text-muted mb-3"></i>
+                            <h5>Связанные товары не добавлены</h5>
+                            <p class="text-muted">Нажмите кнопку "Добавить связанный товар", чтобы создать связи между товарами</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>  <!-- /tab-content -->
+
+            <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                <a href="{{ url_for('admin.list_products') }}" class="btn btn-outline-secondary px-4">
+                    Отмена
+                </a>
+                <button type="submit" class="btn btn-primary px-5">
+                    <i class="fas fa-save me-2"></i>Сохранить товар
+                </button>
+            </div>
+    </form>
+    </div>
+</div>
+
+<!-- ===== Модалка выбора/загрузки изображений (для main/additional/variation) ===== -->
+{% include 'admin/chooseImage.html' %}
+
+{% block extra_css %}
+<style>
+/* Form Styles */
+.form-control, .form-select {
+    border-color: #e5e5e5;
+    padding: 0.625rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+.form-control-lg {
+    font-size: 1.125rem;
+}
+
+.form-label {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.form-text {
+    color: #808080;
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+}
+
+/* Card Styles */
+.card {
+    margin-bottom: 1.5rem;
+}
+
+/* Nav Tabs */
+.nav-tabs {
+    border-bottom-color: #e5e5e5;
+}
+
+.nav-tabs .nav-link {
+    color: #666;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #0066ff;
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0066ff;
+    border-bottom: 2px solid #0066ff;
+    background-color: transparent;
+}
+
+/* Accordion Styles */
+.accordion-item {
+    border-radius: 0.375rem;
+    overflow: hidden;
+    border: 1px solid #e5e5e5;
+}
+
+.accordion-button {
+    padding: 1rem 1.25rem;
+    font-weight: 500;
+}
+
+.accordion-button:not(.collapsed) {
+    color: #0066ff;
+    background-color: rgba(0, 102, 255, 0.05);
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0, 102, 255, 0.25);
+}
+
+/* Form Switch */
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    margin-top: 0.125em;
+}
+
+.form-check-input:checked {
+    background-color: #0066ff;
+    border-color: #0066ff;
+}
+
+/* Image Previews */
+#additionalImagesPreview, .min-height-200 {
+    min-height: 200px;
+}
+
+.remove-additional-image, .remove-gallery-image, .remove-main-image {
+    opacity: 0.8;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    z-index: 1;
+}
+
+.additional-image-wrapper:hover .remove-additional-image,
+.gallery-image-wrapper:hover .remove-gallery-image,
+.main-image-wrapper:hover .remove-main-image {
+    opacity: 1;
+}
+
+/* TinyMCE Overrides */
+.tox-tinymce {
+    border-color: #e5e5e5 !important;
+    border-radius: 0.375rem !important;
+}
+
+.tox .tox-statusbar {
+    border-top-color: #e5e5e5 !important;
+}
+
+/* Select2 Overrides */
+.select2-container--default .select2-selection--multiple {
+    border-color: #e5e5e5;
+    border-radius: 0.375rem;
+    padding: 0.175rem 0.25rem;
+    min-height: 38px;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+/* Option Tags */
+.value-tag .btn-close {
+    font-size: 0.65rem;
+    padding: 0.15rem;
+}
+</style>
+{% endblock %}
+
+<!-- ========== Данные о существующих фотографиях опций ========== -->
+<script>
+    // Загружаем данные о существующих фотографиях опций
+    let existingOptionPhotos = {{ existing_option_photos_json|safe }};
+    console.log('Загруженные фотографии опций:', existingOptionPhotos);
+</script>
+
+<!-- ========== 1) Удаление главного/доп. изображений ========== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Удаление главного изображения
+        const mainPreview = document.getElementById('chosenMainImagePreview');
+        if (mainPreview) {
+            mainPreview.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-main-image')) {
+                    const hiddenField = document.getElementById('{{ form.main_image_id.id }}');
+                    if (hiddenField) {
+                        hiddenField.value = '';
+                    }
+                    mainPreview.innerHTML = '<span>(не выбрано)</span>';
+                }
+            });
+        }
+
+        // 2. Удаление дополнительных
+        const additionalPreview = document.getElementById('additionalImagesPreview');
+        if (additionalPreview) {
+            additionalPreview.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-additional-image')) {
+                    const imageId = e.target.dataset.imageId;
+                    // Удалить из скрытого поля
+                    const additionalField = document.getElementById('{{ form.additional_image_ids.id }}');
+                    if (additionalField) {
+                        let arr = additionalField.value.split(',').map(v => v.trim()).filter(Boolean);
+                        arr = arr.filter(id => id !== imageId);
+                        additionalField.value = arr.join(',');
+                    }
+                    e.target.closest('.additional-image-wrapper').remove();
+                }
+            });
+        }
+    });
+</script>
+
+<!-- ========== 2) Атрибуты (динамич. добавление) ========== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const attrsContainer = document.getElementById('attributes-container');
+        const addAttrBtn = document.getElementById('add-attribute');
+        if (addAttrBtn && attrsContainer) {
+            addAttrBtn.addEventListener('click', function () {
+                const idx = attrsContainer.querySelectorAll('.attribute-row').length;
+                const rowHtml = `
+            <div class="row mb-3 attribute-row align-items-center">
+                <div class="col-md-5">
+                    <input type="text" name="attributes[${idx}][name]" class="form-control" placeholder="Название атрибута">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="attributes[${idx}][value]" class="form-control" placeholder="Значение атрибута">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-danger remove-attribute">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>`;
+                attrsContainer.insertAdjacentHTML('beforeend', rowHtml);
+            });
+
+            attrsContainer.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-attribute')) {
+                    e.target.closest('.attribute-row').remove();
+                }
+            });
+        }
+    });
+</script>
+<script src="/static/js/Sortable.min.js"></script>
+
+<!-- ========== 3) Модалка chooseImageModal (выбор изображений) ========== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const preview = document.getElementById('additionalImagesPreview');
+
+        if (preview) {
+            new Sortable(preview, {
+                animation: 150,
+                onEnd: function (evt) {
+                    updateImageOrder();
+                }
+            });
+        }
+
+        function updateImageOrder() {
+            let order = [];
+            document.querySelectorAll('#additionalImagesPreview .additional-image-wrapper').forEach((el, index) => {
+                let imageId = el.dataset.imageId;
+                el.dataset.order = index;  // Обновляем data-order у элементов
+                order.push(imageId);
+            });
+
+            // Обновляем скрытое поле формы
+            const addField = document.getElementById('{{ form.additional_image_ids.id }}');
+            if (addField) {
+                addField.value = order.join(',');
+                console.log("Обновленный порядок изображений:", addField.value);  // Проверяем, обновилось ли поле
+            }
+        }
+
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const chooseImageModal = document.getElementById('chooseImageModal');
+
+
+        if (chooseImageModal) {
+            chooseImageModal.addEventListener('hidden.bs.modal', function() {
+                // Очищаем глобальную переменную при закрытии модального окна
+                window.currentImageType = null;
+            });
+            
+            chooseImageModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const modal = event.target;
+                
+                // Проверяем есть ли предустановленный тип в dataset модального окна (для option_photo)
+                if (modal.dataset.targetType) {
+                    window.currentImageType = modal.dataset.targetType;
+                } else if (button) {
+                    window.currentImageType = button.getAttribute('data-imagetype') || 'main';
+                } else {
+                    window.currentImageType = 'main';
+                }
+                
+                console.log('Установлен currentImageType:', window.currentImageType);
+
+                const bodyEl = document.getElementById('directoryAjaxContent');
+                if (bodyEl) {
+                    bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+                    fetch("{{ url_for('admin.admin_directories_view', dir_id=0) }}", {
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                    })
+                        .then(resp => resp.text())
+                        .then(html => {
+                            bodyEl.innerHTML = html;
+                            attachDirLinks();
+                            // attachImgClick убран - MediaManager обрабатывает события автоматически
+                        })
+                        .catch(err => {
+                            bodyEl.innerHTML = `<p class="text-danger">Ошибка загрузки каталога</p>`;
+                            console.error(err);
+                        });
+                }
+            });
+
+            function attachDirLinks() {
+                const content = document.getElementById('directoryAjaxContent');
+                if (!content) return;
+                const links = content.querySelectorAll('.dirLink');
+                links.forEach(link => {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const did = link.dataset.dirId || '';
+                        loadDir(did);
+                    });
+                });
+            }
+
+            function loadDir(dirId) {
+                const bodyEl = document.getElementById('directoryAjaxContent');
+                if (!bodyEl) return;
+                bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+                let url = "{{ url_for('admin.admin_directories_view', dir_id=0) }}".replace('0', dirId);
+
+                fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                    .then(r => r.text())
+                    .then(html => {
+                        bodyEl.innerHTML = html;
+                        attachDirLinks();
+                        // attachImgClick убран - MediaManager обрабатывает события автоматически
+                    })
+                    .catch(err => {
+                        bodyEl.innerHTML = `<p class="text-danger">Ошибка загрузки каталога</p>`;
+                        console.error(err);
+                    });
+            }
+
+            function attachImgClick() {
+                const content = document.getElementById('directoryAjaxContent');
+                if (!content) return;
+                const imageGrid = content.querySelector('#imageGrid');
+                if (!imageGrid) return;
+
+                imageGrid.addEventListener('click', function (e) {
+                    const tgt = e.target;
+                    if (tgt.classList.contains('chooseImageItem')) {
+                        const imageId = tgt.dataset.imageId;
+                        const imgSrc = tgt.src;
+
+                        if (!currentImageType) {
+                            currentImageType = 'main';
+                        }
+
+                        if (currentImageType === 'main') {
+                            const mainField = document.getElementById('{{ form.main_image_id.id }}');
+                            if (mainField) {
+                                mainField.value = imageId;
+                            }
+                            const preview = document.getElementById('chosenMainImagePreview');
+                            if (preview) {
+                                preview.innerHTML = `
+                            <div class="main-image-wrapper position-relative">
+                                <img src="${imgSrc}" alt="" style="max-height:50px;">
+                                <button type="button"
+                                        class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-main-image"
+                                        data-image-id="${imageId}">&times;</button>
+                            </div>`;
+                            }
+                        } else if (currentImageType === 'additional') {
+                            const addField = document.getElementById('{{ form.additional_image_ids.id }}');
+                            if (addField) {
+                                let curVal = addField.value.trim();
+                                let arr = curVal ? curVal.split(',').map(s => s.trim()) : [];
+                                if (!arr.includes(imageId)) {
+                                    arr.push(imageId);
+                                    addField.value = arr.join(',');
+                                }
+                            }
+                            const preview = document.getElementById('additionalImagesPreview');
+                            if (preview) {
+                                if (preview.textContent.includes('(не выбраны)')) {
+                                    preview.textContent = '';
+                                }
+                                const wrapper = document.createElement('div');
+                                wrapper.classList.add('additional-image-wrapper', 'd-inline-block', 'position-relative', 'me-2');
+
+                                const imgEl = document.createElement('img');
+                                imgEl.src = imgSrc;
+                                imgEl.style.maxHeight = '50px';
+                                wrapper.appendChild(imgEl);
+
+                                const rmBtn = document.createElement('button');
+                                rmBtn.type = 'button';
+                                rmBtn.classList.add('btn', 'btn-danger', 'btn-sm', 'position-absolute', 'top-0', 'end-0', 'remove-additional-image');
+                                rmBtn.dataset.imageId = imageId;
+                                rmBtn.innerHTML = '&times;';
+                                wrapper.appendChild(rmBtn);
+
+                                preview.appendChild(wrapper);
+                            }
+                        } else if (currentImageType.startsWith('variation-')) {
+                            const varIdx = currentImageType.split('-')[1];
+                            const hidField = document.querySelector(`input[name="variations[${varIdx}][image_id]"]`);
+                            if (hidField) {
+                                hidField.value = imageId;
+                            }
+                            const preview = document.getElementById(`variation-image-preview-${varIdx}`);
+                            if (preview) {
+                                preview.innerHTML = `<img src="${imgSrc}" alt="" style="max-height:50px;">`;
+                            }
+                        } else if (currentImageType === 'option_photo') {
+                            // Обработка фотографий для значений опций
+                            console.log('Обработка фото опции, currentImageType:', currentImageType);
+                            const modal = document.getElementById('chooseImageModal');
+                            if (modal) {
+                                const optionName = modal.dataset.optionName;
+                                const optionValue = modal.dataset.optionValue;
+                                const uniqueId = modal.dataset.uniqueId;
+                                
+                                console.log('Данные модального окна:', {
+                                    optionName, optionValue, uniqueId
+                                });
+                                
+                                if (optionName && optionValue && uniqueId) {
+                                    console.log('Вызываем addSelectedPhotoToValue');
+                                    addSelectedPhotoToValue(imageId, imgSrc, optionName, optionValue, uniqueId);
+                                } else {
+                                    console.error('Не хватает данных для добавления фото опции');
+                                }
+                            } else {
+                                console.error('Модальное окно не найдено');
+                            }
+                        } else if (currentImageType === 'tinymce-description') {
+                            // Обработка для TinyMCE редактора описания
+                            if (window.tinymceCallback) {
+                                window.tinymceCallback(imgSrc, {
+                                    title: filename,
+                                    alt: filename
+                                });
+                                window.tinymceCallback = null;
+                            }
+                        }
+
+                        // Закрываем модалку
+                        const modalEl = document.getElementById('chooseImageModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+                });
+            }
+        }
+    });
+</script>
+
+<!-- ========== 4) TinyMCE (поле description) ========== -->
+<script src="/static/js/tinymce/tinymce.min.js"></script>
+<script>
+    tinymce.init({
+        selector: '#descriptionField',
+        height: 400,
+        plugins: [
+            'advlist', 'accordion', 'autolink', 'lists', 'link', 'image',
+            'charmap', 'preview', 'anchor', 'searchreplace', 'visualblocks',
+            'code', 'fullscreen', 'pagebreak', 'emoticons', 'insertdatetime',
+            'media', 'table', 'help', 'wordcount', 'visualblocks', 'charmap',
+            'codesample', 'importcss', 'directionality'
+        ],
+        toolbar: 'undo redo | formatselect | bold italic backcolor | ' +
+            'alignleft aligncenter alignright alignjustify | ' +
+            'bullist numlist outdent indent | image youtube | ' +
+            'removeformat | help',
+        // Кастомные кнопки
+        setup: function(editor) {
+            // Кнопка для вставки YouTube видео
+            editor.ui.registry.addButton('youtube', {
+                icon: 'video',
+                tooltip: 'Вставить YouTube видео',
+                onAction: function() {
+                    var url = prompt('Введите URL видео YouTube:', 'https://www.youtube.com/watch?v=...');
+                    if (url) {
+                        // Извлекаем ID видео из URL
+                        var videoId = null;
+                        var patterns = [
+                            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+                            /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+                        ];
+                        
+                        for (var i = 0; i < patterns.length; i++) {
+                            var match = url.match(patterns[i]);
+                            if (match) {
+                                videoId = match[1];
+                                break;
+                            }
+                        }
+                        
+                        if (videoId) {
+                            var embedHtml = '<div class="youtube-video-wrapper" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 20px 0;"><iframe src="https://www.youtube.com/embed/' + videoId + '" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe></div>';
+                            editor.insertContent(embedHtml);
+                        } else {
+                            alert('Неверный URL YouTube видео');
+                        }
+                    }
+                }
+            });
+        },
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+        language: 'ru',
+        language_url: '/static/js/tinymce/langs/ru.js',
+        // Настройки для изображений
+        image_title: true,
+        automatic_uploads: false,
+        file_picker_types: 'image',
+        // Настройки для медиа
+        media_live_embeds: true,
+        media_alt_source: false,
+        media_poster: false,
+        media_dimensions: false,
+        // Дополнительные настройки
+        paste_data_images: true,
+        // Кастомный обработчик для вставки изображений
+        file_picker_callback: function(callback, value, meta) {
+            if (meta.filetype === 'image') {
+                        // Открываем медиа-галерею в модальном окне
+        const mediaModalElement = document.getElementById('mediaModal');
+        if (!mediaModalElement) {
+            console.error('Модальное окно mediaModal не найдено');
+            return;
+        }
+        
+        const mediaFrame = document.getElementById('mediaFrame');
+        if (!mediaFrame) {
+            console.error('iframe mediaFrame не найден');
+            return;
+        }
+        
+        try {
+            const mediaModal = new bootstrap.Modal(mediaModalElement);
+            mediaFrame.src = '/admin/media/list?tinymce=true';
+            mediaModal.show();
+        } catch (error) {
+            console.error('Ошибка при открытии модального окна:', error);
+            // Fallback: открываем в новом окне
+            window.open('/admin/media/list?tinymce=true', 'MediaGallery', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        }
+                
+                // Устанавливаем callback для TinyMCE
+                window.tinymceImageCallback = callback;
+                
+                // Слушаем сообщения от медиа-галереи
+                const messageHandler = function(event) {
+                    if (event.data.type === 'imageSelected' && event.data.src) {
+                        callback(event.data.src, {
+                            title: event.data.title || '',
+                            alt: event.data.alt || ''
+                        });
+                        mediaModal.hide();
+                        window.removeEventListener('message', messageHandler);
+                    }
+                };
+                window.addEventListener('message', messageHandler);
+            }
+        }
+    });
+</script>
+
+<!-- ========== 5) Скрипты для опций + генерация вариаций ========== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ===== (C) Генерация вариаций =====
+        const generateBtn = document.getElementById("generate-variations");
+        const variationsAccordion = document.getElementById("variationsAccordion");
+        const optionRowsContainer = document.getElementById("option_rows");
+        if (generateBtn) {
+            generateBtn.addEventListener("click", function () {
+                if (!optionRowsContainer || !variationsAccordion) return;
+
+                // Собираем массив опций
+                const rows = optionRowsContainer.querySelectorAll(".option-row");
+                if (!rows.length) {
+                    alert("Сначала добавьте хотя бы одну опцию!");
+                    return;
+                }
+
+                // [{ name:'Цвет', values:['Красный','Синий'], hasIndividualPhotos: false }, ... ]
+                let opts = [];
+                let individualPhotoOptions = [];
+                
+                rows.forEach(row => {
+                    let optName = row.dataset.optionName || 'option';
+                    let rawVals = row.dataset.optionValues || '';
+                    
+                    console.log(`ОПЦИЯ: ${optName}`);
+                    console.log(`  - row.dataset:`, row.dataset);
+                    console.log(`  - getAttribute('data-has-individual-photos'):`, row.getAttribute('data-has-individual-photos'));
+                    console.log(`  - hasIndividualPhotos dataset:`, row.dataset.hasIndividualPhotos);
+                    console.log(`  - rawVals:`, rawVals);
+                    
+                    // Правильное чтение атрибута
+                    let hasIndividualPhotos = row.getAttribute('data-has-individual-photos') === 'true';
+                    console.log(`  - hasIndividualPhotos boolean:`, hasIndividualPhotos);
+                    
+                    let arrVals = rawVals.split(',').map(v => v.trim()).filter(Boolean);
+                    console.log(`  - arrVals:`, arrVals);
+                    
+                    if (hasIndividualPhotos) {
+                        console.log(`  ✓ Добавляем в individualPhotoOptions`);
+                        individualPhotoOptions.push({name: optName, values: arrVals});
+                    }
+                    
+                    opts.push({name: optName, values: arrVals, hasIndividualPhotos: hasIndividualPhotos});
+                });
+                
+                console.log('=== ИТОГО ===');
+                console.log('opts:', opts);
+                console.log('individualPhotoOptions:', individualPhotoOptions);
+
+                // Декартово произведение
+                let combos = buildAllCombos(opts);
+
+                // Очищаем предыдущие вариации и интерфейс фотографий
+                variationsAccordion.innerHTML = '';
+
+                let varIndex = 0;
+
+                // Сначала генерируем обычные вариации
+                combos.forEach((combo) => {
+                    let varHtml = buildVarHTML(combo, varIndex);
+                    variationsAccordion.insertAdjacentHTML('beforeend', varHtml);
+                    varIndex++;
+                });
+                
+                // Создаем НОВЫЙ пустой интерфейс для загрузки фотографий к значениям опций
+                console.log('=== ГЕНЕРАЦИЯ НОВОГО ИНТЕРФЕЙСА ФОТО ===');
+                console.log('individualPhotoOptions count:', individualPhotoOptions.length);
+                
+                if (individualPhotoOptions.length > 0) {
+                    // Создаем секцию для фотографий опций (пустую, без существующих фото)
+                    let photoSectionHtml = window.buildPhotoManagementSection(individualPhotoOptions, true); // true = создать пустой интерфейс
+                    variationsAccordion.insertAdjacentHTML('beforeend', photoSectionHtml);
+                }
+            });
+        }
+
+        function buildAllCombos(opts) {
+            let result = [];
+
+            function helper(current, depth) {
+                if (depth === opts.length) {
+                    result.push(current);
+                    return;
+                }
+                opts[depth].values.forEach(val => {
+                    helper([...current, {name: opts[depth].name, value: val}], depth + 1);
+                });
+            }
+
+            helper([], 0);
+            return result;
+        }
+
+        function generatePhotoVariationSKU(combo, index) {
+            // Генерируем SKU для фото-вариации на основе названия опции и значения
+            const photoItem = combo.find(c => c.isPhotoVariation);
+            if (photoItem) {
+                // Очищаем от пробелов и спецсимволов
+                const cleanOptionName = photoItem.name.replace(/[^a-zA-Z0-9а-яё]/gi, '').toLowerCase();
+                const cleanValue = photoItem.value.replace(/[^a-zA-Z0-9а-яё]/gi, '').toLowerCase();
+                return `photo-${cleanOptionName}-${cleanValue}-${Date.now()}`;
+            }
+            return `photo-var-${index}-${Date.now()}`;
+        }
+
+        function generatePhotoSEOTitle(combo) {
+            const photoItem = combo.find(c => c.isPhotoVariation);
+            if (photoItem) {
+                return `Фото ${photoItem.name} ${photoItem.value}`;
+            }
+            return 'Фото товара';
+        }
+
+        function generatePhotoSEOKeywords(combo) {
+            const photoItem = combo.find(c => c.isPhotoVariation);
+            if (photoItem) {
+                return `фото, ${photoItem.name}, ${photoItem.value}, изображение`;
+            }
+            return 'фото, товар, изображение';
+        }
+
+        function generatePhotoSEODescription(combo) {
+            const photoItem = combo.find(c => c.isPhotoVariation);
+            if (photoItem) {
+                return `Фотография товара для варианта ${photoItem.name}: ${photoItem.value}`;
+            }
+            return 'Фотография товара';
+        }
+
+        window.buildPhotoManagementSection = function(individualPhotoOptions, createEmpty = false) {
+            let sectionHtml = `
+            <div class="accordion-item border-success">
+                <h2 class="accordion-header" id="heading-photos">
+                    <button class="accordion-button bg-success text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapse-photos"
+                            aria-expanded="true" aria-controls="collapse-photos">
+                        <i class="fas fa-camera me-2"></i> Фотографии для значений опций
+                    </button>
+                </h2>
+                <div id="collapse-photos" class="accordion-collapse collapse show"
+                     aria-labelledby="heading-photos"
+                     data-bs-parent="#variationsAccordion">
+                    <div class="accordion-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Здесь вы можете загрузить фотографии для каждого значения опций, 
+                            отмеченных как "Индивидуальные фото"
+                        </div>`;
+
+            individualPhotoOptions.forEach(optionData => {
+                sectionHtml += `
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tag me-2"></i>${optionData.name}
+                        </h5>
+                    </div>
+                    <div class="card-body">`;
+
+                optionData.values.forEach((value, valueIndex) => {
+                    sectionHtml += window.buildValuePhotoInterface(optionData.name, value, valueIndex, createEmpty);
+                });
+
+                sectionHtml += `
+                    </div>
+                </div>`;
+            });
+
+            sectionHtml += `
+                    </div>
+                </div>
+            </div>`;
+
+            return sectionHtml;
+        }
+
+        window.buildValuePhotoInterface = function(optionName, value, valueIndex, createEmpty = false) {
+            const uniqueId = `${optionName}_${value}_${valueIndex}`.replace(/[^a-zA-Z0-9]/g, '_');
+            
+            // Проверяем, есть ли существующие фотографии для этого значения опции
+            let existingPhotos = [];
+            if (!createEmpty && existingOptionPhotos[optionName] && existingOptionPhotos[optionName][value]) {
+                existingPhotos = existingOptionPhotos[optionName][value];
+            }
+            
+            // Генерируем HTML для существующих фотографий
+            let photosHtml = '';
+            let hiddenValue = '';
+            
+            if (existingPhotos.length > 0) {
+                existingPhotos.forEach((photo, index) => {
+                    photosHtml += `
+                    <div class="col-md-3 position-relative photo-item" data-photo-id="${photo.id}">
+                        <img src="/static/uploads/${photo.path}" class="img-fluid rounded" style="height: 100px; object-fit: cover;">
+                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" 
+                                onclick="removePhotoFromValue('${uniqueId}', ${photo.id})" style="z-index: 10;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        ${photo.is_main ? '<span class="badge bg-success position-absolute bottom-0 start-0 m-1">Главное</span>' : ''}
+                    </div>`;
+                });
+                hiddenValue = existingPhotos.map(p => p.id).join(',');
+                
+                // Скрываем сообщение "фото не загружены"
+                photosHtml = photosHtml + `
+                    <div class="col-12 text-muted text-center p-3" id="no_photos_${uniqueId}" style="display: none;">
+                        <i class="fas fa-image fa-2x mb-2"></i><br>
+                        Фотографии не загружены
+                    </div>`;
+            } else {
+                photosHtml = `
+                    <div class="col-12 text-muted text-center p-3" id="no_photos_${uniqueId}">
+                        <i class="fas fa-image fa-2x mb-2"></i><br>
+                        Фотографии не загружены
+                    </div>`;
+            }
+            
+            return `
+            <div class="border rounded p-3 mb-3 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">
+                        <span class="badge bg-primary">${value}</span>
+                    </h6>
+                    <button type="button" class="btn btn-success btn-sm" 
+                            onclick="addPhotoForValue('${optionName}', '${value}', '${uniqueId}')">
+                        <i class="fas fa-plus"></i> Добавить фото
+                    </button>
+                </div>
+                
+                <div id="photos_${uniqueId}" class="row g-2">
+                    ${photosHtml}
+                </div>
+                
+                <!-- Скрытые поля для сохранения фотографий -->
+                <input type="hidden" name="option_photos[${optionName}][${value}]" value="${hiddenValue}" id="hidden_photos_${uniqueId}">
+            </div>`;
+        }
+
+        function buildVarHTML(combo, index, isPhotoVariation = false) {
+            // combo = [ {name:'Цвет', value:'Красный'}, {name:'Размер', value:'XL'} ]
+            let info = combo.map(c => `<strong>${c.name}:</strong> ${c.value}`).join('<br>');
+            
+            // Определяем заголовок вариации
+            let varTitle = isPhotoVariation ? `Фото-вариация ${index + 1}` : `Вариация ${index + 1}`;
+            
+            // Для фото-вариаций подсвечиваем опцию с фото
+            if (isPhotoVariation) {
+                info = combo.map(c => {
+                    if (c.isPhotoVariation) {
+                        return `<strong class="text-primary">${c.name}:</strong> <span class="text-primary">${c.value}</span> <i class="fas fa-camera text-primary"></i>`;
+                    }
+                    return `<strong>${c.name}:</strong> ${c.value}`;
+                }).join('<br>');
+            }
+            
+            return `
+        <div class="accordion-item ${isPhotoVariation ? 'border-info' : ''}">
+          <h2 class="accordion-header" id="heading-${index}">
+            <button class="accordion-button collapsed ${isPhotoVariation ? 'bg-light text-info' : ''}" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapse-${index}"
+                    aria-expanded="false" aria-controls="collapse-${index}">
+              ${varTitle}
+            </button>
+          </h2>
+          <div id="collapse-${index}" class="accordion-collapse collapse"
+               aria-labelledby="heading-${index}"
+               data-bs-parent="#variationsAccordion">
+            <div class="accordion-body">
+              ${info}
+              <hr>
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <input type="text" class="form-control"
+                         name="variations[${index}][sku]"
+                         placeholder="SKU" 
+                         value="${isPhotoVariation ? generatePhotoVariationSKU(combo, index) : ''}"
+                         required>
+                </div>
+                <div class="col-md-3">
+                  <input type="number" step="0.01" class="form-control"
+                         name="variations[${index}][price]"
+                         placeholder="Цена" required>
+                </div>
+                <div class="col-md-3">
+                  <input type="number" class="form-control"
+                         name="variations[${index}][stock]"
+                         placeholder="Кол-во" required>
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control"
+                         name="variations[${index}][slug]"
+                         placeholder="Slug">
+                </div>
+              </div>
+              <div class="row g-2 mt-2">
+                <div class="col-md-4">
+                  <input type="text" class="form-control"
+                         name="variations[${index}][seo_title]"
+                         placeholder="SEO Title" 
+                         value="${isPhotoVariation ? generatePhotoSEOTitle(combo) : ''}"
+                         required>
+                </div>
+                <div class="col-md-4">
+                  <input type="text" class="form-control"
+                         name="variations[${index}][seo_keywords]"
+                         placeholder="SEO Keywords" 
+                         value="${isPhotoVariation ? generatePhotoSEOKeywords(combo) : ''}"
+                         required>
+                </div>
+                <div class="col-md-4">
+                  <input type="text" class="form-control"
+                         name="variations[${index}][seo_description]"
+                         placeholder="SEO Description" 
+                         value="${isPhotoVariation ? generatePhotoSEODescription(combo) : ''}"
+                         required>
+                </div>
+              </div>
+
+              <!-- Выбор изображения для вариации -->
+              <div class="mt-3">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#chooseImageModal"
+                        data-imagetype="variation-${index}">
+                  ${isPhotoVariation ? '<i class="fas fa-camera"></i> Фото для значения' : 'Изображение'}
+                </button>
+                <input type="hidden" name="variations[${index}][image_id]" value="" ${isPhotoVariation ? 'required' : ''}>
+                <div id="variation-image-preview-${index}" class="mt-2">
+                    <span>(не выбрано)</span>
+                </div>
+                ${isPhotoVariation ? '<small class="text-info"><i class="fas fa-info-circle"></i> Это изображение будет показано для данного значения опции</small>' : ''}
+              </div>
+
+              <!-- Сохраняем combo (название опции + значение) -->
+              ${combo.map((c, cidx) => `
+                <input type="hidden"
+                       name="variations[${index}][combo][${cidx}][name]"
+                       value="${c.name}" >
+                <input type="hidden"
+                       name="variations[${index}][combo][${cidx}][value]"
+                       value="${c.value}">
+                <input type="hidden"
+                       name="variations[${index}][combo][${cidx}][is_photo_variation]"
+                       value="${c.isPhotoVariation || false}">
+              `).join('')}
+              
+              <!-- Тип вариации -->
+              <input type="hidden" name="variations[${index}][is_photo_variation]" value="${isPhotoVariation}">
+            </div>
+          </div>
+        </div>`;
+        }
+    });
+
+    $(document).ready(function () {
+        $('.select2').select2({
+            tags: true,
+            tokenSeparators: [','],
+            createTag: function (params) {
+                var term = $.trim(params.term);
+                if (term === '') {
+                    return null;
+                }
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            },
+            templateResult: function (data) {
+                var $result = $('<span></span>');
+                $result.text(data.text);
+                if (data.newTag) {
+                    $result.append(' <em>(new)</em>');
+                }
+                return $result;
+            }
+        });
+
+        $('#addExistingOptionBtn').on('click', function () {
+            const existingOptionSelect = document.getElementById('existingOptionSelect');
+            const existingValuesSelect = document.getElementById('existingValuesSelect');
+            const optionRowsContainer = document.getElementById('option_rows');
+
+            if (!existingOptionSelect || !existingValuesSelect || !optionRowsContainer) {
+                console.error("Не найдены один или несколько обязательных элементов.");
+                return;
+            }
+
+            const optId = existingOptionSelect.value; // ID ProductOption
+            if (!optId) {
+                alert("Выберите опцию!");
+                return;
+            }
+
+            const selectedOptEl = $('#existingOptionSelect');
+            const optName = selectedOptEl.val();
+
+            const selectedVals = Array.from($(existingValuesSelect).select2('data')).map(o => ({
+                id: o.id, text: o.text
+            }));
+
+            if (!selectedVals.length) {
+                alert("Выберите хотя бы одно значение!");
+                return;
+            }
+
+            const rowIndex = optionRowsContainer.querySelectorAll('.option-row').length;
+            const valTexts = selectedVals.map(v => v.text).join(', ');
+            const valIds = selectedVals.map(v => v.id).join(',');
+            const valStr = selectedVals.map(v => v.text).join(',');
+            const displayType = document.getElementById('OptionDisplayType').value;
+
+            const rowHtml = `
+            <div class="option-row bg-light rounded p-3 mb-3"
+                 data-type="existing"
+                 data-option-name="${optName}"
+                 data-option-values="${valStr}"
+                 data-option-values-ids="${valIds}"
+                 data-display-type="${displayType}"
+                 data-has-individual-photos="${document.getElementById('hasIndividualPhotos').checked ? 'true' : 'false'}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <strong class="text-primary">${optName}</strong>
+                        <span class="ms-2 badge bg-light text-dark">
+                            Отдельные фото: ${document.getElementById('hasIndividualPhotos').checked ? 'Да' : 'Нет'}
+                        </span>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-outline-primary btn-sm edit-option me-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-option">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-muted small">Значения:</span>
+                    <div class="mt-1">
+                        ${selectedVals.map(v => `<span class="value-tag badge bg-secondary me-1 mb-1">${v.text}<button type="button" class="btn-close btn-close-white ms-1 remove-value" aria-label="Удалить значение" data-value="${v.text}"></button></span>`).join('')}
+                    </div>
+                </div>
+                <input type="hidden" name="options[${rowIndex}][existing_option_id]" value="${optName}">
+                <input type="hidden" name="options[${rowIndex}][values_ids]" value="${valStr}">
+                <input type="hidden" name="options[${rowIndex}][display_type]" value="${displayType}">
+                <input type="hidden" name="options[${rowIndex}][has_individual_photos]" value="${document.getElementById('hasIndividualPhotos').checked ? 'true' : 'false'}">
+            </div>
+        `;
+            optionRowsContainer.insertAdjacentHTML('beforeend', rowHtml);
+
+            // Снимаем выделение
+            $('#existingValuesSelect').val(null).trigger('change');
+            
+            // Обновляем состояние пустого списка
+            const emptyOptions = document.getElementById('empty-options');
+            if (emptyOptions) {
+                emptyOptions.style.display = 'none';
+            }
+        });
+        $('#existingOptionSelect').on('change', function () {
+            var selectedOptionName = $(this).val();
+            var optionElement = $('#option-list option[value="' + selectedOptionName + '"]');
+            var optionId = optionElement.data('id');
+            console.log("Selected Option ID:", optionId);
+
+            if (optionId) {
+                $.ajax({
+                    url: '/admin/get_option_values',
+                    method: 'POST',
+                    data: {
+                        option_id: optionId,
+                        csrf_token: $('meta[name=csrf-token]').attr('content')
+                    },
+                    success: function (data) {
+                        var $select = $('#existingValuesSelect');
+                        $select.empty(); // Очистка предыдущих значений
+                        data.forEach(function (item) {
+                            $select.append(new Option(item.value, item.id, false, false));
+                        });
+                        $select.trigger('change'); // Обновляем Select2
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error("AJAX Error:", textStatus, errorThrown);
+                    }
+                });
+            }
+        });
+    });
+
+    // Обработчик удаления и редактирования
+    const optionRows = document.getElementById('option_rows');
+
+    // Функция для обновления hidden input и data-attribute после удаления значения
+    function updateValues(row) {
+        const removeButtons = row.querySelectorAll('.remove-value');
+        const values = Array.from(removeButtons).map(btn => btn.dataset.value);
+        const valuesStr = values.join(',');
+        row.dataset.optionValues = valuesStr;
+        const hiddenValuesInput = row.querySelector('input[name$="[values_ids]"]');
+        if (hiddenValuesInput) {
+            hiddenValuesInput.value = valuesStr;
+        }
+        console.log(`Обновлено data-option-values для строки: "${row.dataset.optionValues}"`); // Отладка: Подтверждение обновления
+    }
+
+    if (optionRows) {
+        optionRows.addEventListener('click', function (e) {
+            // Проверяем, что клик был по кнопке или иконке внутри кнопки
+            const target = e.target.closest('.remove-value, .remove-option, .edit-option');
+            
+            if (target && target.classList.contains('remove-value')) {
+                const row = target.closest('.option-row');
+                const valueTag = target.closest('.value-tag');
+                if (valueTag && row) {
+                    valueTag.remove();
+                    updateValues(row);
+                    if (row.querySelectorAll('.value-tag').length === 0) {
+                        row.remove();
+                        reindexOptions();
+                    }
+                }
+            } else if (target && target.classList.contains('remove-option')) {
+                const row = target.closest('.option-row');
+                if (row) {
+                    row.remove();
+                    reindexOptions();
+                }
+            } else if (target && target.classList.contains('edit-option')) {
+                const row = target.closest('.option-row');
+                if (row) {
+                    const optName = row.dataset.optionName;
+                    const displayType = row.dataset.displayType || 'select';
+                    const valuesStr = row.dataset.optionValues || '';
+                    const values = valuesStr.split(',').map(v => v.trim()).filter(v => v);
+
+                    // Установка опции
+                    const optionSelect = document.getElementById('existingOptionSelect');
+                    if (optionSelect) {
+                    optionSelect.value = optName;
+                    optionSelect.dispatchEvent(new Event('change'));
+                    }
+
+                    // Установка типа отображения
+                    const displayTypeSelect = document.getElementById('OptionDisplayType');
+                    if (displayTypeSelect) {
+                        displayTypeSelect.value = displayType;
+                    }
+                    
+                    // Установка флага индивидуальных фото
+                    const hasPhotosCheckbox = document.getElementById('hasIndividualPhotos');
+                    const hasIndividualPhotos = row.dataset.hasIndividualPhotos === 'true';
+                    if (hasPhotosCheckbox) {
+                        hasPhotosCheckbox.checked = hasIndividualPhotos;
+                    }
+
+                    // Ожидание загрузки значений (увеличено время ожидания, если AJAX медленный)
+                    setTimeout(() => {
+                        const $select = $('#existingValuesSelect');
+                        const selectedIds = [];
+                        values.forEach(val => {
+                            const $opt = $select.find('option').filter(function () {
+                                return $(this).text() === val;
+                            });
+                            if ($opt.length) {
+                                selectedIds.push($opt.val());
+                            } else {
+                                // Новый тег
+                                selectedIds.push(val);
+                            }
+                        });
+                        $select.val(selectedIds).trigger('change');
+                    }, 1000); // Увеличено до 1000 мс
+
+                    // Удаление строки
+                    row.remove();
+                    reindexOptions();
+                }
+            }
+        });
+    }
+
+    // Функция переиндексации имен после удаления
+    function reindexOptions() {
+        const rows = optionRows.querySelectorAll('.option-row');
+        rows.forEach((row, index) => {
+            const inputs = row.querySelectorAll('input[type="hidden"]');
+            inputs.forEach(input => {
+                const nameMatch = input.name.match(/options\[\d+\]/);
+                if (nameMatch) {
+                    input.name = input.name.replace(nameMatch[0], `options[${index}]`);
+                }
+            });
+        });
+    }
+
+    // Функции для управления фотографиями значений опций
+    window.addPhotoForValue = function(optionName, value, uniqueId) {
+        console.log('addPhotoForValue вызвана с параметрами:', {optionName, value, uniqueId});
+        
+        // Открываем медиа-галерею в режиме массового выбора
+        openMultipleImageSelector('option_photo', optionName, value, uniqueId);
+    }
+
+    // Функция для открытия массового выбора изображений
+    function openMultipleImageSelector(type, optionName = null, value = null, uniqueId = null) {
+        console.log('openMultipleImageSelector вызвана с параметрами:', {type, optionName, value, uniqueId});
+        
+        let url = '/admin/media/list?multiple=true';
+        
+        if (type === 'option_photo' && optionName && value && uniqueId) {
+            url += `&option_name=${encodeURIComponent(optionName)}&option_value=${encodeURIComponent(value)}&unique_id=${encodeURIComponent(uniqueId)}`;
+        }
+        
+        console.log('URL для медиа-галереи:', url);
+        
+        // Открываем медиа-галерею в модальном окне
+        const mediaModalElement = document.getElementById('mediaModal');
+        console.log('mediaModalElement:', mediaModalElement);
+        
+        if (!mediaModalElement) {
+            console.error('Модальное окно mediaModal не найдено');
+            // Fallback: открываем в новом окне
+            window.open(url, 'MediaGallery', 'width=1000,height=700,scrollbars=yes,resizable=yes');
+            return;
+        }
+        
+        const mediaFrame = document.getElementById('mediaFrame');
+        console.log('mediaFrame:', mediaFrame);
+        
+        if (!mediaFrame) {
+            console.error('iframe mediaFrame не найден');
+            // Fallback: открываем в новом окне
+            window.open(url, 'MediaGallery', 'width=1000,height=700,scrollbars=yes,resizable=yes');
+            return;
+        }
+        
+        console.log('Элементы найдены, пытаемся открыть модальное окно');
+        console.log('Bootstrap доступен:', typeof bootstrap !== 'undefined');
+        
+        try {
+            // Проверяем, доступен ли Bootstrap
+            if (typeof bootstrap === 'undefined') {
+                console.error('Bootstrap не загружен');
+                window.open(url, 'MediaGallery', 'width=1000,height=700,scrollbars=yes,resizable=yes');
+                return;
+            }
+            
+            const mediaModal = new bootstrap.Modal(mediaModalElement);
+            mediaFrame.src = url;
+            mediaModal.show();
+            console.log('Модальное окно успешно открыто');
+            
+            // Устанавливаем глобальные переменные для обработки выбора
+            window.currentImageType = type;
+            if (type === 'option_photo') {
+                window.currentOptionName = optionName;
+                window.currentOptionValue = value;
+                window.currentUniqueId = uniqueId;
+            }
+            
+                    // Слушаем сообщения от медиа-галереи
+        const messageHandler = function(event) {
+            if (event.data.type === 'multipleImagesSelected') {
+                if (type === 'option_photo') {
+                    handleMultipleImagesSelected(event.data.images, type, event.data.optionName, event.data.optionValue, event.data.uniqueId);
+                } else {
+                    handleMultipleImagesSelected(event.data.images, type, optionName, value, uniqueId);
+                }
+                mediaModal.hide();
+                window.removeEventListener('message', messageHandler);
+            } else if (event.data.type === 'refreshMediaList') {
+                // Обновляем iframe с медиа-галереей
+                const mediaFrame = document.getElementById('mediaFrame');
+                if (mediaFrame) {
+                    let currentUrl = new URL(mediaFrame.src);
+                    if (event.data.directoryId && event.data.directoryId !== 0) {
+                        currentUrl.searchParams.set('directory_id', event.data.directoryId);
+                    } else {
+                        currentUrl.searchParams.delete('directory_id');
+                    }
+                    mediaFrame.src = currentUrl.toString();
+                }
+            }
+        };
+        window.addEventListener('message', messageHandler);
+            
+        } catch (error) {
+            console.error('Ошибка при открытии модального окна:', error);
+            // Fallback: открываем в новом окне
+            window.open(url, 'MediaGallery', 'width=1000,height=700,scrollbars=yes,resizable=yes');
+        }
+    }
+
+    window.addSelectedPhotoToValue = function(imageId, imageSrc, optionName, value, uniqueId) {
+        console.log('addSelectedPhotoToValue вызвана с параметрами:', {
+            imageId, imageSrc, optionName, value, uniqueId
+        });
+        
+        const photosContainer = document.getElementById(`photos_${uniqueId}`);
+        const noPhotosMessage = document.getElementById(`no_photos_${uniqueId}`);
+        const hiddenInput = document.getElementById(`hidden_photos_${uniqueId}`);
+        
+        console.log('Найденные элементы:', {
+            photosContainer: !!photosContainer,
+            noPhotosMessage: !!noPhotosMessage, 
+            hiddenInput: !!hiddenInput
+        });
+        
+        if (photosContainer && hiddenInput) {
+            console.log('Добавляем фотографию в контейнер');
+            
+            // Скрываем сообщение "нет фото"
+            if (noPhotosMessage) {
+                noPhotosMessage.style.display = 'none';
+                console.log('Скрыто сообщение "нет фото"');
+            }
+            
+            // Создаем элемент фотографии в том же стиле, что и в buildValuePhotoInterface
+            const photoHtml = `
+            <div class="col-md-3 position-relative photo-item" data-photo-id="${imageId}">
+                <img src="${imageSrc}" class="img-fluid rounded" style="height: 100px; object-fit: cover;">
+                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" 
+                        onclick="removePhotoFromValue('${uniqueId}', ${imageId})" style="z-index: 10;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`;
+            
+            photosContainer.insertAdjacentHTML('beforeend', photoHtml);
+            
+            // Обновляем скрытое поле
+            let currentPhotos = hiddenInput.value ? hiddenInput.value.split(',') : [];
+            currentPhotos.push(imageId);
+            hiddenInput.value = currentPhotos.join(',');
+            
+            // Закрываем модальное окно
+            const modal = document.getElementById('chooseImageModal');
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+                console.log('Модальное окно закрыто после добавления фото');
+            }
+        } else {
+            console.error('Не найдены необходимые элементы для добавления фото:', {
+                photosContainer: !!photosContainer,
+                hiddenInput: !!hiddenInput
+            });
+        }
+    }
+
+    // Функция для обработки массового выбора изображений
+    function handleMultipleImagesSelected(images, type, optionName = null, value = null, uniqueId = null) {
+        console.log('handleMultipleImagesSelected вызвана с параметрами:', {
+            images, type, optionName, value, uniqueId
+        });
+        
+        if (type === 'additional') {
+            // Обработка дополнительных изображений товара
+            const addField = document.getElementById('{{ form.additional_image_ids.id }}');
+            const preview = document.getElementById('additionalImagesPreview');
+            
+            if (addField && preview) {
+                let curVal = addField.value.trim();
+                let arr = curVal ? curVal.split(',').map(s => s.trim()) : [];
+                
+                images.forEach(image => {
+                    if (!arr.includes(image.id)) {
+                        arr.push(image.id);
+                        
+                        // Добавляем изображение в превью
+                        if (preview.textContent.includes('Нет загруженных изображений')) {
+                            preview.innerHTML = '';
+                        }
+                        
+                        const wrapper = document.createElement('div');
+                        wrapper.classList.add('additional-image-wrapper', 'd-inline-block', 'position-relative', 'me-2', 'mb-2');
+                        wrapper.dataset.imageId = image.id;
+                        wrapper.dataset.order = arr.length - 1;
+                        
+                        const imgEl = document.createElement('img');
+                        imgEl.src = image.url;
+                        imgEl.classList.add('img-thumbnail');
+                        imgEl.style.cssText = 'height:100px; width:100px; object-fit:cover;';
+                        wrapper.appendChild(imgEl);
+                        
+                        const rmBtn = document.createElement('button');
+                        rmBtn.type = 'button';
+                        rmBtn.classList.add('btn', 'btn-danger', 'btn-sm', 'position-absolute', 'top-0', 'end-0', 'remove-additional-image');
+                        rmBtn.dataset.imageId = image.id;
+                        rmBtn.innerHTML = '&times;';
+                        wrapper.appendChild(rmBtn);
+                        
+                        preview.appendChild(wrapper);
+                    }
+                });
+                
+                addField.value = arr.join(',');
+                console.log('Добавлены дополнительные изображения:', arr);
+            }
+        } else if (type === 'option_photo' && optionName && value && uniqueId) {
+            // Обработка фотографий для опций
+            const photosContainer = document.getElementById(`photos_${uniqueId}`);
+            const noPhotosMessage = document.getElementById(`no_photos_${uniqueId}`);
+            const hiddenInput = document.getElementById(`hidden_photos_${uniqueId}`);
+            
+            if (photosContainer && hiddenInput) {
+                // Скрываем сообщение "нет фото"
+                if (noPhotosMessage) {
+                    noPhotosMessage.style.display = 'none';
+                }
+                
+                let currentPhotos = hiddenInput.value ? hiddenInput.value.split(',') : [];
+                
+                images.forEach(image => {
+                    if (!currentPhotos.includes(image.id)) {
+                        currentPhotos.push(image.id);
+                        
+                        // Добавляем изображение в контейнер
+                        const photoHtml = `
+                        <div class="col-md-3 position-relative photo-item" data-photo-id="${image.id}">
+                            <img src="${image.url}" class="img-fluid rounded" style="height: 100px; object-fit: cover;">
+                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" 
+                                    onclick="removePhotoFromValue('${uniqueId}', ${image.id})" style="z-index: 10;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>`;
+                        
+                        photosContainer.insertAdjacentHTML('beforeend', photoHtml);
+                    }
+                });
+                
+                hiddenInput.value = currentPhotos.join(',');
+                console.log('Добавлены фотографии для опции:', currentPhotos);
+            }
+        }
+    }
+
+    function removePhotoFromValue(uniqueId, imageId) {
+        // Ищем элемент фото по data-photo-id
+        const photoElement = document.querySelector(`#photos_${uniqueId} .photo-item[data-photo-id="${imageId}"]`);
+        const hiddenInput = document.getElementById(`hidden_photos_${uniqueId}`);
+        const photosContainer = document.getElementById(`photos_${uniqueId}`);
+        const noPhotosMessage = document.getElementById(`no_photos_${uniqueId}`);
+        
+        if (photoElement) {
+            photoElement.remove();
+        }
+        
+        if (hiddenInput) {
+            let currentPhotos = hiddenInput.value ? hiddenInput.value.split(',') : [];
+            currentPhotos = currentPhotos.filter(id => id != imageId); // Используем != для сравнения с разными типами
+            hiddenInput.value = currentPhotos.join(',');
+        }
+        
+        // Показываем сообщение "нет фото", если все фото удалены
+        const remainingPhotos = photosContainer ? photosContainer.querySelectorAll('.photo-item').length : 0;
+        if (remainingPhotos === 0 && noPhotosMessage) {
+            noPhotosMessage.style.display = 'block';
+        }
+    }
+
+</script>
+
+
+<!--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>-->
+<script src="/static/js/select2.min.js"></script>
+<link href="/static/css/select2.min.css" rel="stylesheet"/>
+
+<script>
+    $(document).ready(function () {
+        $('.select2').select2({
+            tags: true,  // Разрешаем создание тегов (новых значений)
+            tokenSeparators: [','],  // Разделители токенов
+            createTag: function (params) {
+                var term = $.trim(params.term);
+                if (term === '') {
+                    return null;
+                }
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true // Важно! Это указывает на то, что это новый тег
+                };
+            },
+            templateResult: function (data) {
+                var $result = $('<span></span>');
+                $result.text(data.text);
+                if (data.newTag) {
+                    $result.append(' <em>(new)</em>');  // Метка для новых тегов
+                }
+                return $result;
+            }
+        });
+
+        $('#addExistingOptionBtn').on('click', function () {
+            const existingOptionSelect = document.getElementById('existingOptionSelect');
+            const existingValuesSelect = document.getElementById('existingValuesSelect');
+            const optionRowsContainer = document.getElementById('option_rows');
+
+            if (!existingOptionSelect || !existingValuesSelect || !optionRowsContainer) {
+                console.error("Не найдены один или несколько обязательных элементов.");
+                return;
+            }
+
+            const optId = existingOptionSelect.value; // ID ProductOption
+            if (!optId) {
+                alert("Выберите опцию!");
+                return;
+            }
+
+            // Получаем "название" из data-* (если прописали) или же сам текст
+            const selectedOptEl = $('#existingOptionSelect');
+            const optName = selectedOptEl.val();
+
+            const selectedVals = Array.from($(existingValuesSelect).select2('data')).map(o => ({
+                id: o.id, text: o.text
+            }));
+
+            if (!selectedVals.length) {
+                alert("Выберите хотя бы одно значение!");
+                return;
+            }
+
+            const rowIndex = optionRowsContainer.querySelectorAll('.option-row').length;
+            const valTexts = selectedVals.map(v => v.text).join(', ');
+            const valIds = selectedVals.map(v => v.id).join(',');
+            const valStr = selectedVals.map(v => v.text).join(',');
+
+            // Получаем состояние галочки
+            const hasIndividualPhotos = document.getElementById('hasIndividualPhotos').checked ? 'true' : 'false';
+            const displayType = document.getElementById('OptionDisplayType').value;
+
+            const rowHtml = `
+            <div class="option-row bg-light rounded p-3 mb-3"
+                 data-type="existing"
+                 data-option-name="${optName}"
+                 data-option-values="${valStr}"
+                 data-display-type="${displayType}"
+                 data-has-individual-photos="${hasIndividualPhotos}">
+                <strong>Существующая опция:</strong> ${optName} ${hasIndividualPhotos ? '<span class="badge bg-info ms-2"><i class="fas fa-camera"></i> Индивидуальные фото</span>' : ''}<br>
+                <em>Выбранные значения:</em> ${valTexts}
+                <input type="hidden" name="options[${rowIndex}][existing_option_id]" value="${optName}">
+                <input type="hidden" name="options[${rowIndex}][values_ids]" value="${valTexts}">
+                <input type="hidden" name="options[${rowIndex}][display_type]" value="${displayType}">
+                <input type="hidden" name="options[${rowIndex}][has_individual_photos]" value="${hasIndividualPhotos}">
+            </div>
+        `;
+            optionRowsContainer.insertAdjacentHTML('beforeend', rowHtml);
+
+            // Снимаем выделение
+            $('#existingValuesSelect').val(null).trigger('change');
+        });
+        $('#existingOptionSelect').on('change', function () {
+            var selectedOptionName = $(this).val();
+            var optionElement = $('#option-list option[value="' + selectedOptionName + '"]');
+            var optionId = optionElement.data('id');
+            console.log("Selected Option ID:", optionId);
+
+            if (optionId) {
+                $.ajax({
+                    url: '/admin/get_option_values',  // Обратите внимание на добавленный префикс /admin
+                    method: 'POST',
+                    data: {
+                        option_id: optionId,
+                        csrf_token: $('meta[name=csrf-token]').attr('content')
+                    },
+                    success: function (data) {
+                        var $select = $('#existingValuesSelect');
+                        $select.empty(); // Очистка предыдущих значений
+                        data.forEach(function (item) {
+                            $select.append(new Option(item.value, item.id, false, false));
+                        });
+                        $select.trigger('change'); // Обновляем Select2
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error("AJAX Error:", textStatus, errorThrown);
+                    }
+                });
+            }
+        });
+    });
+    
+    // Отображаем существующие фотографии опций при загрузке страницы
+    function displayExistingOptionPhotos() {
+        if (!existingOptionPhotos || Object.keys(existingOptionPhotos).length === 0) {
+            console.log('Нет существующих фотографий для отображения');
+            return;
+        }
+        
+        // Проверяем, что все необходимые функции доступны
+        if (typeof window.buildPhotoManagementSection !== 'function') {
+            console.log('Функция buildPhotoManagementSection еще не готова, повторяем через 100мс');
+            setTimeout(displayExistingOptionPhotos, 100);
+            return;
+        }
+        
+        const variationsAccordion = document.getElementById('variationsAccordion');
+        if (!variationsAccordion) return;
+        
+        console.log('Создаем интерфейс для существующих фотографий');
+        
+        let individualPhotoOptions = [];
+        
+        // Формируем данные на основе существующих фотографий
+        for (const [optionName, values] of Object.entries(existingOptionPhotos)) {
+            const valueNames = Object.keys(values);
+            individualPhotoOptions.push({
+                name: optionName,
+                values: valueNames
+            });
+        }
+        
+        if (individualPhotoOptions.length > 0) {
+            // Создаем секцию для фотографий опций
+            let photoSectionHtml = window.buildPhotoManagementSection(individualPhotoOptions, false);
+            variationsAccordion.insertAdjacentHTML('beforeend', photoSectionHtml);
+            console.log('Интерфейс фотографий создан для существующих данных');
+        }
+    }
+    
+    // Вызываем функцию отображения существующих фотографий после объявления всех функций
+    displayExistingOptionPhotos();
+    
+    // ===== ФУНКЦИИ ДЛЯ СВЯЗАННЫХ ТОВАРОВ =====
+    
+    // Глобальная переменная для хранения всех товаров
+    let allProducts = [];
+    
+    // Данные о связанных товарах для JavaScript
+    let relatedProductsData = {{ related_products|tojson|safe if related_products else '[]' }};
+    
+    // Данные о всех товарах для JavaScript
+    let allProductsData = [
+        {% for product in all_products %}
+        {
+            id: {{ product.id }},
+            name: "{{ product.name|replace('"', '\\"')|replace("'", "\\'") }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    // Функция для добавления связанного товара
+    function addRelatedProduct() {
+        const container = document.getElementById('related-products-container');
+        const emptyMessage = document.getElementById('empty-related');
+        const rowIndex = container.querySelectorAll('.related-product-row').length;
+        
+        // Скрываем сообщение "нет связанных товаров"
+        if (emptyMessage) {
+            emptyMessage.style.display = 'none';
+        }
+        
+        // Создаем HTML для новой строки связанного товара
+        const rowHtml = `
+            <div class="related-product-row bg-light rounded p-3 mb-3">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium">Товар</label>
+                        <select name="related_products[${rowIndex}][product_id]" class="form-select">
+                            <option value="">Выберите товар</option>
+                            ${generateProductOptions()}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium">Текст ссылки</label>
+                        <input type="text" name="related_products[${rowIndex}][link_text]" 
+                               class="form-control" value="" 
+                               placeholder="например: детям, мужское, женское">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-medium">Порядок</label>
+                        <input type="number" name="related_products[${rowIndex}][sort_order]" 
+                               class="form-control" value="${rowIndex}" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger mt-4" onclick="removeRelatedProduct(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+    
+    // Функция для удаления связанного товара
+    function removeRelatedProduct(button) {
+        const row = button.closest('.related-product-row');
+        const container = document.getElementById('related-products-container');
+        
+        row.remove();
+        
+        // Если больше нет связанных товаров, показываем сообщение
+        if (container.querySelectorAll('.related-product-row').length === 0) {
+            const emptyMessage = document.getElementById('empty-related');
+            if (emptyMessage) {
+                emptyMessage.style.display = 'block';
+            }
+        }
+        
+        // Обновляем индексы в name атрибутах
+        updateRelatedProductIndexes();
+    }
+    
+    // Функция для обновления индексов в name атрибутах
+    function updateRelatedProductIndexes() {
+        const rows = document.querySelectorAll('.related-product-row');
+        rows.forEach((row, index) => {
+            const productSelect = row.querySelector('select[name*="[product_id]"]');
+            const linkTextInput = row.querySelector('input[name*="[link_text]"]');
+            const sortOrderInput = row.querySelector('input[name*="[sort_order]"]');
+            
+            if (productSelect) {
+                productSelect.name = `related_products[${index}][product_id]`;
+            }
+            if (linkTextInput) {
+                linkTextInput.name = `related_products[${index}][link_text]`;
+            }
+            if (sortOrderInput) {
+                sortOrderInput.name = `related_products[${index}][sort_order]`;
+            }
+        });
+    }
+    
+    // Функция для генерации опций товаров
+    function generateProductOptions() {
+        if (!allProductsData || allProductsData.length === 0) {
+            return '<option value="">Нет доступных товаров</option>';
+        }
+        
+        return allProductsData.map(product => 
+            `<option value="${product.id}">${product.name} (ID: ${product.id})</option>`
+        ).join('');
+    }
+    
+    // Инициализация Select2 для существующих селектов связанных товаров
+    document.addEventListener('DOMContentLoaded', function() {
+        // Временно отключили Select2 для связанных товаров
+        console.log('Связанные товары загружены');
+    });
+    
+    // Функция для открытия модального окна загрузки
+    function openUploadModal() {
+        const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+        uploadModal.show();
+    }
+    
+    // Функция для загрузки изображения
+    function uploadImage() {
+        var formData = new FormData();
+        var fileInput = document.getElementById('imageFile');
+        var altInput = document.getElementById('imageAlt');
+        
+        if (fileInput.files.length === 0) {
+            alert('Выберите файл для загрузки');
+            return;
+        }
+        
+        formData.append('file', fileInput.files[0]);
+        if (altInput.value) {
+            formData.append('alt', altInput.value);
+        }
+        
+        fetch('/admin/media/upload', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.location) {
+                // Закрываем модальное окно загрузки
+                const uploadModal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
+                uploadModal.hide();
+                
+                // Обновляем iframe с медиа-галереей
+                const mediaFrame = document.getElementById('mediaFrame');
+                if (mediaFrame) {
+                    mediaFrame.src = mediaFrame.src;
+                }
+                
+                // Очищаем форму
+                fileInput.value = '';
+                altInput.value = '';
+            } else {
+                alert('Ошибка загрузки: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка загрузки файла');
+        });
+    }
+</script>
+
+<!-- Модальное окно для медиа-галереи -->
+<div class="modal fade" id="mediaModal" tabindex="-1" aria-labelledby="mediaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mediaModalLabel">Медиа-галерея</h5>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="mediaFrame" src="" style="width: 100%; height: 600px; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для загрузки файлов -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Загрузить изображение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="imageFile" class="form-label">Выберите файл</label>
+                        <input type="file" class="form-control" id="imageFile" name="file" 
+                               accept="image/*" required>
+                        <div class="form-text">Поддерживаемые форматы: PNG, JPG, JPEG, GIF, WebP, SVG</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="imageAlt" class="form-label">Alt-текст</label>
+                        <input type="text" class="form-control" id="imageAlt" name="alt" 
+                               placeholder="Описание изображения">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="uploadImage()">Загрузить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

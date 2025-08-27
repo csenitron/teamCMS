@@ -1,0 +1,747 @@
+<!-- Модуль меню - {{ menu_title }} -->
+<nav class="menu-module menu-style-{{ menu_style }}" id="menu-{{ module_instance.id }}">
+    
+    {% if menu_style == 'horizontal' %}
+        <!-- Горизонтальное меню -->
+        <div class="horizontal-menu">
+            <ul class="menu-list">
+                {% for item in menu_tree %}
+                    <li class="menu-item {{ item.custom_class }}{% if item.is_featured %} featured{% endif %}">
+                        <a href="{{ item.url }}" 
+                           class="menu-link"
+                           {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                           
+                            {% if show_icons and item.icon %}
+                                <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon">
+                            {% endif %}
+                            
+                            <span class="menu-text">{{ item.title }}</span>
+                            
+                            {% if item.children %}
+                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                            {% endif %}
+                        </a>
+                        
+                        {% if item.children %}
+                            <ul class="submenu">
+                                {% for child in item.children %}
+                                    <li class="submenu-item {{ child.custom_class }}">
+                                        <a href="{{ child.url }}" 
+                                           class="submenu-link"
+                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                           
+                                            {% if show_icons and child.icon %}
+                                                <img src="{{ child.icon.url }}" alt="{{ child.title }}" class="submenu-icon">
+                                            {% endif %}
+                                            
+                                            <span class="submenu-text">{{ child.title }}</span>
+                                        </a>
+                                        
+                                        {% if child.children %}
+                                            <ul class="sub-submenu">
+                                                {% for grandchild in child.children %}
+                                                    <li class="sub-submenu-item">
+                                                        <a href="{{ grandchild.url }}" 
+                                                           class="sub-submenu-link"
+                                                           {% if grandchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                            {{ grandchild.title }}
+                                                        </a>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+    {% elif menu_style == 'vertical' %}
+        <!-- Вертикальное меню -->
+        <div class="vertical-menu">
+            <ul class="menu-list vertical">
+                {% for item in menu_tree %}
+                    <li class="menu-item {{ item.custom_class }}{% if item.is_featured %} featured{% endif %}">
+                        <a href="{{ item.url }}" 
+                           class="menu-link"
+                           {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                           
+                            {% if show_icons and item.icon %}
+                                <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon">
+                            {% endif %}
+                            
+                            <span class="menu-text">{{ item.title }}</span>
+                            
+                            {% if item.children %}
+                                <i class="fas fa-chevron-right expand-arrow"></i>
+                            {% endif %}
+                        </a>
+                        
+                        {% if item.children %}
+                            <ul class="submenu vertical">
+                                {% for child in item.children %}
+                                    <li class="submenu-item">
+                                        <a href="{{ child.url }}" 
+                                           class="submenu-link"
+                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                            {{ child.title }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+    {% elif menu_style == 'mega' %}
+    <!-- Мегаменю в стиле Pangaia -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+        <div class="container-fluid">
+            <!-- Логотип по центру -->
+            <a class="navbar-brand mx-auto order-1 order-lg-2" href="#">{{ menu_title or 'LOGO' }}</a>
+            
+            <!-- Левая часть навигации -->
+            <button class="navbar-toggler order-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse order-2 order-lg-1" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% for item in menu_tree %}
+                        {% if item.children %}
+                            <!-- Пункт меню с мегаменю -->
+                            <li class="nav-item dropdown dropdown-mega">
+                                <a class="nav-link dropdown-toggle" href="{{ item.url or '#' }}" 
+                                   id="menu{{ loop.index }}" role="button" data-bs-toggle="dropdown"
+                                   aria-expanded="false" {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                    {% if show_icons and item.icon %}
+                                        <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-1" width="16" height="16">
+                                    {% endif %}
+                                    {{ item.title }}
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="menu{{ loop.index }}">
+                                    <div class="container mega-content">
+                                        <div class="row">
+                                            {% if enable_videos and item.video %}
+                                                <!-- Видео справа -->
+                                                <div class="col-md-4 p-0">
+                                                    <div class="mega-video h-100">
+                                                        <video autoplay muted loop playsinline class="w-100 h-100" style="object-fit: cover;">
+                                                            <source src="{{ item.video.url }}" type="video/mp4">
+                                                        </video>
+                                                    </div>
+                                                </div>
+                                                <!-- Контент слева -->
+                                                <div class="col-md-8">
+                                                    <div class="row">
+                                                        {% for child in item.children %}
+                                                            <div class="col-md-6 mb-4">
+                                                                <h6 class="fw-bold mb-3">
+                                                                    <a href="{{ child.url or '#' }}" 
+                                                                       class="text-decoration-none text-dark"
+                                                                       {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                        {{ child.title }}
+                                                                    </a>
+                                                                </h6>
+                                                                {% if child.children %}
+                                                                    <ul class="list-unstyled mb-0">
+                                                                        {% for subchild in child.children %}
+                                                                            <li class="mb-2">
+                                                                                <a href="{{ subchild.url or '#' }}" 
+                                                                                   class="text-decoration-none text-muted"
+                                                                                   {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                                    {{ subchild.title }}
+                                                                                </a>
+                                                                            </li>
+                                                                        {% endfor %}
+                                                                    </ul>
+                                                                {% endif %}
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <!-- Только контент без видео -->
+                                                {% for child in item.children %}
+                                                    <div class="col-md-4 mb-4">
+                                                        <h6 class="fw-bold mb-3">
+                                                            <a href="{{ child.url or '#' }}" 
+                                                               class="text-decoration-none text-dark"
+                                                               {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                {{ child.title }}
+                                                            </a>
+                                                        </h6>
+                                                        {% if child.children %}
+                                                            <ul class="list-unstyled mb-0">
+                                                                {% for subchild in child.children %}
+                                                                    <li class="mb-2">
+                                                                        <a href="{{ subchild.url or '#' }}" 
+                                                                           class="text-decoration-none text-muted"
+                                                                           {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                            {{ subchild.title }}
+                                                                        </a>
+                                                                    </li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% else %}
+                            <!-- Обычный пункт меню -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ item.url or '#' }}" 
+                                   {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                    {% if show_icons and item.icon %}
+                                        <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-1" width="16" height="16">
+                                    {% endif %}
+                                    {{ item.title }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <!-- Правая часть навигации -->
+            <div class="d-flex ms-auto order-3">
+                <button class="btn btn-link p-2" type="button" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search"
+                         viewBox="0 0 16 16">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.397h-.001l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zm-5.742 1.16a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
+                    </svg>
+                </button>
+                <button class="btn btn-link p-2" type="button" aria-label="Account">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-person"
+                         viewBox="0 0 16 16">
+                        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                        <path fill-rule="evenodd" d="M8 9a5 5 0 0 0-4.546 2.916C2.99 13.159 3.825 14 5 14h6c1.175 0 2.01-.841 1.546-2.084A5 5 0 0 0 8 9z"/>
+                    </svg>
+                </button>
+                <button class="btn btn-link p-2" type="button" aria-label="Cart">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bag"
+                         viewBox="0 0 16 16">
+                        <path d="M8 1.5A1.5 1.5 0 0 0 6.5 3v1h3V3A1.5 1.5 0 0 0 8 1.5zm-4 4A.5.5 0 0 1 4.5 5h.694l.554-1.106A1.5 1.5 0 0 1 7.172 3h1.656a1.5 1.5 0 0 1 1.425.894L10.806 5H11.5a.5.5 0 0 1 .5.5v7A2.5 2.5 0 0 1 9.5 15h-3A2.5 2.5 0 0 1 4 12.5v-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+        
+    {% elif menu_style == 'mobile' %}
+        <!-- Мобильное меню -->
+        <div class="mobile-menu">
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <span class="hamburger"></span>
+                <span class="hamburger"></span>
+                <span class="hamburger"></span>
+            </button>
+            
+            <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
+            
+            <div class="mobile-menu-content" id="mobileMenuContent">
+                <div class="mobile-menu-header">
+                    <h4>{{ menu_title }}</h4>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <ul class="mobile-menu-list">
+                    {% for item in menu_tree %}
+                        <li class="mobile-menu-item {{ item.custom_class }}{% if item.is_featured %} featured{% endif %}">
+                            <div class="mobile-menu-link-wrapper">
+                                <a href="{{ item.url }}" 
+                                   class="mobile-menu-link"
+                                   {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                   
+                                    {% if show_icons and item.icon %}
+                                        <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="mobile-menu-icon">
+                                    {% endif %}
+                                    
+                                    <span class="mobile-menu-text">{{ item.title }}</span>
+                                </a>
+                                
+                                {% if item.children %}
+                                    <button class="mobile-submenu-toggle" onclick="toggleMobileSubmenu({{ loop.index0 }})">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                            
+                            {% if item.children %}
+                                <ul class="mobile-submenu" id="submenu-{{ loop.index0 }}">
+                                    {% for child in item.children %}
+                                        <li class="mobile-submenu-item">
+                                            <a href="{{ child.url }}" 
+                                               class="mobile-submenu-link"
+                                               {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                {{ child.title }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+</nav>
+
+<style>
+/* Базовые стили меню */
+.menu-module {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.menu-link, .submenu-link, .sub-submenu-link, .mobile-menu-link, .mobile-submenu-link {
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.menu-icon, .submenu-icon, .mobile-menu-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Горизонтальное меню */
+.horizontal-menu .menu-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.horizontal-menu .menu-item {
+    position: relative;
+}
+
+.horizontal-menu .menu-link {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    color: #333;
+    border-bottom: 3px solid transparent;
+}
+
+.horizontal-menu .menu-link:hover {
+    background: #f8f9fa;
+    border-bottom-color: #007bff;
+}
+
+.horizontal-menu .submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    background: #fff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.horizontal-menu .menu-item:hover .submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.horizontal-menu .submenu-link {
+    display: block;
+    padding: 12px 20px;
+    color: #333;
+}
+
+.horizontal-menu .submenu-link:hover {
+    background: #f8f9fa;
+    color: #007bff;
+}
+
+/* Вертикальное меню */
+.vertical-menu {
+    width: 250px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+.vertical-menu .menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.vertical-menu .menu-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    color: #333;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.vertical-menu .menu-link:hover {
+    background: #f8f9fa;
+    color: #007bff;
+}
+
+.vertical-menu .submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: #f8f9fa;
+    display: none;
+}
+
+.vertical-menu .menu-item:hover .submenu {
+    display: block;
+}
+
+.vertical-menu .submenu-link {
+    display: block;
+    padding: 10px 30px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.vertical-menu .submenu-link:hover {
+    background: #e9ecef;
+    color: #007bff;
+}
+
+/* Мегаменю в стиле Pangaia */
+.dropdown-mega {
+    position: static;
+}
+
+.dropdown-mega .dropdown-menu {
+    width: 100%;
+    margin-top: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 0;
+}
+
+.mega-content {
+    padding: 2rem 2rem;
+}
+
+.mega-content h6 {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.mega-content li {
+    list-style: none;
+    margin-bottom: 0.5rem;
+}
+
+.mega-content a {
+    color: #000;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.mega-content a:hover {
+    color: #666;
+    text-decoration: underline;
+}
+
+/* Видео в мегаменю */
+.mega-video {
+    height: 100%;
+    min-height: 300px;
+}
+
+.mega-video video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+}
+
+/* Навигация */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #000;
+}
+
+.nav-link {
+    color: #000 !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #666 !important;
+}
+
+.dropdown-toggle::after {
+    margin-left: 0.5rem;
+}
+
+/* Иконки в меню */
+.menu-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+/* Кнопки справа */
+.btn-link {
+    color: #000;
+    text-decoration: none;
+    padding: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.btn-link:hover {
+    color: #666;
+}
+
+/* Адаптивность */
+@media (max-width: 991.98px) {
+    .dropdown-mega .dropdown-menu {
+        width: 100%;
+        margin-top: 0;
+    }
+    
+    .mega-content {
+        padding: 1rem;
+    }
+    
+    .mega-video {
+        min-height: 200px;
+        margin-top: 1rem;
+    }
+}
+
+/* Мобильное меню */
+.mobile-menu-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.hamburger {
+    width: 30px;
+    height: 3px;
+    background: #333;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-menu-content {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 300px;
+    height: 100%;
+    background: #fff;
+    z-index: 1000;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-content.show {
+    right: 0;
+}
+
+.mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.mobile-menu-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.mobile-menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-menu-link-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mobile-menu-link {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    color: #333;
+    flex: 1;
+}
+
+.mobile-submenu-toggle {
+    background: none;
+    border: none;
+    padding: 15px 20px;
+    cursor: pointer;
+}
+
+.mobile-submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: #f8f9fa;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-submenu.show {
+    max-height: 500px;
+}
+
+.mobile-submenu-link {
+    display: block;
+    padding: 12px 40px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Выделенные пункты */
+.featured {
+    position: relative;
+}
+
+.featured::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 6px;
+    background: #ff6b6b;
+    border-radius: 50%;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .mega-container {
+        flex-direction: column;
+        padding: 30px 20px;
+    }
+    
+    .mega-video {
+        width: 100%;
+        height: 250px;
+        min-height: 250px;
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .horizontal-menu { display: none; }
+    /* скрываем только десктопный список, сам контейнер мегаменю оставляем для offcanvas */
+    .mega-menu .menu-list.mega { display: none !important; }
+    .mobile-menu { display: block; }
+    .mega-categories { 
+        grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 12px; }
+}
+
+@media (min-width: 769px) {
+    .mobile-menu {
+        display: none;
+    }
+}
+</style>
+
+<script>
+// JavaScript для мобильного меню
+function toggleMobileMenu() {
+    const overlay = document.getElementById('mobileMenuOverlay');
+    const content = document.getElementById('mobileMenuContent');
+    
+    overlay.classList.toggle('show');
+    content.classList.toggle('show');
+}
+
+function closeMobileMenu() {
+    const overlay = document.getElementById('mobileMenuOverlay');
+    const content = document.getElementById('mobileMenuContent');
+    
+    overlay.classList.remove('show');
+    content.classList.remove('show');
+}
+
+function toggleMobileSubmenu(index) {
+    const submenu = document.getElementById(`submenu-${index}`);
+    const toggle = submenu.previousElementSibling.querySelector('.mobile-submenu-toggle i');
+    
+    submenu.classList.toggle('show');
+    toggle.classList.toggle('fa-chevron-down');
+    toggle.classList.toggle('fa-chevron-up');
+}
+
+// Закрытие меню при клике вне его
+document.addEventListener('click', function(event) {
+    const menuContent = document.getElementById('mobileMenuContent');
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
+    
+    if (menuContent && menuToggle && 
+        !menuContent.contains(event.target) && 
+        !menuToggle.contains(event.target)) {
+        closeMobileMenu();
+    }
+});
+</script>

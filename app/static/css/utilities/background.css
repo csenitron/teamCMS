@@ -1,0 +1,32 @@
+.background-color-gray {
+	background-color: #f8f8f8 !important;
+}
+.background-color-light-gray {
+	background-color: #f7f7f8 !important;
+}
+
+.background-color-dark-gray {
+	background-color: #575757 !important;
+}
+.background-color-black {
+	background-color: black !important;
+}
+.background-color-white {
+	background-color: white !important;
+}
+.background-color-db {
+	background: #dbdbdb;
+}
+.background-color-d3d {
+	background: #d3d4dd;
+}
+.background-color-9a9 {
+	background: #9a9db1;
+}
+.background-color-f4 {
+	background-color: #f4f4f6;
+}
+
+.background-none {
+	background: none !important;
+}

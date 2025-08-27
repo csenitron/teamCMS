@@ -1,0 +1,285 @@
+{% include 'front/header.html' %}
+
+<div class="container py-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width:120px;height:120px;">
+            <span class="fs-1">👤</span>
+          </div>
+          <div class="mt-3 fs-4 fw-semibold">{{ customer.name }}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="list-group list-group-flush">
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if active_section=='overview' %}active{% endif %}"
+             href="{{ url_for('main.account', section='overview') }}">
+            <span>История заказов</span>
+            <span class="ms-2">›</span>
+          </a>
+          <div class="px-3 pt-3 text-uppercase text-muted small">Настройки</div>
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if active_section=='shipping' %}active{% endif %}"
+             href="{{ url_for('main.account', section='shipping') }}">
+            <span>Информация о доставке</span>
+            <span class="ms-2">›</span>
+          </a>
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if active_section=='security' %}active{% endif %}"
+             href="{{ url_for('main.account', section='security') }}">
+            <span>Настройки безопасности</span>
+            <span class="ms-2">›</span>
+          </a>
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+             href="{{ url_for('main.logout') }}">
+            <span class="text-danger">Выйти</span>
+            <span>↗</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      {% if active_section == 'overview' %}
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>№</th>
+                  <th>Дата</th>
+                  <th>Статус</th>
+                  <th class="text-end">Сумма</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for o in orders %}
+                <tr>
+                  <td>#{{ o.id }}</td>
+                  <td>{{ o.created_at.strftime('%d.%m.%Y %H:%M') if o.created_at }}</td>
+                  <td>{{ o.status }}</td>
+                  <td class="text-end">{{ '%.2f'|format(o.total_price or 0) }} р.</td>
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary order-details-btn" type="button" data-order-id="{{ o.id }}">Открыть</button>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-5">
+                    <div style="font-size: 64px;">🤷‍♂️</div>
+                    <div class="mt-2">Заказов пока нет</div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% elif active_section == 'shipping' %}
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Адреса доставки</h5>
+            <form class="row g-2" method="post" action="{{ url_for('main.account_address_add') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <div class="col-md-6"><input class="form-control" name="full_name" placeholder="ФИО"/></div>
+              <div class="col-md-6"><input class="form-control" name="phone" placeholder="Телефон"/></div>
+              <div class="col-12"><input class="form-control" name="address_line1" placeholder="Адрес: улица, дом, кв." required/></div>
+              <div class="col-12"><input class="form-control" name="address_line2" placeholder="Дополнительно"/></div>
+              <div class="col-md-5"><input class="form-control" name="city" placeholder="Город" required/></div>
+              <div class="col-md-4"><input class="form-control" name="country" placeholder="Страна" value="Россия"/></div>
+              <div class="col-md-3"><input class="form-control" name="postcode" placeholder="Индекс"/></div>
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="is_default_shipping" id="is_default_shipping">
+                  <label class="form-check-label" for="is_default_shipping">Сделать адресом по умолчанию</label>
+                </div>
+              </div>
+              <div class="col-12"><button class="btn btn-primary">Добавить адрес</button></div>
+            </form>
+
+            <hr/>
+            {% for a in addresses %}
+            <div class="d-flex justify-content-between align-items-center py-2">
+              <div>
+                <div class="fw-medium">{{ a.full_name }} {% if a.is_default_shipping %}<span class="badge bg-success ms-1">По умолчанию</span>{% endif %}</div>
+                <div class="text-muted small">{{ a.phone }}</div>
+                <div class="text-muted small">{{ a.address_line1 }}{% if a.address_line2 %}, {{ a.address_line2 }}{% endif %}</div>
+                <div class="text-muted small">{{ a.city }}, {{ a.postcode }}, {{ a.country }}</div>
+              </div>
+              <div class="d-flex gap-2">
+                {% if not a.is_default_shipping %}
+                <form method="post" action="{{ url_for('main.account_address_default', addr_id=a.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button class="btn btn-sm btn-outline-secondary">По умолчанию</button>
+                </form>
+                {% endif %}
+                <form method="post" action="{{ url_for('main.account_address_delete', addr_id=a.id) }}" onsubmit="return confirm('Удалить адрес?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button class="btn btn-sm btn-outline-danger">Удалить</button>
+                </form>
+              </div>
+            </div>
+            {% else %}
+            <div class="text-muted">Адресов еще нет</div>
+            {% endfor %}
+          </div>
+        </div>
+      {% elif active_section == 'security' %}
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Безопасность</h5>
+            <form method="post" action="{{ url_for('main.account_password') }}" class="mt-3">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <div class="mb-3">
+                <label class="form-label">Текущий пароль</label>
+                <input type="password" class="form-control" name="current_password"/>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Новый пароль</label>
+                <input type="password" class="form-control" name="new_password"/>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Подтверждение пароля</label>
+                <input type="password" class="form-control" name="confirm_password"/>
+              </div>
+              <button class="btn btn-primary">Обновить пароль</button>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Детали заказа</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="order-details-body">
+          <div class="text-center text-muted py-4">Загрузка...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+ </div>
+
+<script>
+document.addEventListener('click', async function(e) {
+  const btn = e.target.closest('.order-details-btn');
+  if (!btn) return;
+  const orderId = btn.getAttribute('data-order-id');
+  if (!orderId) return;
+  try {
+    const modalEl = document.getElementById('orderDetailsModal');
+    const bodyEl = document.getElementById('order-details-body');
+    bodyEl.innerHTML = '<div class="text-center text-muted py-4">Загрузка...</div>';
+    const myModal = new bootstrap.Modal(modalEl);
+    myModal.show();
+    const resp = await fetch(`/account/orders/${orderId}/details`, { credentials: 'same-origin' });
+    const data = await resp.json();
+    if (!data.success) {
+      bodyEl.innerHTML = `<div class="alert alert-danger">${data.message || 'Не удалось получить данные заказа'}</div>`;
+      return;
+    }
+    const o = data.order;
+    let itemsHtml = '';
+    (o.items || []).forEach(it => {
+      const opts = it.selected_options ? `<div class="text-muted small">Опции: ${JSON.stringify(it.selected_options)}</div>` : '';
+      let pretty = '';
+      if (Array.isArray(it.selected_options_pretty) && it.selected_options_pretty.length) {
+        pretty = '<div class="text-muted small">' + it.selected_options_pretty.map(p => `${p.name}: ${p.value}`).join(', ') + '</div>';
+      } else if (it.selected_options) {
+        pretty = `<div class="text-muted small">Опции: ${JSON.stringify(it.selected_options)}</div>`;
+      }
+      itemsHtml += `
+        <tr>
+          <td>${it.product_name || ('Товар #' + it.product_id)}${pretty}</td>
+          <td class="text-center">${it.quantity}</td>
+          <td class="text-end">${it.price.toFixed(2)} р.</td>
+          <td class="text-end">${it.subtotal.toFixed(2)} р.</td>
+        </tr>
+      `;
+    });
+    bodyEl.innerHTML = `
+      <div class="mb-3 d-flex justify-content-between align-items-center">
+        <div>
+          <div class="fw-semibold">Заказ #${o.id}</div>
+          <div class="text-muted small">${o.created_at ? new Date(o.created_at).toLocaleString() : ''}</div>
+        </div>
+        <span class="badge bg-secondary">${o.status}</span>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="border rounded p-2 h-100">
+            <div class="fw-semibold mb-1">Доставка</div>
+            <div>${o.shipping.full_name || ''}</div>
+            <div class="text-muted small">${o.shipping.phone || ''}</div>
+            <div class="text-muted small">${[o.shipping.address_line1, o.shipping.address_line2].filter(Boolean).join(', ')}</div>
+            <div class="text-muted small">${[o.shipping.city, o.shipping.postcode, o.shipping.country].filter(Boolean).join(', ')}</div>
+            <div class="text-muted small">${o.shipping.method_name || ''}</div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-2 h-100">
+            <div class="fw-semibold mb-1">Оплата</div>
+            <div class="text-muted small">Метод: ${o.payment_method || ''}</div>
+            <div class="text-muted small">Статус: ${o.payment_status || ''}</div>
+            <div class="text-muted small">Референс: ${o.payment_reference || ''}</div>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead class="table-light">
+            <tr>
+              <th>Товар</th>
+              <th class="text-center">Кол-во</th>
+              <th class="text-end">Цена</th>
+              <th class="text-end">Сумма</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+          <tfoot>
+            <tr>
+              <th colspan="3" class="text-end">Доставка</th>
+              <th class="text-end">${o.shipping_cost.toFixed(2)} р.</th>
+            </tr>
+            <tr>
+              <th colspan="3" class="text-end">Налоги</th>
+              <th class="text-end">${o.tax_amount.toFixed(2)} р.</th>
+            </tr>
+            <tr>
+              <th colspan="3" class="text-end">Итого</th>
+              <th class="text-end">${o.total_price.toFixed(2)} р.</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    `;
+  } catch (e) {
+    const bodyEl = document.getElementById('order-details-body');
+    bodyEl.innerHTML = '<div class="alert alert-danger">Ошибка загрузки деталей заказа</div>';
+  }
+});
+</script>
+
+{% include 'front/footer.html' %}
+
+

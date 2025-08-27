@@ -1,0 +1,19 @@
+.transition {
+	transition: all 0.3s ease !important;
+}
+.cursor-pointer {
+	cursor: pointer !important;
+}
+.overflow-scrolling-touch {
+	-webkit-overflow-scrolling: touch !important;
+}
+.no-interact {
+	user-select: none;
+	pointer-events: none;
+}
+.z-1 {
+	z-index: 1 !important;
+}
+.z-2 {
+	z-index: 2 !important;
+}

@@ -1,0 +1,71 @@
+.proposal {
+	position: relative;
+	background-color: #f5f5f5;
+	margin-top: 40px;
+	padding-bottom: 24px;
+}
+
+.proposal-swiper .swiper-slide {
+	background-position: center top;
+	background-size: cover;
+	min-height: 500px;
+	transition: opacity 0.4s ease-in-out;
+	position: relative;
+}
+
+.proposal-swiper .swiper-slide:not(.swiper-slide-active) {
+	opacity: 0.5;
+}
+
+.proposal-swiper .swiper-pagination {
+	position: relative;
+	margin-top: 30px;
+}
+
+.proposal-swiper .swiper-pagination-bullet {
+	background-color: #ccc;
+	width: 10px;
+	height: 10px;
+}
+
+.proposal-swiper .swiper-pagination-bullet-active {
+	background-color: #000;
+	border: none;
+}
+
+.proposal .custom-button-prev,
+.proposal .custom-button-next {
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.proposal-slide-content-wrapper {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+	padding: 40px 0;
+	opacity: 0;
+	transition: opacity 0.3s ease-in-out;
+}
+
+.proposal-swiper .swiper-slide-active .proposal-slide-content-wrapper {
+	opacity: 1;
+}
+
+.proposal-slide-content {
+	color: white;
+	text-align: center;
+	padding: 20px 0;
+}
+
+.btn-fixed-size {
+	width: 150px;
+	height: 50px;
+	flex-shrink: 0;
+}

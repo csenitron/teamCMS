@@ -1,0 +1,896 @@
+{% extends "base.html" %}
+
+{% block title %}Настройка модуля меню{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bars me-2"></i>Настройка модуля меню
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="menuForm" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <!-- Настройки модуля -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="menu_title">Название меню</label>
+                                    <input type="text" class="form-control" id="menu_title" name="menu_title" 
+                                           value="{{ moduleInstanceData.title }}" required>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="menu_style">Стиль меню</label>
+                                    <select class="form-control" id="menu_style" name="menu_style">
+                                        <option value="horizontal" {% if moduleInstanceData.menu_style == 'horizontal' %}selected{% endif %}>Горизонтальное</option>
+                                        <option value="vertical" {% if moduleInstanceData.menu_style == 'vertical' %}selected{% endif %}>Вертикальное</option>
+                                        <option value="mega" {% if moduleInstanceData.menu_style == 'mega' %}selected{% endif %}>Мега-меню</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_icons" name="show_icons" 
+                                           {% if moduleInstanceData.show_icons %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_icons">
+                                        Показывать иконки
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="enable_videos" name="enable_videos" 
+                                           {% if moduleInstanceData.enable_videos %}checked{% endif %}>
+                                    <label class="form-check-label" for="enable_videos">
+                                        Включить видео
+                                    </label>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="is_main" name="is_main"
+                                           {% if moduleInstanceData.is_main %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_main">
+                                        Сделать это меню главным (отобразить в шапке сайта)
+                                    </label>
+                                    <div class="form-text">Будет только одно главное меню. При установке флажка у других меню статус снимется автоматически.</div>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="max_depth">Максимальная глубина вложенности</label>
+                                    <input type="number" class="form-control" id="max_depth" name="max_depth" 
+                                           value="{{ moduleInstanceData.max_depth or 3 }}" min="1" max="5">
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Пункты меню -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Пункты меню</h4>
+                            <button type="button" class="btn btn-success" onclick="addMenuItem()">
+                                <i class="fas fa-plus me-1"></i>Добавить пункт
+                            </button>
+                        </div>
+
+                        <div id="menuItems" class="sortable-container">
+                            {% for item in items %}
+                            <div class="menu-item card mb-3" data-item-index="{{ loop.index0 }}">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-grip-vertical me-2 drag-handle" style="cursor: move;"></i>
+                                        <strong>{{ item.title }}</strong>
+                                        <span class="badge bg-secondary ms-2">{{ item.item_type }}</span>
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-success" onclick="chooseParent({{ loop.index0 }})" title="Сделать дочерним">
+                                            <i class="fas fa-level-down-alt"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="makeRoot({{ loop.index0 }})" title="Сделать корневым">
+                                            <i class="fas fa-level-up-alt"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="toggleMenuItem({{ loop.index0 }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeMenuItem({{ loop.index0 }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body menu-item-form" id="form_{{ loop.index0 }}" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label>Название пункта</label>
+                                                <input type="text" class="form-control" name="menu_item_{{ loop.index0 }}_title" 
+                                                       value="{{ item.title }}" required>
+                                            </div>
+                                            
+                                            <div class="form-group mb-3">
+                                                <label>Тип пункта</label>
+                                                <select class="form-control" name="menu_item_{{ loop.index0 }}_type" 
+                                                        onchange="changeMenuItemType({{ loop.index0 }}, this.value)">
+                                                    <option value="custom" {% if item.item_type == 'custom' %}selected{% endif %}>Произвольная ссылка</option>
+                                                    <option value="page" {% if item.item_type == 'page' %}selected{% endif %}>Страница</option>
+                                                    <option value="category" {% if item.item_type == 'category' %}selected{% endif %}>Категория</option>
+                                                    <option value="post" {% if item.item_type == 'post' %}selected{% endif %}>Статья</option>
+                                                    <option value="post_category" {% if item.item_type == 'post_category' %}selected{% endif %}>Категория статей</option>
+                                                    <option value="all_posts" {% if item.item_type == 'all_posts' %}selected{% endif %}>Все статьи</option>
+                                                    <option value="catalog" {% if item.item_type == 'catalog' %}selected{% endif %}>Каталог</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Селекторы контента -->
+                                            <div class="content-selectors">
+                                                <!-- Произвольная ссылка -->
+                                                <div class="content-selector" id="selector_{{ loop.index0 }}_custom" style="display: none;">
+                                                    <div class="form-group mb-3">
+                                                        <label>URL ссылки</label>
+                                                        <input type="text" class="form-control" name="menu_item_{{ loop.index0 }}_custom_url" 
+                                                               value="{{ item.url if item.item_type == 'custom' else '' }}" placeholder="https://example.com">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Выбор страницы -->
+                                                <div class="content-selector" id="selector_{{ loop.index0 }}_page" style="display: none;">
+                                                    <div class="form-group mb-3">
+                                                        <label>Выберите страницу</label>
+                                                        <select class="form-control" name="menu_item_{{ loop.index0 }}_target_id" id="select_page_{{ loop.index0 }}">
+                                                            <option value="">-- Выберите страницу --</option>
+                                                            {% for option in contentOptions.pages %}
+                                                            <option value="{{ option.id }}" {% if item.target_id == option.id %}selected{% endif %}>{{ option.title }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Выбор категории -->
+                                                <div class="content-selector" id="selector_{{ loop.index0 }}_category" style="display: none;">
+                                                    <div class="form-group mb-3">
+                                                        <label>Выберите категорию</label>
+                                                        <select class="form-control" name="menu_item_{{ loop.index0 }}_target_id" id="select_category_{{ loop.index0 }}" onchange="checkCategoryForSubcategories({{ loop.index0 }}, this.value)">
+                                                            <option value="">-- Выберите категорию --</option>
+                                                            {% for option in contentOptions.categories %}
+                                                            <option value="{{ option.id }}" {% if item.target_id == option.id %}selected{% endif %} data-has-children="{{ option.has_children }}">{{ option.name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <div id="subcategories_info_{{ loop.index0 }}" class="mt-2" style="display: none;">
+                                                            <div class="alert alert-info">
+                                                                <i class="fas fa-info-circle me-2"></i>
+                                                                У этой категории есть подкатегории
+                                                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="createSubcategoriesMenuItems({{ loop.index0 }})">
+                                                                    <i class="fas fa-plus me-1"></i>Создать подпункты из подкатегорий
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Выбор статьи -->
+                                                <div class="content-selector" id="selector_{{ loop.index0 }}_post" style="display: none;">
+                                                    <div class="form-group mb-3">
+                                                        <label>Выберите статью</label>
+                                                        <select class="form-control" name="menu_item_{{ loop.index0 }}_target_id" id="select_post_{{ loop.index0 }}">
+                                                            <option value="">-- Выберите статью --</option>
+                                                            {% for option in contentOptions.posts %}
+                                                            <option value="{{ option.id }}" {% if item.target_id == option.id %}selected{% endif %}>{{ option.title }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Выбор категории статей -->
+                                                <div class="content-selector" id="selector_{{ loop.index0 }}_post_category" style="display: none;">
+                                                    <div class="form-group mb-3">
+                                                        <label>Выберите категорию статей</label>
+                                                        <select class="form-control" name="menu_item_{{ loop.index0 }}_target_id" id="select_post_category_{{ loop.index0 }}">
+                                                            <option value="">-- Выберите категорию статей --</option>
+                                                            {% for option in contentOptions.post_categories %}
+                                                            <option value="{{ option.id }}" {% if item.target_id == option.id %}selected{% endif %}>{{ option.title }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <!-- Иконка -->
+                                            <div class="form-group mb-3">
+                                                <label>Иконка</label>
+                                                <div class="d-flex align-items-center">
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="selectIcon({{ loop.index0 }})">
+                                                        <i class="fas fa-image"></i> Выбрать иконку
+                                                    </button>
+                                                    <div class="ms-2" id="icon_preview_{{ loop.index0 }}">
+                                                        {% if item.icon_id %}<img src="/static/uploads/{{ item.icon_id }}" style="max-height: 30px;">{% endif %}
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="menu_item_{{ loop.index0 }}_icon_id" value="{{ item.icon_id or '' }}">
+                                            </div>
+
+                                            <!-- Видео -->
+                                            <div class="form-group mb-3">
+                                                <label>Видео</label>
+                                                <div class="d-flex align-items-center">
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="selectVideo({{ loop.index0 }})">
+                                                        <i class="fas fa-video"></i> Выбрать видео
+                                                    </button>
+                                                    <div class="ms-2" id="video_preview_{{ loop.index0 }}">
+                                                        {% if item.video_filename %}
+                                                            <video src="/static/uploads/videos/{{ item.video_filename }}" style="max-height: 50px;" controls></video>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="menu_item_{{ loop.index0 }}_video_id" value="{{ item.video_id or '' }}">
+                                            </div>
+
+                                            <!-- CSS класс -->
+                                            <div class="form-group mb-3">
+                                                <label>CSS класс</label>
+                                                <input type="text" class="form-control" name="menu_item_{{ loop.index0 }}_custom_class" 
+                                                       value="{{ item.custom_class or '' }}" placeholder="custom-class">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Скрытые поля -->
+                                    <input type="hidden" name="menu_item_{{ loop.index0 }}_position" value="{{ item.position or loop.index0 }}">
+                                    <!-- parent_id должен быть индексом родителя в форме, а не id из БД -->
+                                    <input type="hidden" name="menu_item_{{ loop.index0 }}_parent_id" value="{{ item.parent_id or '' }}">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Кнопки -->
+                        <div class="mt-4">
+                            <button type="button" class="btn btn-primary" onclick="saveMenu()">
+                                <i class="fas fa-save me-1"></i>Сохранить меню
+                            </button>
+                            <a href="{{ url_for('admin.modules_list') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Включаем модальные окна для выбора контента -->
+{% include 'admin/chooseImage.html' %}
+
+<!-- Модальное окно выбора видео -->
+<div class="modal fade" id="videoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Выбор видео</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="videoList" class="row"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let menuItemCounter = {{ items|length }};
+
+$(function() {
+    
+    // Передаем данные contentOptions в JavaScript  
+    const contentOptions = {
+        pages: {{ contentOptions.pages | tojson }},
+        categories: {{ contentOptions.categories | tojson }},
+        posts: {{ contentOptions.posts | tojson }},
+        post_categories: {{ contentOptions.post_categories | tojson }}
+    };
+    
+
+
+    // Функция для выбора родителя через выпадающий список
+    window.chooseParent = function(itemIndex) {
+        // Собираем список возможных родителей (все кроме самого себя и потомков)
+        let options = '<option value="">(Корневой)</option>';
+        $('.menu-item').each(function() {
+            const idx = $(this).data('item-index');
+            if (idx == itemIndex) return; // нельзя быть родителем самому себе
+            // Проверка: не потомок ли это выбранного пункта (чтобы не было циклов)
+            let isDescendant = false;
+            let check = idx;
+            while (true) {
+                let parent = $(`input[name='menu_item_${check}_parent_id']`).val();
+                if (parent == itemIndex) { isDescendant = true; break; }
+                if (!parent) break;
+                check = parent;
+            }
+            if (!isDescendant) {
+                const title = $(this).find('input[name^="menu_item_"]').first().val() || ('Пункт ' + idx);
+                options += `<option value="${idx}">${title}</option>`;
+            }
+        });
+        const selectHtml = `<select id="parentSelect_${itemIndex}" class="form-select form-select-sm" style="width:auto;display:inline-block;">
+            ${options}
+        </select>`;
+        const $actions = $(`.menu-item[data-item-index='${itemIndex}'] .btn-group`);
+        $actions.append(selectHtml);
+        $(`#parentSelect_${itemIndex}`).focus();
+        $(`#parentSelect_${itemIndex}`).on('change', function() {
+            const val = $(this).val();
+            $(`input[name='menu_item_${itemIndex}_parent_id']`).val(val);
+            $(this).remove();
+            updateNestingVisuals();
+        });
+        // Удалить селект при потере фокуса
+        $(`#parentSelect_${itemIndex}`).on('blur', function() { $(this).remove(); });
+    };
+
+    // Кнопка "Сделать корневым"
+    window.makeRoot = function(itemIndex) {
+        $(`input[name='menu_item_${itemIndex}_parent_id']`).val('');
+        updateNestingVisuals();
+    };
+
+
+
+
+
+    // Функция добавления нового пункта меню
+    window.addMenuItem = function() {
+        const itemHtml = `
+            <div class="menu-item card mb-3" data-item-index="${menuItemCounter}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-grip-vertical me-2 drag-handle" style="cursor: move;"></i>
+                        <strong>Новый пункт</strong>
+                        <span class="badge bg-secondary ms-2">custom</span>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-success" onclick="makeNested(${menuItemCounter})" title="Сделать родительским">
+                            <i class="fas fa-indent"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="toggleMenuItem(${menuItemCounter})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="removeMenuItem(${menuItemCounter})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body menu-item-form" id="form_${menuItemCounter}" style="display: block;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label>Название пункта</label>
+                                <input type="text" class="form-control" name="menu_item_${menuItemCounter}_title" 
+                                       value="Новый пункт" required>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label>Тип пункта</label>
+                                <select class="form-control" name="menu_item_${menuItemCounter}_type" 
+                                        onchange="changeMenuItemType(${menuItemCounter}, this.value)">
+                                    <option value="custom">Произвольная ссылка</option>
+                                    <option value="page">Страница</option>
+                                    <option value="category">Категория</option>
+                                    <option value="post">Статья</option>
+                                    <option value="post_category">Категория статей</option>
+                                    <option value="all_posts">Все статьи</option>
+                                    <option value="catalog">Каталог</option>
+                                </select>
+                            </div>
+
+                            <!-- Селекторы контента -->
+                            <div class="content-selectors">
+                                <div class="content-selector" id="selector_${menuItemCounter}_custom" style="display: block;">
+                                    <div class="form-group mb-3">
+                                        <label>URL ссылки</label>
+                                        <input type="text" class="form-control" name="menu_item_${menuItemCounter}_custom_url" 
+                                               placeholder="https://example.com">
+                                    </div>
+                                </div>
+
+                                <div class="content-selector" id="selector_${menuItemCounter}_page" style="display: none;">
+                                    <div class="form-group mb-3">
+                                        <label>Выберите страницу</label>
+                                        <select class="form-control" name="menu_item_${menuItemCounter}_target_id" id="select_page_${menuItemCounter}">
+                                            <option value="">-- Выберите страницу --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="content-selector" id="selector_${menuItemCounter}_category" style="display: none;">
+                                    <div class="form-group mb-3">
+                                        <label>Выберите категорию</label>
+                                        <select class="form-control" name="menu_item_${menuItemCounter}_target_id" id="select_category_${menuItemCounter}" onchange="checkCategoryForSubcategories(${menuItemCounter}, this.value)">
+                                            <option value="">-- Выберите категорию --</option>
+                                        </select>
+                                        <div id="subcategories_info_${menuItemCounter}" class="mt-2" style="display: none;">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                У этой категории есть подкатегории
+                                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="createSubcategoriesMenuItems(${menuItemCounter})">
+                                                    <i class="fas fa-plus me-1"></i>Создать подпункты из подкатегорий
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="content-selector" id="selector_${menuItemCounter}_post" style="display: none;">
+                                    <div class="form-group mb-3">
+                                        <label>Выберите статью</label>
+                                        <select class="form-control" name="menu_item_${menuItemCounter}_target_id" id="select_post_${menuItemCounter}">
+                                            <option value="">-- Выберите статью --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="content-selector" id="selector_${menuItemCounter}_post_category" style="display: none;">
+                                    <div class="form-group mb-3">
+                                        <label>Выберите категорию статей</label>
+                                        <select class="form-control" name="menu_item_${menuItemCounter}_target_id" id="select_post_category_${menuItemCounter}">
+                                            <option value="">-- Выберите категорию статей --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label>Иконка</label>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="selectIcon(${menuItemCounter})">
+                                        <i class="fas fa-image"></i> Выбрать иконку
+                                    </button>
+                                    <div class="ms-2" id="icon_preview_${menuItemCounter}"></div>
+                                </div>
+                                <input type="hidden" name="menu_item_${menuItemCounter}_icon_id">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label>Видео</label>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="selectVideo(${menuItemCounter})">
+                                        <i class="fas fa-video"></i> Выбрать видео
+                                    </button>
+                                    <div class="ms-2" id="video_preview_${menuItemCounter}"></div>
+                                </div>
+                                <input type="hidden" name="menu_item_${menuItemCounter}_video_id">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label>CSS класс</label>
+                                <input type="text" class="form-control" name="menu_item_${menuItemCounter}_custom_class" 
+                                       placeholder="custom-class">
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="menu_item_${menuItemCounter}_position" value="${menuItemCounter}">
+                    <input type="hidden" name="menu_item_${menuItemCounter}_parent_id" value="">
+                </div>
+            </div>
+        `;
+        
+        $('#menuItems').append(itemHtml);
+        
+        // Заполняем селекты данными
+        const currentIndex = menuItemCounter;
+        
+        // Заполняем селект страниц
+        contentOptions.pages.forEach(page => {
+            $(`#select_page_${currentIndex}`).append(`<option value="${page.id}">${page.title}</option>`);
+        });
+        
+        // Заполняем селект категорий  
+        contentOptions.categories.forEach(category => {
+            $(`#select_category_${currentIndex}`).append(`<option value="${category.id}" data-has-children="${category.has_children}">${category.name}</option>`);
+        });
+        
+        // Заполняем селект статей
+        contentOptions.posts.forEach(post => {
+            $(`#select_post_${currentIndex}`).append(`<option value="${post.id}">${post.title}</option>`);
+        });
+        
+        // Заполняем селект категорий статей
+        contentOptions.post_categories.forEach(postCategory => {
+            $(`#select_post_category_${currentIndex}`).append(`<option value="${postCategory.id}">${postCategory.title}</option>`);
+        });
+        
+        menuItemCounter++;
+        
+        // Переинициализируем sortable
+        $('#menuItems').sortable('refresh');
+    };
+
+    // Функция удаления пункта меню
+    window.removeMenuItem = function(index) {
+        if (confirm('Удалить этот пункт меню?')) {
+            $(`.menu-item[data-item-index="${index}"]`).remove();
+            updateMenuPositions();
+        }
+    };
+
+    // Функция переключения отображения формы пункта меню
+    window.toggleMenuItem = function(index) {
+        $(`#form_${index}`).slideToggle();
+    };
+
+    // Функция изменения типа пункта меню
+    window.changeMenuItemType = function(itemIndex, type) {
+        console.log('Changing menu item type:', itemIndex, type);
+        
+        // Скрываем все селекторы контента для этого пункта
+        $(`#form_${itemIndex} .content-selector`).hide();
+        
+        // Сбрасываем значения селектов target_id для типов, которые НЕ выбраны
+        if (type !== 'page') $(`#select_page_${itemIndex}`).val('');
+        if (type !== 'category') $(`#select_category_${itemIndex}`).val('');
+        if (type !== 'post') $(`#select_post_${itemIndex}`).val('');
+        if (type !== 'post_category') $(`#select_post_category_${itemIndex}`).val('');
+        
+
+        
+        // Показываем нужный селектор в зависимости от типа
+        if (type === 'custom') {
+            $(`#selector_${itemIndex}_custom`).show();
+        } else if (type === 'all_posts') {
+            // Для "Все статьи" устанавливаем фиксированный URL
+            $(`input[name="menu_item_${itemIndex}_custom_url"]`).val('/posts');
+        } else if (type !== 'catalog') {
+            $(`#selector_${itemIndex}_${type}`).show();
+        }
+        
+        // Обновляем badge
+        $(`.menu-item[data-item-index="${itemIndex}"] .badge`).text(type);
+    };
+
+    // Функция выбора иконки
+    window.selectIcon = function(itemIndex) {
+        window.currentIconType = `menu-icon-${itemIndex}`;
+        $('#chooseImageModal').modal('show');
+    };
+
+    // Функция выбора видео
+    window.selectVideo = function(itemIndex) {
+        window.currentVideoIndex = itemIndex;
+        loadVideos();
+        $('#videoModal').modal('show');
+    };
+
+    // Загрузка списка видео
+    window.loadVideos = function() {
+        $.get('/admin/media/list/videos', function(data) {
+            displayVideos(data.videos || []);
+        }).fail(function() {
+            $('#videoList').html('<div class="col-12 text-center text-muted">Ошибка загрузки видео</div>');
+        });
+    };
+
+    // Отображение списка видео
+    window.displayVideos = function(videos) {
+        const videoList = $('#videoList');
+        videoList.empty();
+        
+        if (!videos.length) {
+            videoList.html('<div class="col-12 text-center text-muted">Видео не найдены</div>');
+            return;
+        }
+        
+        videos.forEach(video => {
+            videoList.append(`
+                <div class="col-md-4 mb-3">
+                    <div class="card video-item" onclick="selectVideoFile(${video.id}, '${video.filename}', '${video.url}')">
+                        <video class="card-img-top" src="${video.url}" style="height: 150px; object-fit: cover;"></video>
+                        <div class="card-body p-2">
+                            <small class="text-muted">${video.filename}</small>
+                        </div>
+                    </div>
+                </div>
+            `);
+        });
+    };
+
+    // Выбор видео файла
+    window.selectVideoFile = function(videoId, filename, url) {
+        const itemIndex = window.currentVideoIndex;
+        $(`input[name="menu_item_${itemIndex}_video_id"]`).val(videoId);
+        $(`#video_preview_${itemIndex}`).html(`<video src="${url}" style="max-height: 50px;" controls></video>`);
+        $('#videoModal').modal('hide');
+    };
+
+    // Функция создания вложенного пункта меню
+    window.makeNested = function(itemIndex) {
+        // Сделать выбранный пункт дочерним предыдущего
+        const $current = $(`.menu-item[data-item-index='${itemIndex}']`);
+        const prev = $current.prev('.menu-item');
+        if (prev.length) {
+            // Установить parent_id как индекс предыдущего
+            $current.find(`input[name='menu_item_${itemIndex}_parent_id']`).val(prev.data('item-index'));
+            $current.addClass('nested');
+        } else {
+            // Если нет предыдущего — сделать корневым
+            $current.find(`input[name='menu_item_${itemIndex}_parent_id']`).val('');
+            $current.removeClass('nested');
+        }
+    };
+
+});
+
+// Функция сохранения меню (вне jQuery блока для глобального доступа)
+window.saveMenu = function() {
+    $('#menuForm').submit();
+};
+
+// Функция для вычисления уровня вложенности по parent_id
+window.getDepth = function(itemIndex) {
+    let depth = 0;
+    let parent = $(`input[name='menu_item_${itemIndex}_parent_id']`).val();
+    while (parent !== '' && parent !== undefined) {
+        depth++;
+        parent = $(`input[name='menu_item_${parent}_parent_id']`).val();
+        if (depth > 20) break; // защита от зацикливания
+    }
+    return depth;
+};
+
+// Обновить визуализацию отступа для всех пунктов
+window.updateNestingVisuals = function() {
+    $('.menu-item').each(function() {
+        const idx = $(this).data('item-index');
+        const depth = getDepth(idx);
+        $(this).css('margin-left', (depth * 40) + 'px');
+    });
+};
+
+// Обновление позиций пунктов меню
+window.updateMenuPositions = function() {
+    $('#menuItems .menu-item').each(function(index) {
+        $(this).find('input[name*="_position"]').val(index);
+    });
+};
+
+// Функция инициализации сортировки
+window.initializeSortable = function() {
+    if (typeof $ !== 'undefined' && $.fn.sortable) {
+        $('#menuItems').sortable({
+            handle: '.drag-handle',
+            placeholder: 'sortable-placeholder',
+            items: '.menu-item',
+            tolerance: 'pointer',
+            update: function(event, ui) {
+                updateMenuPositions();
+                updateNestingVisuals();
+            }
+        });
+    }
+};
+
+$(function() {
+    
+    // На сабмите включаем только селект target_id активного типа для каждого пункта
+    $('#menuForm').on('submit', function() {
+        $('.menu-item').each(function() {
+            const idx = $(this).data('item-index');
+            const typeVal = $(`select[name='menu_item_${idx}_type']`).val();
+            // Сначала отключаем все селекты target_id данного пункта
+            $(this).find(`select[name='menu_item_${idx}_target_id']`).prop('disabled', true);
+            // Включаем селект только для типов, где нужен target_id
+            const typesWithTarget = ['page', 'category', 'post', 'post_category', 'all_posts'];
+            if (typesWithTarget.includes(typeVal)) {
+                $(`#selector_${idx}_${typeVal} select[name='menu_item_${idx}_target_id']`).prop('disabled', false);
+            }
+            // Для custom/external/catalog целевой объект не нужен — селект остаётся disabled
+        });
+    });
+
+    // Инициализация существующих пунктов меню
+    {% for item in items %}
+    changeMenuItemType({{ loop.index0 }}, '{{ item.item_type }}');
+    {% endfor %}
+    
+    // Устанавливаем выбранные значения для селектов
+    setTimeout(function() {
+        {% for item in items %}
+        {% if item.target_id %}
+        $('select[name="menu_item_{{ loop.index0 }}_target_id"]').val('{{ item.target_id }}');
+        {% endif %}
+        {% endfor %}
+    }, 100);
+
+    // Инициализируем drag and drop
+    initializeSortable();
+
+    // При инициализации отмечаем вложенные пункты
+    $('.menu-item').each(function() {
+        const idx = $(this).data('item-index');
+        const parent = $(`input[name='menu_item_${idx}_parent_id']`).val();
+        if (parent !== '' && parent !== undefined) {
+            $(this).addClass('nested');
+        }
+    });
+
+    // При инициализации отмечаем вложенность
+    updateNestingVisuals();
+
+    // Проверяем существующие пункты меню типа "category" на наличие подкатегорий
+    setTimeout(function() {
+        $('.menu-item').each(function() {
+            const idx = $(this).data('item-index');
+            const categorySelect = $(`#select_category_${idx}`);
+            if (categorySelect.length) {
+                const selectedValue = categorySelect.val();
+                console.log(`Проверяем пункт ${idx}, выбранная категория: ${selectedValue}`);
+                if (selectedValue) {
+                    checkCategoryForSubcategories(idx, selectedValue);
+                }
+            }
+        });
+    }, 500); // Задержка 500мс для загрузки данных
+
+    console.log('Menu module initialized with', menuItemCounter, 'items');
+});
+
+// Функция для проверки наличия подкатегорий у выбранной категории
+window.checkCategoryForSubcategories = function(itemIndex, categoryId) {
+    const selectElement = $(`#select_category_${itemIndex}`);
+    const selectedOption = selectElement.find(`option[value="${categoryId}"]`);
+    const hasChildren = selectedOption.attr('data-has-children') === 'true';
+    const infoDiv = $(`#subcategories_info_${itemIndex}`);
+    
+    if (hasChildren && categoryId) {
+        infoDiv.show();
+    } else {
+        infoDiv.hide();
+    }
+};
+
+// Функция для создания подпунктов меню из подкатегорий
+window.createSubcategoriesMenuItems = function(itemIndex) {
+    const categoryId = $(`#select_category_${itemIndex}`).val();
+    if (!categoryId) {
+        alert('Сначала выберите категорию!');
+        return;
+    }
+    
+    const categoryName = $(`#select_category_${itemIndex} option:selected`).text();
+    
+    if (confirm(`Создать подпункты меню из подкатегорий категории "${categoryName}"?`)) {
+        const menuInstanceId = '{{ moduleInstanceData.id if moduleInstanceData and moduleInstanceData.id else "" }}';
+        console.log('moduleInstanceData:', {{ moduleInstanceData | tojson }});
+        console.log('Отправляем данные:', {
+            category_id: categoryId,
+            menu_instance_id: menuInstanceId,
+            parent_menu_item_id: itemIndex
+        });
+        
+        // Здесь будет AJAX запрос для создания подпунктов
+        $.ajax({
+            url: '{{ url_for("admin.create_subcategories_menu_items") }}',
+            method: 'POST',
+            data: {
+                category_id: categoryId,
+                menu_instance_id: menuInstanceId,
+                parent_menu_item_id: itemIndex,
+                csrf_token: $('input[name="csrf_token"]').val()
+            },
+            success: function(response) {
+                console.log('Ответ сервера:', response);
+                if (response.success) {
+                    alert(`Создано ${response.created_items.length} подпунктов меню!`);
+                    
+                    // Добавляем созданные подпункты в форму с правильным parent_id
+                    response.created_items.forEach(function(item, index) {
+                        // Создаем новый пункт меню в форме
+                        addMenuItem();
+                        
+                        // Устанавливаем данные для нового пункта
+                        const newIndex = menuItemCounter - 1; // addMenuItem увеличивает счетчик
+                        $(`input[name="menu_item_${newIndex}_title"]`).val(item.title);
+                        $(`select[name="menu_item_${newIndex}_type"]`).val('category');
+                        $(`input[name="menu_item_${newIndex}_target_id"]`).val(item.target_id);
+                        $(`input[name="menu_item_${newIndex}_parent_id"]`).val(itemIndex); // Устанавливаем parent_id как индекс родительского пункта
+                        
+                        // Обновляем отображение
+                        changeMenuItemType(newIndex, 'category');
+                        $(`select[name="menu_item_${newIndex}_target_id"]`).val(item.target_id);
+                        
+                        // Применяем визуальное оформление вложенности
+                        $(`[data-item-index="${newIndex}"]`).addClass('nested').css('margin-left', '40px');
+                    });
+                    
+                    // Обновляем визуализацию
+                    updateNestingVisuals();
+                    
+                } else {
+                    alert('Ошибка при создании подпунктов: ' + response.error);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Ошибка AJAX:', xhr.responseText);
+                alert('Ошибка при создании подпунктов меню! Статус: ' + status);
+            }
+        });
+    }
+};
+
+// Дополнительная инициализация для установки выбранных значений в селектах
+$(document).ready(function() {
+    // Создаем мапинг ID пунктов меню → индекс в форме
+    const menuIdToIndex = {};
+    {% for item in items %}
+    menuIdToIndex[{{ item.id }}] = {{ loop.index0 }};
+    {% endfor %}
+    
+    setTimeout(function() {
+        {% for item in items %}
+        {% if item.target_id %}
+        console.log('Setting target_id {{ item.target_id }} for item {{ loop.index0 }}');
+        $('select[name="menu_item_{{ loop.index0 }}_target_id"]').val('{{ item.target_id }}');
+        {% endif %}
+        {% if item.parent_id %}
+        // Преобразуем parent_id из БД в индекс формы
+        const parentIndex_{{ loop.index0 }} = menuIdToIndex[{{ item.parent_id }}];
+        if (parentIndex_{{ loop.index0 }} !== undefined) {
+            console.log('Setting parent_id {{ item.parent_id }} (index ' + parentIndex_{{ loop.index0 }} + ') for item {{ loop.index0 }}');
+            $('input[name="menu_item_{{ loop.index0 }}_parent_id"]').val(parentIndex_{{ loop.index0 }});
+            // Применяем визуальное оформление вложенности
+            const depth = getDepth({{ loop.index0 }});
+            $(`[data-item-index="{{ loop.index0 }}"]`).addClass('nested').css('margin-left', (depth * 40) + 'px');
+        }
+        {% endif %}
+        {% endfor %}
+        
+        // Обновляем визуализацию вложенности для всех пунктов
+        updateNestingVisuals();
+    }, 200);
+});
+</script>
+
+<style>
+.sortable-placeholder {
+    height: 100px;
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    margin-bottom: 1rem;
+}
+.menu-item {
+    transition: all 0.3s ease;
+    margin-left: 0;
+}
+.menu-item.nested {
+    margin-left: 40px;
+    border-left: 3px solid #e0e0e0;
+    background: #fcfcfc;
+}
+.menu-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.drag-handle {
+    color: #6c757d;
+}
+.drag-handle:hover {
+    color: #495057;
+}
+.video-item {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.video-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h3 mb-1">Пользователи</h1>
+                <div class="text-muted small">Управление пользователями системы</div>
+            </div>
+            <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#userModal">
+                <i class="fas fa-plus me-2"></i>Добавить пользователя
+            </button>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Всего пользователей</div>
+                            <div class="h4 mb-0">{{ users|length }}</div>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-users text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Администраторы</div>
+                            <div class="h4 mb-0">{{ users|selectattr('role.name', 'equalto', 'admin')|list|length }}</div>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-user-shield text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Обычные пользователи</div>
+                            <div class="h4 mb-0">{{ users|selectattr('role.name', 'equalto', 'user')|list|length }}</div>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-user text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white rounded shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Пользователь</th>
+                        <th>Email</th>
+                        <th>Роль</th>
+                        <th class="text-end pe-4">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr data-user_id="{{ user.id }}">
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-placeholder bg-primary bg-opacity-10 text-primary rounded-circle me-3">
+                                    {{ user.username|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-medium">{{ user.username }}</div>
+                                    <div class="text-muted small">ID: {{ user.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <span class="badge {% if user.role.name == 'admin' %}bg-danger-subtle text-danger{% else %}bg-success-subtle text-success{% endif %}">
+                                {{ user.role.name|capitalize }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="actions">
+                                <button type="button"
+                                        class="action-btn edit-btn user_edit"
+                                        title="Редактировать">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if users|length == 0 %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-users fa-3x text-muted"></i>
+            </div>
+            <h5>Нет пользователей</h5>
+            <p class="text-muted">Добавьте первого пользователя, нажав кнопку "Добавить пользователя"</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Include User Form Modal -->
+{% include 'admin/user_form.html' %}
+
+{% block extra_css %}
+<style>
+/* Base Styles */
+.table {
+    --bs-table-hover-bg: rgba(250, 250, 250, 0.7);
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.875rem 0.75rem;
+    background: none;
+    border-bottom-color: #f0f0f0;
+}
+
+/* Avatar Placeholder */
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e5e5;
+    background: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    border-color: #ccc;
+    color: #333;
+}
+
+.edit-btn:hover {
+    background-color: #f8f9fa;
+    color: #0066ff;
+}
+
+/* Statistics Cards */
+.h4 {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/user.js"></script>
+{% endblock %}
+{% endblock %}

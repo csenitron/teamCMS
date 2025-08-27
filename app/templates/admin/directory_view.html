@@ -1,0 +1,263 @@
+{# app/templates/admin/directory_view.html #}
+{% extends "base.html" %}
+
+{% block title %}Управление медиафайлами{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-images me-2"></i>Управление медиафайлами
+                </h1>
+                <div class="text-muted small">
+                    Управление изображениями и каталогами
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.admin_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Назад в админку
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистические карточки -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="h4 mb-0">{{ all_directories|length if all_directories else 0 }}</div>
+                            <div class="small">Всего каталогов</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-folder fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="h4 mb-0">{{ images|length if images else 0 }}</div>
+                            <div class="small">Всего изображений</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-images fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="h4 mb-0">~{{ '%.1f'|format((images|length * 0.5) if images else 0) }} МБ</div>
+                            <div class="small">Примерный размер</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hdd fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="h4 mb-0">{{ current_dir.name if current_dir else 'Корень' }}</div>
+                            <div class="small">Текущий каталог</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-folder-open fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основное содержимое -->
+    <div class="bg-white rounded shadow-sm p-4">
+        <!-- Включаем partial шаблон -->
+        {% include 'admin/_directories_partial.html' %}
+    </div>
+</div>
+
+<!-- Модальные окна -->
+
+<!-- Модальное окно для создания каталога -->
+<div class="modal fade" id="createDirectoryModal" tabindex="-1" aria-labelledby="createDirectoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createDirectoryModalLabel">
+                    <i class="fas fa-folder-plus me-2"></i>Создать новый каталог
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <form action="{{ url_for('admin.admin_directories_create') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="directoryName" class="form-label">Название каталога</label>
+                        <input type="text" class="form-control" id="directoryName" name="name" required 
+                               placeholder="Введите название каталога">
+                    </div>
+                    <div class="mb-3">
+                        <label for="parentDirectory" class="form-label">Родительский каталог</label>
+                        <select class="form-select" id="parentDirectory" name="parent_id">
+                            <option value="">Корневой каталог</option>
+                            {% for dir in all_directories %}
+                                <option value="{{ dir.id }}" 
+                                        {% if current_dir and dir.id == current_dir.id %}selected{% endif %}>
+                                    {{ dir.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-folder-plus me-2"></i>Создать каталог
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для загрузки изображений -->
+<div class="modal fade" id="uploadImageModal" tabindex="-1" aria-labelledby="uploadImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadImageModalLabel">
+                    <i class="fas fa-upload me-2"></i>Загрузить изображения
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <form action="{{ url_for('admin.admin_images_upload_post') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <!-- Drag & Drop зона -->
+                    <div class="drop-zone mb-4 p-5 border border-2 border-dashed rounded text-center" id="dropZone">
+                        <div class="mb-3">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted"></i>
+                        </div>
+                        <h5>Перетащите файлы сюда</h5>
+                        <p class="text-muted mb-3">или нажмите кнопку ниже для выбора файлов</p>
+                        <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open me-2"></i>Выбрать файлы
+                        </button>
+                                                 <input type="file" id="fileInput" name="image" multiple accept="image/*" class="d-none">
+                    </div>
+                    
+                    <!-- Список выбранных файлов -->
+                    <div id="fileList" class="d-none">
+                        <h6>Выбранные файлы:</h6>
+                        <div id="selectedFiles" class="mb-3"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="uploadDirectory" class="form-label">Каталог для загрузки</label>
+                        <select class="form-select" id="uploadDirectory" name="directory_id">
+                            <option value="">Корневой каталог</option>
+                            {% for dir in all_directories %}
+                                <option value="{{ dir.id }}" 
+                                        {% if current_dir and dir.id == current_dir.id %}selected{% endif %}>
+                                    {{ dir.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success" id="uploadBtn" disabled>
+                        <i class="fas fa-upload me-2"></i>Загрузить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Drag & Drop функциональность
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    // Drag & Drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        dropZone.classList.add('border-primary', 'bg-light');
+    }
+
+    function unhighlight() {
+        dropZone.classList.remove('border-primary', 'bg-light');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            fileList.classList.remove('d-none');
+            selectedFiles.innerHTML = '';
+            uploadBtn.disabled = false;
+
+            Array.from(files).forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'border rounded p-2 mb-2 d-flex align-items-center';
+                fileItem.innerHTML = `
+                    <i class="fas fa-image me-2 text-success"></i>
+                    <span class="me-auto">${file.name}</span>
+                    <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                `;
+                selectedFiles.appendChild(fileItem);
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

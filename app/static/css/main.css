@@ -1,0 +1,36 @@
+/* base */
+@import url(./base/reset.css);
+@import url(./base/utils.css);
+
+/* utils */
+@import url(./utilities/display.css);
+@import url(./utilities/images.css);
+@import url(./utilities/sizing.css);
+@import url(./utilities/spacing.css);
+@import url(./utilities/typography.css);
+@import url(./utilities/borders.css);
+@import url(./utilities/background.css);
+
+/* layout */
+
+/* components */
+@import url(./components/table.css);
+@import url(./components/slider-custom-btns.css);
+
+/* features */
+@import url(./features/product-rating.css);
+@import url(./features/gender.css);
+@import url(./features/pallets.css);
+@import url(./features/size-item.css);
+@import url(./features/fit-scale.css);
+@import url(./features/unit-toggle.css);
+
+/* animations */
+@import url(./animations/button-animation.css);
+@import url(./animations/readmore.css);
+
+/* themes */
+
+/* media */
+@import url(./media/responsive.css);
+@import url(./media/fonts.css);

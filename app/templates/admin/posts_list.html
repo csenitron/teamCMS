@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Статьи{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h3 mb-1">Статьи</h1>
+                <div class="text-muted small">Управление статьями и публикациями</div>
+            </div>
+            <a class="btn btn-primary px-4" href="{{ url_for('admin.admin_post_form') }}">
+                <i class="fas fa-plus me-2"></i>Создать статью
+            </a>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Всего статей</div>
+                            <div class="h4 mb-0">{{ posts|length }}</div>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-newspaper text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Категорий</div>
+                            <div class="h4 mb-0">{{ categories|length }}</div>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-folder text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Последнее обновление</div>
+                            <div class="h4 mb-0">
+                                {% if posts|length > 0 %}
+                                    {{ posts|sort(attribute='updated_at', reverse=true)|first|attr('updated_at')|default('Н/Д', true)|string|truncate(10, true, '') }}
+                                {% else %}
+                                    Н/Д
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-calendar-alt text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-light rounded p-3 mb-4">
+        <form method="GET" class="row g-2">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control border-start-0" 
+                           placeholder="Поиск по названию" value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-5">
+                <select name="category" class="form-select">
+                    <option value="">Все категории</option>
+                    {% for category, level in categories_with_levels %}
+                        <option value="{{ category.id }}" {% if category.id == category_filter|int %}selected{% endif %}>{{ "— " * level }}{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="fas fa-filter me-2"></i>Применить
+                </button>
+                <a href="{{ url_for('admin.admin_posts') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Posts List -->
+    <div class="bg-white rounded shadow-sm">
+        {% if posts|length > 0 %}
+            <div class="list-group list-group-flush">
+                {% for post in posts %}
+                <div class="list-group-item border-0 border-bottom py-3">
+                    <div class="d-flex justify-content-between">
+                        <div class="d-flex">
+                            {% if post.image %}
+                            <div class="post-image me-3">
+                                <img src="{{ url_for('static', filename='uploads/' ~ post.image.filename) }}" 
+                                     alt="" class="img-thumbnail" width="80" height="80">
+                            </div>
+                            {% else %}
+                            <div class="post-no-image me-3 bg-light rounded d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-newspaper text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1 fw-medium">{{ post.title }}</h5>
+                                <p class="text-muted mb-1 small">{{ post.meta_description|default('Нет описания', true)|truncate(100, true) }}</p>
+                                <div class="d-flex align-items-center small">
+                                    {% if post.category %}
+                                    <span class="badge bg-light text-dark me-2">{{ post.category.name }}</span>
+                                    {% endif %}
+                                    <span class="text-muted">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        {{ post.created_at.strftime('%d.%m.%Y') if post.created_at else 'Н/Д' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="actions align-self-center">
+                            <a href="{{ url_for('admin.admin_post_form', post_id=post.id) }}"
+                               class="action-btn edit-btn"
+                               title="Редактировать">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button"
+                                    class="action-btn delete-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deletePostModal"
+                                    data-post-id="{{ post.id }}"
+                                    data-post-title="{{ post.title }}"
+                                    title="Удалить">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-newspaper fa-3x text-muted"></i>
+                </div>
+                <h5>Статьи не найдены</h5>
+                <p class="text-muted">
+                    {% if search_query or category_filter %}
+                        Попробуйте изменить параметры поиска
+                    {% else %}
+                        Создайте первую статью, нажав кнопку "Создать статью"
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deletePostModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Удаление статьи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить статью "<span id="postTitleToDelete"></span>"?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Отмена</button>
+                <form id="deletePostForm" method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger px-4" type="submit">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+/* Base Styles */
+.list-group-item {
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: rgba(250, 250, 250, 0.7);
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e5e5;
+    background: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    border-color: #ccc;
+    color: #333;
+}
+
+.edit-btn:hover {
+    background-color: #f8f9fa;
+    color: #0066ff;
+}
+
+.delete-btn:hover {
+    background-color: #fff5f5;
+    color: #ff3333;
+}
+
+/* Post Image */
+.post-image img {
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* Statistics Cards */
+.h4 {
+    font-weight: 600;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    border-color: #e5e5e5;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+.input-group-text {
+    color: #999;
+}
+
+/* Modal Styles */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Delete Modal Functionality
+    const deleteModal = document.getElementById('deletePostModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const postId = button.dataset.postId;
+            const postTitle = button.dataset.postTitle;
+            
+            this.querySelector('#postTitleToDelete').textContent = postTitle;
+            this.querySelector('#deletePostForm').action = 
+                "{{ url_for('admin.admin_post_delete', post_id=0) }}".replace('0', postId);
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

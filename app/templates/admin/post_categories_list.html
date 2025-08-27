@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Категории постов</h1>
+    <a href="{{ url_for('admin.admin_post_categories_form') }}" class="btn btn-primary mb-3">Создать категорию</a>
+
+    <!-- Форма для массовых действий -->
+    <form method="POST">
+        {{ form.csrf_token }}
+        <div class="list-group">
+            {% for category in cat_list %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <input type="checkbox" name="selected_ids" value="{{ category.id }}" class="form-check-input me-3">
+                    <div>
+                        <h5>{{ category.name }}</h5>
+                        <p>{{ category.meta_description }}</p>
+                    </div>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.admin_post_categories_form', category_id=category.id) }}" class="btn btn-sm btn-warning">Редактировать</a>
+                    <form method="POST" action="{{ url_for('admin.admin_post_categories_delete', category_id=category.id) }}" style="display:inline;">
+                        {{ form.csrf_token }}
+                        <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Кнопки для массовых действий -->
+        <div class="mt-3">
+            <button type="submit" name="action" value="delete_selected" class="btn btn-danger">Удалить выбранные</button>
+            <button type="submit" name="action" value="toggle_index_selected" class="btn btn-secondary">Переключить индексирование для выбранных</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

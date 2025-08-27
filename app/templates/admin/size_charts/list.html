@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 m-0">Размерные сетки</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.size_charts_form') }}">Создать</a>
+  </div>
+
+<table class="table table-striped">
+  <thead>
+    <tr><th>ID</th><th>Заголовок</th><th>Изображение</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for chart in charts.items %}
+    <tr>
+      <td>{{ chart.id }}</td>
+      <td>{{ chart.title }}</td>
+      <td>{% if chart.image %}<img src="/static/uploads/{{ chart.image.filename }}" style="height:40px">{% endif %}</td>
+      <td class="text-end">
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.size_charts_form', chart_id=chart.id) }}">Редактировать</a>
+        <form method="post" action="{{ url_for('admin.size_charts_delete', chart_id=chart.id) }}" class="d-inline" onsubmit="return confirm('Удалить сетку?')">
+          <button class="btn btn-sm btn-outline-danger">Удалить</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
+

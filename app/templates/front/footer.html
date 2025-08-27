@@ -1,0 +1,284 @@
+
+
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .footer-section {
+        background-color: #000;
+        color: #fff;
+        padding: 60px 0 40px;
+        margin-top: auto;
+    }
+    
+    .newsletter-section {
+        border-bottom: 1px solid #333;
+        padding-bottom: 40px;
+        margin-bottom: 40px;
+    }
+    
+    .newsletter-title {
+        font-size: 1.5rem;
+        font-weight: 300;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .newsletter-subtitle {
+        font-size: 0.9rem;
+        color: #ccc;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .form-control {
+        background-color: transparent;
+        border: 1px solid #333;
+        border-radius: 0;
+        color: #fff;
+        padding: 15px 20px;
+    }
+    
+    .form-control:focus {
+        background-color: transparent;
+        border-color: #666;
+        box-shadow: none;
+        color: #fff;
+    }
+    
+    .form-control::placeholder {
+        color: #888;
+    }
+    
+    .btn-subscribe {
+        background-color: transparent;
+        border: 1px solid #333;
+        color: #fff;
+        padding: 15px 30px;
+        border-radius: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-subscribe:hover {
+        background-color: #fff;
+        color: #000;
+        border-color: #fff;
+    }
+    
+    .footer-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .footer-links li {
+        margin-bottom: 12px;
+    }
+    
+    .footer-links a {
+        color: #ccc;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: color 0.3s ease;
+    }
+    
+    .footer-links a:hover {
+        color: #fff;
+    }
+    
+    .footer-column h6 {
+        color: #fff;
+        font-weight: 600;
+        margin-bottom: 25px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 1rem;
+    }
+    
+    .social-icons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .social-icons a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: transparent;
+        border: 1px solid #333;
+        color: #ccc;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .social-icons a:hover {
+        background-color: #fff;
+        color: #000;
+        border-color: #fff;
+    }
+    
+    .language-selector {
+        margin-top: 30px;
+    }
+    
+    .language-btn {
+        background-color: transparent;
+        border: 1px solid #333;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 0;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .language-btn:hover {
+        background-color: #333;
+        border-color: #666;
+    }
+    
+    @media (max-width: 768px) {
+        .newsletter-title {
+            font-size: 1.2rem;
+        }
+        
+        .footer-section {
+            padding: 40px 0 30px;
+        }
+        
+        .newsletter-section {
+            padding-bottom: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .social-icons {
+            justify-content: center;
+            margin-top: 20px;
+        }
+    }
+</style>
+<footer class="footer-section">
+    <div class="container">
+        <!-- Newsletter Section -->
+        <div class="newsletter-section">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h2 class="newsletter-title">Будьте в курсе наших последних предложений</h2>
+                    <p class="newsletter-subtitle">
+                        Будьте первыми, кто получит информацию о новых инновационных продуктах, перспективах и технологиях прямо на свой почтовый ящик.
+                        Чтобы позволить нам быть с вашими миром, мы предлагаем скидку 10% на ваш первый заказ.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    <form class="row g-3">
+                        <div class="col-md-4">
+                            <input type="email" class="form-control" placeholder="Введите адрес электронной почты">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" placeholder="Имя">
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-subscribe w-100">Подписаться</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Social Icons -->
+            <div class="social-icons">
+                <a href="#" aria-label="Facebook">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" aria-label="Twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" aria-label="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" aria-label="YouTube">
+                    <i class="fab fa-youtube"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer Links -->
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="footer-column">
+                    <h6>Компания</h6>
+                    <ul class="footer-links">
+                        <li><a href="#">О нас</a></li>
+                        <li><a href="#">Контакты</a></li>
+                        <li><a href="#">Частые вопросы</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="footer-column">
+                    <h6>Магазин</h6>
+                    <ul class="footer-links">
+                        <li><a href="#">Женщинам</a></li>
+                        <li><a href="#">Мужчинам</a></li>
+                        <li><a href="#">Руководство по размеру</a></li>
+                        <li><a href="#">Руководство по уходу</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="footer-column">
+                    <h6>Условия и политика</h6>
+                    <ul class="footer-links">
+                        <li><a href="#">Доставка</a></li>
+                        <li><a href="#">Пошлины и налоги</a></li>
+                        <li><a href="#">Условия и политика</a></li>
+                        <li><a href="#">Заявления и Кодекс поведения</a></li>
+                        <li><a href="#">Праздничная доставка и возврат товара</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="footer-column">
+                    <!-- Language Selector -->
+                    <div class="language-selector">
+                        <div class="dropdown">
+                            <button class="btn language-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                EN
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item" href="#">EN - English</a></li>
+                                <li><a class="dropdown-item" href="#">RU - Русский</a></li>
+                                <li><a class="dropdown-item" href="#">DE - Deutsch</a></li>
+                                <li><a class="dropdown-item" href="#">FR - Français</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

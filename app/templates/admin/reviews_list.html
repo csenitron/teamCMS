@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 m-0">Отзывы</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.review_form') }}">Создать</a>
+</div>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ID</th><th>Товар</th><th>Покупатель</th><th>Рейтинг</th><th>Статус</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in reviews.items %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.product.name if r.product else '—' }}</td>
+      <td>{{ r.customer_id }}</td>
+      <td>{{ r.rating }}</td>
+      <td>{% if r.approved %}<span class="badge bg-success">Одобрен</span>{% else %}<span class="badge bg-secondary">На модерации</span>{% endif %}</td>
+      <td class="text-end">
+        {% if not r.approved %}
+        <form class="d-inline" method="post" action="{{ url_for('admin.review_approve', review_id=r.id) }}">
+          <button class="btn btn-sm btn-success">Одобрить</button>
+        </form>
+        {% endif %}
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.review_form', review_id=r.id) }}">Редактировать</a>
+        <form class="d-inline" method="post" action="{{ url_for('admin.review_delete', review_id=r.id) }}" onsubmit="return confirm('Удалить отзыв?')">
+          <button class="btn btn-sm btn-outline-danger">Удалить</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+

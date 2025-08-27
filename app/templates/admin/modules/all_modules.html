@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Модули{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">Модули</h1>
+                <div class="text-muted small">Управление модулями сайта</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="bg-white rounded shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Всего модулей</div>
+                        <div class="h4 mb-0">{{ modules|length }}</div>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-puzzle-piece text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="bg-white rounded shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Активных экземпляров</div>
+                        <div class="h4 mb-0">
+                            {% set active_count = 0 %}
+                            {% for module_id, instances in instances_by_module.items() %}
+                                {% for instance in instances %}
+                                    {% if instance.settings.status %}
+                                        {% set active_count = active_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            {{ active_count }}
+                        </div>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="bg-white rounded shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Всего экземпляров</div>
+                        <div class="h4 mb-0">
+                            {% set total_instances = 0 %}
+                            {% for module_id, instances in instances_by_module.items() %}
+                                {% set total_instances = total_instances + instances|length %}
+                            {% endfor %}
+                            {{ total_instances }}
+                        </div>
+                    </div>
+                    <div class="bg-info bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-layer-group text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modules List -->
+    <div class="bg-white rounded shadow-sm p-4">
+        {% for module in modules %}
+        <div class="module-item mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <div class="module-icon me-3 p-3 bg-light rounded">
+                        {% if module.name == 'Banner' %}
+                            <i class="fas fa-images text-primary"></i>
+                        {% elif module.name == 'Slider' %}
+                            <i class="fas fa-sliders-h text-success"></i>
+                        {% elif module.name == 'Gallery' %}
+                            <i class="fas fa-th text-warning"></i>
+                        {% elif module.name == 'ProductTab' %}
+                            <i class="fas fa-tags text-info"></i>
+                        {% else %}
+                            <i class="fas fa-puzzle-piece text-secondary"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ module.name }}</h5>
+                        <div class="text-muted small">ID: {{ module.id }}</div>
+                    </div>
+                </div>
+                <a href="{{ url_for('admin.create_or_edit_module_instance', module_id=module.id) }}"
+                   class="btn btn-primary btn-sm px-3">
+                    <i class="fas fa-plus me-2"></i>Добавить экземпляр
+                </a>
+            </div>
+
+            {% if module.id in instances_by_module and instances_by_module[module.id]|length > 0 %}
+            <div class="module-instances bg-light rounded p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Экземпляры модуля</h6>
+                    <button class="btn btn-sm btn-link text-decoration-none toggle-instances" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#instances-{{ module.id }}" 
+                            aria-expanded="false" 
+                            aria-controls="instances-{{ module.id }}">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                
+                <div id="instances-{{ module.id }}" class="collapse instances-container">
+                    <div class="list-group list-group-flush">
+                        {% for instance in instances_by_module[module.id] %}
+                        <div class="list-group-item bg-transparent border-0 border-bottom py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-medium">{{ instance.settings.name }}</div>
+                                    <div class="text-muted small">ID: {{ instance.id }}</div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    {% if instance.settings.status %}
+                                    <span class="badge bg-success-subtle text-success me-3">Активен</span>
+                                    {% else %}
+                                    <span class="badge bg-danger-subtle text-danger me-3">Отключен</span>
+                                    {% endif %}
+                                    
+                                    <div class="actions">
+                                        <a href="{{ url_for('admin.create_or_edit_module_instance', module_id=module.id, instance_id=instance.id) }}"
+                                           class="action-btn edit-btn"
+                                           title="Редактировать">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="action-btn delete-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteModuleModal"
+                                                data-module-id="{{ module.id }}"
+                                                data-instance-id="{{ instance.id }}"
+                                                data-instance-name="{{ instance.settings.name }}"
+                                                title="Удалить">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-light rounded p-3 text-center text-muted">
+                <p class="mb-0">Нет созданных экземпляров для этого модуля</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModuleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Удаление экземпляра модуля</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить экземпляр "<span id="instanceNameToDelete"></span>"?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Отмена</button>
+                <a href="#" id="deleteInstanceLink" class="btn btn-danger px-4">Удалить</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+/* Module Item */
+.module-item {
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 1.5rem;
+}
+
+.module-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.module-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e5e5;
+    background: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    border-color: #ccc;
+    color: #333;
+}
+
+.edit-btn:hover {
+    background-color: #f8f9fa;
+    color: #0066ff;
+}
+
+.delete-btn:hover {
+    background-color: #fff5f5;
+    color: #ff3333;
+}
+
+/* List Group */
+.list-group-item {
+    border-color: #f0f0f0;
+}
+
+/* Modal Styles */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+/* Statistics Cards */
+.h4 {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle instances
+    const toggleButtons = document.querySelectorAll('.toggle-instances');
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            
+            if (this.getAttribute('aria-expanded') === 'true') {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        });
+    });
+    
+    // Delete modal functionality
+    const deleteModal = document.getElementById('deleteModuleModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const moduleId = button.dataset.moduleId;
+            const instanceId = button.dataset.instanceId;
+            const instanceName = button.dataset.instanceName;
+            
+            this.querySelector('#instanceNameToDelete').textContent = instanceName;
+            this.querySelector('#deleteInstanceLink').href = 
+                `{{ url_for('admin.delete_module_instance', module_id=0, instance_id=0) }}`
+                    .replace('/0/instance/0', `/${moduleId}/instance/${instanceId}`);
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

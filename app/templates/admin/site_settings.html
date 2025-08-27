@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Настройки сайта</h1>
+    
+    <!-- Показываем flash сообщения -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Показываем ошибки валидации -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <h6>Ошибки валидации:</h6>
+            <ul class="mb-0">
+                {% for field, errors in form.errors.items() %}
+                    {% for error in errors %}
+                        <li>{{ field }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <!-- Форма для сохранения настроек -->
+    <form method="POST" action="{{ url_for('admin.site_settings') }}">
+        {{ form.csrf_token }}
+
+        <div class="row">
+            <div class="col-md-6">
+
+                <!-- Название сайта -->
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control") }}
+                </div>
+
+                <!-- Логотип (скрытое поле logo_id) -->
+                <div class="mb-3">
+                    <label class="form-label">Текущий логотип</label>
+                    <div id="chosenLogoPreview">
+                        {% if settings and settings.logo %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ settings.logo.filename) }}"
+                             alt="Логотип" style="max-height:50px;">
+                        <span class="ms-2 text-muted">{{ settings.logo.filename }}</span>
+                        {% else %}
+                        <span class="text-muted">(не выбрано)</span>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary mt-2"
+                            data-bs-toggle="modal" data-bs-target="#chooseImageModal"
+                            data-preview="chosenLogoPreview" data-hidden-input="image_id">
+                        Выбрать / Загрузить изображение
+                    </button>
+
+                    {{ form.image_id() }}
+                </div>
+
+                <!-- Прочие поля -->
+                <div class="mb-3">
+                    {{ form.address.label(class="form-label") }}
+                    {{ form.address(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.phone.label(class="form-label") }}
+                    {{ form.phone(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.owner.label(class="form-label") }}
+                    {{ form.owner(class="form-control") }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ form.working_hours.label(class="form-label") }}
+                    {{ form.working_hours(class="form-control") }}
+                </div>
+
+                <!-- Домашняя страница -->
+                <div class="mb-3">
+                    {{ form.home_page_id.label(class="form-label") }}
+                    {{ form.home_page_id(class="form-select") }}
+                </div>
+
+                <!-- Соц.сети -->
+                <div class="mb-3 border p-2">
+                    <label class="form-label">Ссылки на соц.сети</label>
+                    <div id="socialLinksContainer">
+                        {% for subform in form.social_links %}
+                        <div class="border p-2 mb-2 soc">
+                            <!-- subform.platform -->
+                            <div class="mb-2">
+                                {{ subform.platform.label(class="form-label") }}
+                                {{ subform.platform(class="form-control") }}
+                            </div>
+                            <!-- subform.url -->
+                            <div class="mb-2">
+                                {{ subform.url.label(class="form-label") }}
+                                {{ subform.url(class="form-control") }}
+                            </div>
+                            <!-- subform.icon_id (hidden) + кнопка выбрать иконку -->
+                            <div class="mb-2">
+                                <label class="form-label">Иконка</label>
+                                <div id="chosenIconPreview-{{ loop.index }}">
+                                    {% if subform.icon_id.data %}
+                                    <img src="{{ url_for('static', filename='uploads/' ~ subform.icon.data) }}"
+                                         alt="Иконка" style="max-height:50px;">
+                                    {% else %}
+                                    <span class="text-muted">(нет)</span>
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal" data-bs-target="#chooseImageModal"
+                                        data-preview="chosenIconPreview-{{ loop.index }}"
+                                        data-hidden-input="{{ subform.icon_id.id }}">
+                                    Выбрать иконку
+                                </button>
+                                {{ subform.icon_id() }}
+                            </div>
+                            <button type="button" class="btn btn-danger remove-social-link">Удалить</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="addSocialLinkBtn">
+                        Добавить соц.ссылку
+                    </button>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.map_locations.label(class="form-label") }}
+            {{ form.map_locations(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.additional_info.label(class="form-label") }}
+            {{ form.additional_info(class="form-control") }}
+        </div>
+
+        <button type="submit" class="btn btn-success mt-3">Сохранить</button>
+    </form>
+</div>
+
+<!-- Модальное окно для выбора / загрузки изображения -->
+{% include 'admin/chooseImage.html' %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const addBtn = document.getElementById('addSocialLinkBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                const container = document.getElementById('socialLinksContainer');
+                // Начинаем с большого индекса чтобы не конфликтовать с существующими полями формы
+                const existingFormFields = container.querySelectorAll('input[name*="social_links-"]').length;
+                const existingJsFields = container.querySelectorAll('input[name*="social_links["]').length;
+                const newIndex = 100 + existingJsFields;  // Начинаем с 100 для JavaScript полей
+
+                let html = `
+                    <div class="border p-2 mb-2 soc js-added">
+                        <div class="mb-2">
+                            <label class="form-label">Платформа</label>
+                            <input type="text" name="social_links[${newIndex}].platform" class="form-control" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">URL</label>
+                            <input type="url" name="social_links[${newIndex}].url" class="form-control" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Иконка</label>
+                            <div id="chosenIconPreview-${newIndex}">
+                                <span class="text-muted">(нет)</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal" data-bs-target="#chooseImageModal"
+                                    data-preview="chosenIconPreview-${newIndex}"
+                                    data-hidden-input="social_links[${newIndex}]-icon_id">
+                                Выбрать иконку
+                            </button>
+                            <input type="hidden" id="social_links[${newIndex}]-icon_id" name="social_links[${newIndex}].icon_id" value="">
+                        </div>
+                        <button type="button" class="btn btn-danger remove-social-link">Удалить</button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-social-link')) {
+                e.target.closest('.soc').remove();
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chooseImageModal = document.getElementById('chooseImageModal');
+        if (!chooseImageModal) {
+            console.error("Модальное окно 'chooseImageModal' не найдено.");
+            return;
+        }
+
+        chooseImageModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (button) {
+                chooseImageModal.dataset.preview = button.getAttribute('data-preview');
+                chooseImageModal.dataset.hiddenInput = button.getAttribute('data-hidden-input');
+            }
+        });
+
+        // Обработчик для выбора изображений в модальном окне
+        // Используем делегирование событий для динамического контента
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('chooseImageItem') || e.target.closest('.chooseImageItem')) {
+                const imageItem = e.target.classList.contains('chooseImageItem') ? e.target : e.target.closest('.chooseImageItem');
+                const imageId = imageItem.dataset.imageId;
+                const imgSrc = imageItem.getAttribute('data-src') || imageItem.src;
+
+                const hiddenInputSelector = chooseImageModal.dataset.hiddenInput;
+                const previewSelector = chooseImageModal.dataset.preview;
+
+                if (hiddenInputSelector) {
+                    const hiddenInput = document.getElementById(hiddenInputSelector);
+                    if (hiddenInput) {
+                        hiddenInput.value = imageId;
+                    }
+                }
+
+                if (previewSelector) {
+                    const previewContainer = document.getElementById(previewSelector);
+                    if (previewContainer) {
+                        previewContainer.innerHTML = `
+                            <div class="image-wrapper position-relative">
+                                <img src="${imgSrc}" alt="Выбранное изображение" style="max-height:50px;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-image" data-image-id="${imageId}">&times;</button>
+                            </div>`;
+                    }
+                }
+
+                const modalInstance = bootstrap.Modal.getInstance(chooseImageModal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,912 @@
+<!-- Модальное окно для выбора/загрузки изображения -->
+
+<!-- CSRF токен для AJAX запросов -->
+<script>
+window.csrfToken = '{{ csrf_token }}';
+</script>
+
+<div class="modal fade" id="chooseImageModal" tabindex="-1" aria-labelledby="chooseImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chooseImageModalLabel">
+                    <i class="fas fa-images me-2"></i>Управление медиафайлами
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Toolbar -->
+                <div class="border-bottom p-3 bg-light">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-primary btn-sm" id="createDirectoryBtn">
+                            <i class="fas fa-folder-plus me-1"></i>Создать каталог
+                        </button>
+                        <button class="btn btn-success btn-sm" id="uploadImageBtn">
+                            <i class="fas fa-upload me-1"></i>Загрузить изображение
+                        </button>
+                        <div class="ms-auto">
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="viewMode" id="gridView" checked>
+                                <label class="btn btn-outline-secondary btn-sm" for="gridView">
+                                    <i class="fas fa-th"></i>
+                                </label>
+                                <input type="radio" class="btn-check" name="viewMode" id="listView">
+                                <label class="btn btn-outline-secondary btn-sm" for="listView">
+                                    <i class="fas fa-list"></i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div id="mediaManagerContent" class="p-3" style="min-height: 400px;">
+                    <!-- Индикатор загрузки -->
+                    <div id="loadingIndicator" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Загрузка каталога...</p>
+                    </div>
+                    
+                    <!-- Контент загружается AJAX -->
+                    <div id="directoryContent" style="display: none;"></div>
+                    <!-- Для обратной совместимости -->
+                    <div id="directoryAjaxContent" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <small class="text-muted" id="selectionInfo">Выберите изображение для продолжения</small>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="selectImageBtn" disabled>Выбрать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно загрузки изображения -->
+<div class="modal fade" id="uploadImageModal" tabindex="-1" aria-labelledby="uploadImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="uploadImageForm" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadImageModalLabel">
+                        <i class="fas fa-upload me-2"></i>Загрузить изображение
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Drag and Drop Area -->
+                    <div id="dropZone" class="border border-dashed rounded p-4 text-center mb-3" style="min-height: 120px; border-color: #dee2e6;">
+                        <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                        <p class="mb-2">Перетащите файлы сюда или</p>
+                        <button type="button" class="btn btn-outline-primary" id="selectFileBtn">Выберите файлы</button>
+                        <input type="file" id="fileInput" name="image" accept="image/*" multiple style="display: none;">
+                        <input type="hidden" name="directory_id" id="uploadDirectoryId">
+                    </div>
+                    
+                    <!-- File List -->
+                    <div id="fileList" style="display: none;">
+                        <h6>Выбранные файлы:</h6>
+                        <div id="selectedFiles"></div>
+                    </div>
+
+                    <!-- Alt Text for single file -->
+                    <div class="mb-3" id="altTextGroup" style="display: none;">
+                        <label for="altText" class="form-label">Описание изображения</label>
+                        <input type="text" class="form-control" id="altText" name="alt" placeholder="Введите описание изображения">
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div id="uploadProgress" style="display: none;">
+                        <div class="progress mb-2">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted">Загрузка файлов...</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+                        <i class="fas fa-upload me-1"></i>Загрузить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания каталога -->
+<div class="modal fade" id="createDirectoryModal" tabindex="-1" aria-labelledby="createDirectoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="createDirectoryForm" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createDirectoryModalLabel">
+                        <i class="fas fa-folder-plus me-2"></i>Создать каталог
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="directoryName" class="form-label">Название каталога</label>
+                        <input type="text" class="form-control" id="directoryName" name="name" required 
+                               placeholder="Введите название каталога">
+                        <input type="hidden" name="parent_id" id="parentDirectoryId">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Создать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+#dropZone.drag-over {
+    border-color: #0d6efd !important;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.image-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.image-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.image-item.selected {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.directory-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.directory-item:hover {
+    background-color: #f8f9fa;
+}
+
+.breadcrumb-item.active {
+    color: #6c757d;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const MediaManager = {
+        currentDirectoryId: 0,
+        selectedImageId: null,
+        selectedImageData: null,
+        
+        init() {
+            this.bindEvents();
+            this.setupDragAndDrop();
+        },
+        
+        bindEvents() {
+            // Открытие основного модального окна
+            const chooseModal = document.getElementById('chooseImageModal');
+            if (chooseModal) {
+                chooseModal.addEventListener('show.bs.modal', () => {
+                    this.loadDirectory(0);
+                });
+            }
+            
+            // Кнопки в toolbar
+            document.getElementById('createDirectoryBtn')?.addEventListener('click', () => {
+                this.showCreateDirectoryModal();
+            });
+            
+            document.getElementById('uploadImageBtn')?.addEventListener('click', () => {
+                this.showUploadModal();
+            });
+            
+            document.getElementById('selectImageBtn')?.addEventListener('click', () => {
+                this.selectImage();
+            });
+            
+            // Формы
+            document.getElementById('uploadImageForm')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.uploadFiles();
+            });
+            
+            document.getElementById('createDirectoryForm')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createDirectory();
+            });
+            
+            // Выбор файлов
+            document.getElementById('selectFileBtn')?.addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            
+            document.getElementById('fileInput')?.addEventListener('change', (e) => {
+                this.handleFileSelect(e.target.files);
+            });
+        },
+        
+        setupDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+            if (!dropZone) return;
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('drag-over');
+                });
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('drag-over');
+                });
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                this.handleFileSelect(files);
+            });
+        },
+        
+        async loadDirectory(dirId = 0) {
+            this.showLoading(true);
+            this.currentDirectoryId = dirId;
+            
+            try {
+                let url;
+                if (dirId === 0 || dirId === '0' || !dirId) {
+                    url = "{{ url_for('admin.admin_directories_view') }}";
+                } else {
+                    url = "{{ url_for('admin.admin_directories_view', dir_id=1) }}".replace('/1', '/' + dirId);
+                }
+                
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!response.ok) throw new Error('Ошибка загрузки');
+                
+                const html = await response.text();
+                document.getElementById('directoryContent').innerHTML = html;
+                // Для обратной совместимости также загружаем в directoryAjaxContent
+                document.getElementById('directoryAjaxContent').innerHTML = html;
+                this.showLoading(false);
+                this.bindDirectoryEvents();
+                
+            } catch (error) {
+                console.error('Ошибка загрузки каталога:', error);
+                this.showError('Ошибка загрузки каталога');
+            }
+        },
+        
+        bindDirectoryEvents() {
+            // Навигация по каталогам
+            document.querySelectorAll('.dirLink').forEach(link => {
+                if (!link.hasAttribute('data-event-bound')) {
+                    link.setAttribute('data-event-bound', 'true');
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const dirId = link.dataset.dirId || link.getAttribute('data-dir-id');
+                        this.loadDirectory(dirId);
+                    });
+                }
+            });
+            
+            // Выбор изображений
+            document.querySelectorAll('.chooseImageItem').forEach(item => {
+                if (!item.hasAttribute('data-event-bound')) {
+                    item.setAttribute('data-event-bound', 'true');
+                    item.addEventListener('click', (e) => {
+                        // Пропускаем клик, если это dropdown или его элементы
+                        if (e.target.closest('.dropdown') || e.target.closest('.dropdown-menu')) {
+                            return;
+                        }
+                        this.selectImageItem(item);
+                    });
+                }
+            });
+        },
+        
+        selectImageItem(item) {
+            const imageId = item.dataset.imageId;
+            const filename = item.dataset.filename;
+            
+            // Находим изображение - может быть сам элемент или в карточке
+            let imageSrc = '';
+            if (item.tagName === 'IMG') {
+                imageSrc = item.src;
+            } else {
+                const imgElement = item.closest('.image-card').querySelector('img');
+                imageSrc = imgElement ? imgElement.src : '';
+            }
+            
+            console.log('Выбор изображения:', imageId, filename, imageSrc);
+            
+            // Сохраняем данные о выбранном изображении
+            this.selectedImageData = {
+                id: imageId,
+                src: imageSrc,
+                filename: filename
+            };
+            
+            // Проверяем нужна ли специфичная логика для товаров
+            if (window.currentImageType && window.currentImageType !== 'simple') {
+                this.handleProductImageType(imageId, imageSrc, filename);
+            } else {
+                // Универсальная логика для всех остальных форм
+                this.handleUniversalImageSelection(imageId, imageSrc, filename);
+            }
+        },
+        
+        handleProductImageType(imageId, imageSrc, filename) {
+            const currentImageType = window.currentImageType;
+            console.log('Обработка изображения товара:', currentImageType, imageId);
+            
+            if (currentImageType === 'main') {
+                // Главное изображение
+                const mainField = document.querySelector('input[name="main_image_id"]');
+                if (mainField) {
+                    mainField.value = imageId;
+                }
+                const preview = document.getElementById('chosenMainImagePreview');
+                if (preview) {
+                    preview.innerHTML = `
+                        <div class="main-image-wrapper position-relative">
+                            <img src="${imageSrc}" alt="" class="img-fluid mb-2" style="max-height:200px;">
+                            <div class="mt-2 text-muted small">${filename}</div>
+                        </div>`;
+                }
+            } else if (currentImageType === 'additional') {
+                // Дополнительные изображения
+                const addField = document.querySelector('input[name="additional_image_ids"]');
+                if (addField) {
+                    let curVal = addField.value.trim();
+                    let arr = curVal ? curVal.split(',').map(s => s.trim()) : [];
+                    if (!arr.includes(imageId)) {
+                        arr.push(imageId);
+                        addField.value = arr.join(',');
+                    }
+                }
+                const preview = document.getElementById('additionalImagesPreview');
+                if (preview) {
+                    if (preview.textContent.includes('(не выбраны)')) {
+                        preview.innerHTML = '';
+                    }
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'additional-image-wrapper position-relative d-inline-block me-2';
+                    wrapper.dataset.imageId = imageId;
+                    wrapper.innerHTML = `
+                        <img src="${imageSrc}" alt="" class="img-fluid rounded" style="height: 120px; object-fit: cover;">
+                        <div class="mt-1 text-muted small text-center">${filename}</div>
+                    `;
+                    preview.appendChild(wrapper);
+                }
+                         } else if (currentImageType === 'option_photo') {
+                 // Фотографии для значений опций
+                 const modal = document.getElementById('chooseImageModal');
+                 const optionName = modal.dataset.optionName;
+                 const optionValue = modal.dataset.optionValue;  
+                 const uniqueId = modal.dataset.uniqueId;
+                 
+                 console.log('Обработка option_photo:', {optionName, optionValue, uniqueId});
+                 
+                                  if (window.addSelectedPhotoToValue && uniqueId) {
+                     window.addSelectedPhotoToValue(imageId, imageSrc, optionName, optionValue, uniqueId);
+                     // Модальное окно закрывается в addSelectedPhotoToValue
+                     return;
+                 } else {
+                     console.error('addSelectedPhotoToValue не найдена или отсутствует uniqueId');
+                 }
+             } else if (currentImageType && currentImageType.startsWith('banner-bg-')) {
+                 // Обработка баннеров: banner-bg-${index}
+                 const bannerIndex = currentImageType.split('-').pop();
+                 const field = document.querySelector(`input[name="banners[${bannerIndex}][background_image_id]"]`);
+                 if (field) {
+                     field.value = imageId;
+                 }
+                 const preview = document.querySelector(`[data-imagetype="${currentImageType}"]`);
+                 if (preview) {
+                     preview.innerHTML = `
+                         <img src="${imageSrc}" class="img-fluid" style="max-height: 100px;">
+                         <div class="mt-2 small text-muted">Нажмите для выбора изображения</div>
+                     `;
+                 }
+             } else if (currentImageType && currentImageType.startsWith('slide-')) {
+                 // Обработка слайдера: slide-pc-${index} или slide-mobile-${index}
+                 const parts = currentImageType.split('-');
+                 const slideType = parts[1]; // 'pc' или 'mobile'
+                 const slideIndex = parts[2]; // индекс слайда
+                 const fieldType = slideType === 'pc' ? 'image_pc_id' : 'image_mobile_id';
+                 const field = document.querySelector(`input[name="slides[${slideIndex}][${fieldType}]"]`);
+                 if (field) {
+                     field.value = imageId;
+                 }
+                 const preview = document.querySelector(`[data-imagetype="${currentImageType}"]`);
+                 if (preview) {
+                     preview.innerHTML = `<img src="${imageSrc}" class="img-thumbnail">`;
+                 }
+             } else if (currentImageType && currentImageType.startsWith('gallery-')) {
+                 // Обработка галереи
+                 const suffix = currentImageType.replace('gallery-','');
+                 const fieldSelector = `input[name="images[${suffix}][image_id]"]`;
+                 const field = document.querySelector(fieldSelector);
+                 if (field) {
+                     field.value = imageId;
+                 }
+                 const container = document.querySelector(`[data-imagetype="${currentImageType}"]`);
+                 if (container) {
+                     container.innerHTML = `<img src="${imageSrc}" class="img-thumbnail" alt="Gallery Image">`;
+                 }
+             } else {
+                 // Для всех остальных случаев - универсальная логика
+                 this.handleUniversalImageSelection(imageId, imageSrc, filename);
+             }
+             
+             // Закрываем модальное окно (не для option_photo - там закрывается в addSelectedPhotoToValue)
+             const modal = bootstrap.Modal.getInstance(document.getElementById('chooseImageModal'));
+             if (modal) {
+                 modal.hide();
+             }
+        },
+        
+        handleUniversalImageSelection(imageId, imageSrc, filename) {
+            console.log('Обработка выбора изображения:', imageId, filename);
+            
+            // Пытаемся найти поле image_id в разных вариантах
+            const possibleSelectors = [
+                'input[name="image_id"]',
+                'input[id="form-image_id"]', 
+                'input[id*="image_id"]',
+                'input[name*="image_id"]',
+                'input[id$="-image_id"]',
+                'input[name$="-image_id"]'
+            ];
+            
+            let imageIdField = null;
+            for (const selector of possibleSelectors) {
+                imageIdField = document.querySelector(selector);
+                if (imageIdField) {
+                    console.log('Найдено поле image_id с селектором:', selector);
+                    break;
+                }
+            }
+            
+            if (imageIdField) {
+                imageIdField.value = imageId;
+                console.log('Установлено image_id:', imageId, 'в поле:', imageIdField.name || imageIdField.id);
+                
+                // Вызываем событие изменения
+                const changeEvent = new Event('change', { bubbles: true });
+                imageIdField.dispatchEvent(changeEvent);
+            } else {
+                console.warn('Поле image_id не найдено');
+            }
+            
+            // Пытаемся найти и обновить превью
+            const possiblePreviews = [
+                'chosenImagePreview',
+                'selectedImagePreview', 
+                'imagePreview',
+                'chosen-image-preview'
+            ];
+            
+            let preview = null;
+            for (const previewId of possiblePreviews) {
+                preview = document.getElementById(previewId);
+                if (preview) {
+                    console.log('Найдено превью с ID:', previewId);
+                    break;
+                }
+            }
+            
+            if (preview) {
+                preview.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <img src="${imageSrc}" alt="" style="max-height:50px;" class="rounded">
+                        <span class="ms-2">${filename}</span>
+                    </div>
+                `;
+            } else {
+                console.log('Превью не найдено');
+            }
+            
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('chooseImageModal'));
+            if (modal) {
+                modal.hide();
+            }
+        },
+        
+        handleSpecificImageType(imageId, imageSrc, filename) {
+            const currentImageType = window.currentImageType;
+            
+            if (currentImageType === 'main') {
+                // Главное изображение товара
+                const hidField = document.querySelector('input[name="main_image_id"]') || 
+                                document.getElementById('main_image_id') ||
+                                document.querySelector('input[id*="main_image_id"]');
+                if (hidField) {
+                    hidField.value = imageId;
+                }
+                const preview = document.getElementById('chosenMainImagePreview');
+                if (preview) {
+                    preview.innerHTML = `
+                        <div class="main-image-wrapper position-relative">
+                            <img src="${imageSrc}" alt="" class="img-fluid mb-2" style="max-height:200px;">
+                            <div class="mt-2 text-muted small">${filename}</div>
+                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-main-image" data-image-id="${imageId}">&times;</button>
+                        </div>
+                    `;
+                }
+            } else if (currentImageType === 'additional') {
+                // Дополнительные изображения
+                const preview = document.getElementById('additionalImagesPreview');
+                if (preview) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'additional-image-wrapper position-relative';
+                    wrapper.dataset.imageId = imageId;
+                    wrapper.innerHTML = `
+                        <img src="${imageSrc}" alt="" class="img-fluid rounded" style="height: 120px; object-fit: cover;">
+                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-additional-image" data-image-id="${imageId}">&times;</button>
+                        <div class="mt-1 text-muted small text-center">${filename}</div>
+                    `;
+                    preview.appendChild(wrapper);
+                    
+                    // Обновляем скрытое поле со списком ID
+                    const hiddenField = document.querySelector('input[name="additional_image_ids"]') ||
+                                      document.getElementById('additional_image_ids') ||
+                                      document.querySelector('input[id*="additional_image_ids"]');
+                    if (hiddenField) {
+                        const currentIds = hiddenField.value ? hiddenField.value.split(',') : [];
+                        currentIds.push(imageId);
+                        hiddenField.value = currentIds.join(',');
+                    }
+                }
+            } else if (currentImageType.startsWith('variation-')) {
+                // Изображения вариаций
+                const varIdx = currentImageType.split('-')[1];
+                const hidField = document.querySelector(`input[name="variations[${varIdx}][image_id]"]`);
+                if (hidField) {
+                    hidField.value = imageId;
+                }
+                const preview = document.getElementById(`variation-image-preview-${varIdx}`);
+                if (preview) {
+                    preview.innerHTML = `
+                        <img src="${imageSrc}" alt="Изображение вариации" class="img-fluid mb-2" style="max-height:120px;">
+                        <div class="text-muted small">${filename}</div>
+                    `;
+                }
+            } else if (currentImageType === 'option_photo') {
+                // Фотографии для значений опций
+                const modal = document.getElementById('chooseImageModal');
+                const optionName = modal.dataset.optionName;
+                const optionValue = modal.dataset.optionValue;  
+                const uniqueId = modal.dataset.uniqueId;
+                
+                if (window.addSelectedPhotoToValue && uniqueId) {
+                    window.addSelectedPhotoToValue(imageId, imageSrc, optionName, optionValue, uniqueId);
+                }
+            } else {
+                // Для всех остальных случаев - базовая логика
+                const imageIdField = document.querySelector('input[name="image_id"]') || 
+                                   document.getElementById('form-image_id');
+                if (imageIdField) {
+                    imageIdField.value = imageId;
+                }
+                
+                const preview = document.getElementById('chosenImagePreview');
+                if (preview) {
+                    preview.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <img src="${imageSrc}" alt="" style="max-height:50px;" class="rounded">
+                            <span class="ms-2">${filename}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Закрываем модальное окно
+            bootstrap.Modal.getInstance(document.getElementById('chooseImageModal')).hide();
+        },
+        
+        selectImage() {
+            // Эта функция больше не нужна, так как selectImageItem уже все делает
+            console.log('selectImage() вызвана - логика уже выполнена в selectImageItem()');
+        },
+        
+        showCreateDirectoryModal() {
+            document.getElementById('parentDirectoryId').value = this.currentDirectoryId;
+            document.getElementById('directoryName').value = '';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('createDirectoryModal')).show();
+        },
+        
+        showUploadModal() {
+            document.getElementById('uploadDirectoryId').value = this.currentDirectoryId;
+            this.resetUploadForm();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('uploadImageModal')).show();
+        },
+        
+        handleFileSelect(files) {
+            if (!files.length) return;
+            
+            const fileList = document.getElementById('selectedFiles');
+            const fileListContainer = document.getElementById('fileList');
+            const altTextGroup = document.getElementById('altTextGroup');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            fileList.innerHTML = '';
+            
+            Array.from(files).forEach((file, index) => {
+                if (!file.type.startsWith('image/')) return;
+                
+                const fileItem = document.createElement('div');
+                fileItem.className = 'border rounded p-2 mb-2';
+                fileItem.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-image me-2"></i>
+                        <span class="flex-grow-1">${file.name}</span>
+                        <small class="text-muted">${this.formatFileSize(file.size)}</small>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+            
+            fileListContainer.style.display = files.length > 0 ? 'block' : 'none';
+            altTextGroup.style.display = files.length === 1 ? 'block' : 'none';
+            uploadBtn.disabled = files.length === 0;
+        },
+        
+        async uploadFiles() {
+            const form = document.getElementById('uploadImageForm');
+            const formData = new FormData(form);
+            const progressBar = document.querySelector('#uploadProgress .progress-bar');
+            const uploadProgress = document.getElementById('uploadProgress');
+            
+            uploadProgress.style.display = 'block';
+            document.getElementById('uploadBtn').disabled = true;
+            
+            try {
+                const response = await fetch('{{ url_for("admin.admin_images_upload_post") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': window.csrfToken || ''
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Ошибка загрузки');
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('uploadImageModal')).hide();
+                    this.loadDirectory(this.currentDirectoryId);
+                    this.showSuccess('Файлы успешно загружены');
+                } else {
+                    throw new Error(result.message || 'Ошибка загрузки');
+                }
+                
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                this.showError('Ошибка загрузки файлов');
+            } finally {
+                uploadProgress.style.display = 'none';
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        },
+        
+        async createDirectory() {
+            const form = document.getElementById('createDirectoryForm');
+            const formData = new FormData(form);
+            
+            // Получаем CSRF токен из формы
+            const csrfToken = form.querySelector('input[name="csrf_token"]').value;
+            
+            try {
+                const response = await fetch('{{ url_for("admin.admin_directories_create") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Ошибка создания каталога');
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('createDirectoryModal')).hide();
+                    this.loadDirectory(this.currentDirectoryId);
+                    this.showSuccess('Каталог успешно создан');
+                } else {
+                    throw new Error(result.message || 'Ошибка создания каталога');
+                }
+                
+            } catch (error) {
+                console.error('Ошибка создания каталога:', error);
+                this.showError('Ошибка создания каталога');
+            }
+        },
+        
+        resetUploadForm() {
+            document.getElementById('uploadImageForm').reset();
+            document.getElementById('fileList').style.display = 'none';
+            document.getElementById('altTextGroup').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = true;
+        },
+        
+        showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+            document.getElementById('directoryContent').style.display = show ? 'none' : 'block';
+        },
+        
+        showError(message) {
+            // Можно добавить toast уведомления
+            alert(message);
+        },
+        
+        showSuccess(message) {
+            // Можно добавить toast уведомления
+            console.log(message);
+        },
+        
+        formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+        
+        updateImagePreview() {
+            if (!this.selectedImageData) return;
+            
+            // Простое превью для обычных форм
+            const preview = document.getElementById('chosenImagePreview');
+            if (preview) {
+                preview.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <img src="${this.selectedImageData.src}" alt="" style="max-height:50px; max-width:80px;" class="rounded">
+                        <div class="ms-2">
+                            <div class="fw-bold text-truncate" style="max-width:200px;">${this.selectedImageData.filename}</div>
+                            <small class="text-muted">ID: ${this.selectedImageData.id}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    };
+    
+    MediaManager.init();
+    
+    // Глобальный доступ для обратной совместимости
+    window.MediaManager = MediaManager;
+    
+    // Глобальные функции для обратной совместимости
+    window.selectImage = function(button) {
+        // Ищем элемент с данными изображения
+        const chooseImageItem = button.closest('.chooseImageItem') || button;
+        if (chooseImageItem && chooseImageItem.dataset.imageId && window.MediaManager) {
+            window.MediaManager.selectImageItem(chooseImageItem);
+        } else {
+            console.error('Не найден элемент изображения или MediaManager');
+        }
+    };
+    
+    // Функция для совместимости с product_form.html
+    window.attachImgClick = function() {
+        // Эта функция больше не нужна, так как события привязываются автоматически
+        console.log('attachImgClick вызвана - события уже привязаны через MediaManager');
+    };
+    
+    // Простой универсальный обработчик
+    document.addEventListener('DOMContentLoaded', function() {
+        const chooseImageModal = document.getElementById('chooseImageModal');
+        if (chooseImageModal) {
+            chooseImageModal.addEventListener('show.bs.modal', function(event) {
+                // Загружаем каталог при открытии модального окна
+                if (window.MediaManager && window.MediaManager.loadDirectory) {
+                    window.MediaManager.loadDirectory(0);
+                }
+            });
+        }
+    });
+    
+    window.editImage = function(id, alt, directoryId) {
+        console.log('Edit image:', id, alt, directoryId);
+        // Можно добавить модальное окно редактирования или использовать существующий
+        if (window.editImage && typeof window.editImage === 'function') {
+            // Если уже есть функция editImage, используем её
+            return;
+        }
+    };
+    
+    window.deleteImage = function(id, filename) {
+        if (confirm('Вы уверены, что хотите удалить изображение "' + filename + '"?')) {
+            var deleteUrl = "/admin/images/" + id + "/delete";
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': window.csrfToken || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    if (window.MediaManager) {
+                        window.MediaManager.loadDirectory(window.MediaManager.currentDirectoryId);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('Ошибка удаления изображения: ' + (data.message || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Ошибка удаления изображения');
+            });
+        }
+    };
+    
+    window.editDirectory = function(id, name) {
+        console.log('Edit directory:', id, name);
+        // Функция для редактирования каталога
+    };
+    
+    window.deleteDirectory = function(id, name) {
+        if (confirm('Вы уверены, что хотите удалить каталог "' + name + '"?\nВсе файлы в нем также будут удалены.')) {
+            var deleteUrl = "/admin/directories/" + id + "/delete";
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': window.csrfToken || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    if (window.MediaManager) {
+                        window.MediaManager.loadDirectory(window.MediaManager.currentDirectoryId);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('Ошибка удаления каталога: ' + (data.message || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Ошибка удаления каталога');
+            });
+        }
+    };
+});
+</script> 

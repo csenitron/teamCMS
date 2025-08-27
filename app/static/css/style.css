@@ -1,0 +1,165 @@
+/* Ensure inputs/selects/textareas have visible dark text on light background */
+input.form-control,
+select.form-select,
+textarea.form-control {
+  color: #212529 !important;
+  background-color: #fff !important;
+}
+
+input.form-control::placeholder,
+textarea.form-control::placeholder {
+  color: #6c757d !important;
+  opacity: 1;
+}
+
+/* Buttons inside input-group should not dim text */
+.input-group-text,
+button.input-group-text {
+  color: #212529 !important;
+  background-color: #fff !important;
+}
+
+/* Modal forms: labels and controls readable */
+.modal .form-label { color: #212529; }
+.modal .form-control,
+.modal .form-select { color: #212529 !important; background-color: #fff !important; }
+/* Montserrat Regular */
+@font-face {
+    font-family: 'Montserrat';
+    src: url('/static/fonts/Montserrat-Regular.ttf') format('ttf'),
+
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* Montserrat Bold */
+@font-face {
+    font-family: 'Montserrat';
+    src: url('/static/fonts/Montserrat-Bold.ttf') format('ttf'),
+         url('/static/fonts/Montserrat-Bold.ttf') format('ttf');
+    font-weight: 700;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+}
+
+span.fav-btn {
+    position: relative;
+    top: 30px;
+    left: 10px;
+    color: #000;
+}
+
+
+textarea.select2-search__field {
+    min-width: 18rem !important;
+}
+
+a.product_item{
+    text-decoration: none;
+    color: #000;
+}
+
+.nav-link{
+    color: #000;
+
+}
+.product-image{
+    background: #F8F8F8;
+}
+
+/* Скрываем кнопку по умолчанию */
+.product-item .add-to-cart-btn {
+    display: none;
+}
+
+/* Показываем кнопку при наведении на карточку */
+.product-item:hover .add-to-cart-btn {
+    display: inline-block;
+}
+
+.input-group:not(.has-validation)>.dropdown-toggle:nth-last-child(n+3), .input-group:not(.has-validation)>:not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
+    border-bottom-left-radius: 1.3em;
+    border-top-left-radius: 1.3em;
+    border: none;
+    background: #F8F8F8;
+}
+
+.input-group>:not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback){
+    border-bottom-right-radius: 1.3em;
+    border-top-right-radius: 1.3em;
+    border: none;
+    background: #F8F8F8;
+}
+
+.carousel-caption.d-none.d-md-block {
+    bottom: 40%;
+}
+
+
+body.modal-open {
+    padding-right: 0 !important;
+}
+body.offcanvas-open[style*="padding-right"] {
+    padding-right: 0 !important;
+}
+
+
+
+
+/* base */
+@import url("./base/variables.css");
+@import url("./base/reset.css");
+@import url("./base/utils.css");
+
+/* utils */
+@import url(./utilities/display.css);
+@import url(./utilities/images.css);
+@import url(./utilities/sizing.css);
+@import url(./utilities/spacing.css);
+@import url("./utilities/typography.css");
+@import url(./utilities/borders.css);
+@import url("./utilities/background.css");
+
+/* layout */
+@import url("./layout/hero.css");
+@import url("./layout/categories.css");
+@import url("./layout/trending.css");
+@import url("./layout/complete-the-look.css");
+@import url("./layout/sales.css");
+@import url("./layout/inspiration.css");
+@import url("./layout/proposal.css");
+@import url("./layout/navigation.css");
+@import url("./layout/category-gallery.css");
+@import url("./layout/products.css");
+
+/* COMPONENTS */
+@import url("./components/navbar.css");
+@import url("./components/footer.css");
+@import url("./components/product-card.css");
+@import url("./components/slider-custom-btns.css");
+@import url("./components/table.css");
+@import url("./components/filter-sidebar.css");
+
+/* features */
+@import url(./features/product-rating.css);
+@import url(./features/gender.css);
+@import url(./features/pallets.css);
+@import url(./features/size-item.css);
+@import url("./features/fit-scale.css");
+@import url("./features/unit-toggle.css");
+
+/* animations */
+@import url("./animations/button-animation.css");
+@import url("./animations/readmore.css");
+
+/* themes */
+
+/* media */
+@import url("./media/responsive.css");
+@import url("./media/fonts.css");
+
+
+

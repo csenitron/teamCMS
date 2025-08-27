@@ -1,0 +1,86 @@
+{% if module.tabs_instance %}
+<div class="tabs-module px-2">
+    <h2 class="my-2">{{ module.tabs_instance.title }}</h2>
+    <!-- Навигация вкладок -->
+    <ul class="nav nav-tabs" id="tabs-{{ module.tabs_instance.id }}" role="tablist">
+        {% for tab in module.tab_items %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if loop.first %}active{% endif %}"
+               id="tab-link-{{ tab.id }}"
+               data-bs-toggle="tab"
+               href="#tab-content-{{ tab.id }}"
+               role="tab"
+               aria-controls="tab-content-{{ tab.id }}"
+               aria-selected="{% if loop.first %}true{% else %}false{% endif %}">
+                {{ tab.tab_title }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    <!-- Содержимое вкладок -->
+    <div class="tab-content" id="tabs-content-{{ module.tabs_instance.id }}">
+        {% for tab in module.tab_items %}
+        <div class="tab-pane container-fluid fade {% if loop.first %}show active{% endif %}"
+             id="tab-content-{{ tab.id }}"
+             role="tabpanel"
+             aria-labelledby="tab-link-{{ tab.id }}">
+            <div class="row">
+                {% for product in module.tab_products[tab.id] %}
+                <div class="product-item col-md-3 col-12">
+                    <!-- Кнопка избранного как в каталоге -->
+                    <span class="fav-btn" data-product-id="{{product.id}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                             class="bi bi-heart-fill" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                  d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314"/>
+                        </svg>
+                    </span>
+
+                    <a href="{{ url_for('main.product', product_slug=product.slug) }}" data-product-id="product.id"
+                       class="product_item">
+                        <div class="product-image">
+                            <img src="/static/uploads/{{ product.main_image.filename }}" alt="{{ product.name }}"
+                                 class="img-fluid w-100">
+                        </div>
+                    </a>
+                    <div class="row py-2">
+                        <div class="col-6">
+                            <a href="{{ url_for('main.product', product_slug=product.slug) }}"
+                               data-product-id="product.id" class="product_item">
+                                <h6>{{ product.name }}</h6></a>
+                        </div>
+                        <div class="col-6 d-flex justify-content-end">
+                            <p>{{ product.price }} р.</p>
+                            <button class="cat-catalog-btn add-to-cart-btn" id="add-to-cart"
+                                    style="border: none; background: transparent"><img src="/static/icons/add-cart.png">
+                            </button>
+                        </div>
+                        <!-- Цветовые опции как в каталоге -->
+                        <div class="mt-4 color-options">
+                            {% set options = product.product_options %}
+                            {% for option in options %}
+                                {% if option['display_type'] == 'color' %}
+                                <div class="top-palletes d-flex">
+                                    {% for color in option['values'] %}
+                                    <div
+                                        class="pallete-color pallete-color-{{ color.value | lower | replace(' ', '-') }} {% if loop.first %}active{% endif %} cursor-pointer position-relative me-3 transition wh-26 rounded-circle"
+                                        data-pallet="core"
+                                        data-color-name="{{ color.value | capitalize }}"
+                                        style="{% if color.value == 'Красный' %}background-color: #e31e2b;{% elif color.value == 'Белый' %}background-color: #ffffff; border: 1px solid #e0e0e0;{% elif color.value == 'Черный' %}background-color: #000000;{% endif %}">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<p>Вкладки не найдены.</p>
+{% endif %}

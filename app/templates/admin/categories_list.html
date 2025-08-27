@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+
+{% block title %}Категории{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h3 mb-1">Категории</h1>
+                <div class="text-muted small">Управление структурой категорий товаров</div>
+            </div>
+            <a class="btn btn-primary px-4" href="{{ url_for('admin.admin_categories_form') }}">
+                <i class="fas fa-plus me-2"></i>Добавить
+            </a>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Всего категорий</div>
+                            <div class="h4 mb-0">{{ cat_list|length }}</div>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-folder text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Индексируемые</div>
+                            <div class="h4 mb-0">{{ cat_list|selectattr('0.is_indexed', 'true')|list|length }}</div>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-search text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Верхнего уровня</div>
+                            <div class="h4 mb-0">{{ cat_list|selectattr('0.parent_id', 'none')|list|length }}</div>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-layer-group text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">С изображениями</div>
+                            <div class="h4 mb-0">{{ cat_list|selectattr('0.image', 'defined')|list|length }}</div>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-image text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-light rounded p-3 mb-4">
+        <div class="row g-2">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0" id="categorySearch" 
+                           placeholder="Поиск по категориям..." value="" autocomplete="off">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mass Actions -->
+    <div class="bg-light rounded p-3 mb-4">
+        <div class="row g-2">
+            <div class="col-md-6">
+                <button class="btn btn-outline-danger px-4" type="submit" form="categoriesForm" name="action" value="delete_selected">
+                    <i class="fas fa-trash me-2"></i>Удалить
+                </button>
+                <button class="btn btn-outline-secondary px-4" type="submit" form="categoriesForm" name="action" value="toggle_index_selected">
+                    <i class="fas fa-sync me-2"></i>Индексация
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Table -->
+    <form method="post" action="{{ url_for('admin.admin_categories') }}" id="categoriesForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="bg-white rounded shadow-sm">
+        <div class="table-responsive">
+            <table class="table categories-table mb-0" id="categoriesTable">
+                <thead>
+                    <tr>
+                        <th class="border-bottom-0 ps-4" style="width:40px;">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </div>
+                        </th>
+                        <th class="border-bottom-0" style="width:60px;">ID</th>
+                        <th class="border-bottom-0">Название</th>
+                        <th class="border-bottom-0">URL</th>
+                        <th class="border-bottom-0 text-center" style="width:100px;">Порядок</th>
+                        <th class="border-bottom-0 text-center" style="width:120px;">Индексация</th>
+                        <th class="border-bottom-0 text-end pe-4" style="width:120px;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for cat, level in cat_list %}
+                    <tr class="category-row {% if cat.parent_id %}child-row{% endif %}"
+                        data-id="{{ cat.id }}"
+                        data-parent="{{ cat.parent_id if cat.parent_id else 0 }}"
+                        data-name="{{ cat.name|lower }}"
+                        data-slug="{{ cat.slug|lower }}"
+                        {% if cat.parent_id %}style="display: none;"{% endif %}>
+                        
+                        <td class="ps-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="selected_ids" value="{{ cat.id }}">
+                            </div>
+                        </td>
+                        <td class="text-secondary">{{ cat.id }}</td>
+                        <td>
+                            {% set has_children = (cat.subcategories|length > 0) %}
+                            <div class="d-flex align-items-center category-name">
+                                <div style="width: {{ 24 * level }}px;"></div>
+                                {% if has_children %}
+                                    <button type="button" class="btn-toggle me-2" onclick="toggleCategory({{ cat.id }})">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                {% else %}
+                                    <span class="text-muted me-2" style="width: 16px;">•</span>
+                                {% endif %}
+                                <div class="d-flex align-items-center">
+                                    {% if cat.image %}
+                                    <div class="category-image me-2">
+                                        <img src="{{ url_for('static', filename='uploads/' ~ cat.image.filename) }}" 
+                                             alt="" class="img-thumbnail" width="32" height="32">
+                                    </div>
+                                    {% else %}
+                                    <div class="category-no-image me-2">
+                                        <i class="fas fa-folder text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <span class="category-title">{{ cat.name }}</span>
+                                    {% if cat.subcategories|length > 0 %}
+                                    <span class="badge bg-light text-secondary ms-2">{{ cat.subcategories|length }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="text-secondary small">{{ cat.slug }}</span></td>
+                        <td class="text-center">{{ cat.sort_order }}</td>
+                        <td class="text-center">
+                            <span class="status-badge {% if cat.is_indexed %}status-active{% else %}status-inactive{% endif %}">
+                                {{ 'Индексируется' if cat.is_indexed else 'Не индексируется' }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="actions">
+                                <a href="{{ url_for('admin.admin_categories_form', category_id=cat.id) }}"
+                                   class="action-btn edit-btn"
+                                   title="Редактировать">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button"
+                                        class="action-btn delete-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteCategoryModal"
+                                        data-category-id="{{ cat.id }}"
+                                        data-category-name="{{ cat.name }}"
+                                        title="Удалить">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Empty State -->
+        {% if cat_list|length == 0 %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-folder-open fa-3x text-muted"></i>
+            </div>
+            <h5>Нет категорий</h5>
+            <p class="text-muted">Создайте первую категорию, нажав кнопку "Добавить"</p>
+            <a href="{{ url_for('admin.admin_categories_form') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Добавить категорию
+            </a>
+        </div>
+        {% endif %}
+        
+        <!-- Table Footer -->
+        {% if cat_list|length > 0 %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-top">
+            <div class="text-muted small">
+                Показано <span id="visibleCount">{{ cat_list|length }}</span> из {{ cat_list|length }} категорий
+            </div>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="expandAllBtn">
+                    <i class="fas fa-expand-alt me-1"></i>Развернуть все
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="collapseAllBtn">
+                    <i class="fas fa-compress-alt me-1"></i>Свернуть все
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    </form>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Удаление категории</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить категорию "<span id="categoryNameToDelete"></span>"?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteCategoryForm" method="post" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger px-4" type="submit">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+/* Base Styles */
+.table {
+    --bs-table-hover-bg: rgba(250, 250, 250, 0.7);
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.875rem 0.75rem;
+    background: none;
+    border-bottom-color: #f0f0f0;
+}
+
+/* Category Row Styles */
+.category-row:hover {
+    background-color: var(--bs-table-hover-bg);
+}
+
+.child-row {
+    background-color: #fafafa;
+}
+
+/* Category Toggle Button */
+.btn-toggle {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-toggle:hover {
+    color: #000;
+}
+
+.btn-toggle i {
+    transition: transform 0.2s ease;
+    font-size: 12px;
+}
+
+.btn-toggle.expanded i {
+    transform: rotate(90deg);
+}
+
+/* Category Title */
+.category-title {
+    color: #333;
+    font-weight: 500;
+}
+
+/* Category Image */
+.category-image img {
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.category-no-image {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: #eef7f2;
+    color: #1a9f53;
+}
+
+.status-inactive {
+    background-color: #f5f5f5;
+    color: #808080;
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e5e5;
+    background: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    border-color: #ccc;
+    color: #333;
+}
+
+.edit-btn:hover {
+    background-color: #f8f9fa;
+    color: #0066ff;
+}
+
+.delete-btn:hover {
+    background-color: #fff5f5;
+    color: #ff3333;
+}
+
+/* Form Controls */
+.form-check-input {
+    border-color: #e5e5e5;
+}
+
+.form-check-input:checked {
+    background-color: #0066ff;
+    border-color: #0066ff;
+}
+
+/* Search Input */
+.input-group-text {
+    color: #999;
+}
+
+.form-control:focus {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+/* Modal Styles */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+/* Statistics Cards */
+.h4 {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Clear search field on page load
+    const searchInput = document.getElementById('categorySearch');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Select All Functionality
+    const selectAll = document.getElementById('selectAll');
+    selectAll.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('#categoriesTable tbody input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    // Delete Modal Functionality
+    const deleteModal = document.getElementById('deleteCategoryModal');
+    deleteModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const categoryId = button.dataset.categoryId;
+        const categoryName = button.dataset.categoryName;
+        
+        this.querySelector('#categoryNameToDelete').textContent = categoryName;
+        this.querySelector('#deleteCategoryForm').action = 
+            "{{ url_for('admin.admin_categories_delete', category_id=0) }}".replace('0', categoryId);
+    });
+    
+    // Search Functionality
+    const searchInput = document.getElementById('categorySearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.category-row');
+            let visibleCount = 0;
+            
+            // Сначала скрываем все строки
+            rows.forEach(row => {
+                row.style.display = 'none';
+            });
+            
+            if (searchTerm === '') {
+                // Если поиск пустой, показываем все категории первого уровня
+                rows.forEach(row => {
+                    const parent = row.dataset.parent;
+                    if (parent === '0') {
+                        row.style.display = '';
+                        visibleCount++;
+                    }
+                });
+            } else {
+                // Ищем по всем уровням иерархии
+                const matchingRows = new Set();
+                
+                // Находим все строки, которые соответствуют поиску
+                rows.forEach(row => {
+                    const name = row.dataset.name;
+                    const slug = row.dataset.slug;
+                    const id = row.dataset.id;
+                    
+                    if (name.includes(searchTerm) || slug.includes(searchTerm) || id.includes(searchTerm)) {
+                        matchingRows.add(id);
+                        
+                        // Показываем текущую строку
+                        row.style.display = '';
+                        visibleCount++;
+                        
+                        // Показываем всех родителей этой категории
+                        let currentParent = row.dataset.parent;
+                        while (currentParent && currentParent !== '0') {
+                            const parentRow = document.querySelector(`.category-row[data-id="${currentParent}"]`);
+                            if (parentRow) {
+                                parentRow.style.display = '';
+                                matchingRows.add(currentParent);
+                                
+                                // Раскрываем родительскую категорию
+                                const toggleBtn = parentRow.querySelector('.btn-toggle');
+                                if (toggleBtn && !toggleBtn.classList.contains('expanded')) {
+                                    toggleBtn.classList.add('expanded');
+                                }
+                                
+                                currentParent = parentRow.dataset.parent;
+                            } else {
+                                break;
+                            }
+                        }
+                        
+                        // Показываем всех детей этой категории
+                        showAllChildren(id, matchingRows);
+                    }
+                });
+                
+                // Показываем всех детей найденных категорий
+                matchingRows.forEach(categoryId => {
+                    showAllChildren(categoryId, matchingRows);
+                });
+                
+                // Обновляем счетчик видимых строк
+                visibleCount = document.querySelectorAll('.category-row[style*="display: table-row"]').length;
+            }
+            
+            // Update visible count
+            document.getElementById('visibleCount').textContent = visibleCount;
+        });
+    }
+    
+    // Expand/Collapse All Buttons
+    const expandAllBtn = document.getElementById('expandAllBtn');
+    if (expandAllBtn) {
+        expandAllBtn.addEventListener('click', function() {
+            const toggleBtns = document.querySelectorAll('.btn-toggle');
+            toggleBtns.forEach(btn => {
+                if (!btn.classList.contains('expanded')) {
+                    btn.classList.add('expanded');
+                    const row = btn.closest('.category-row');
+                    const categoryId = row.dataset.id;
+                    showChildren(categoryId);
+                }
+            });
+        });
+    }
+    
+    const collapseAllBtn = document.getElementById('collapseAllBtn');
+    if (collapseAllBtn) {
+        collapseAllBtn.addEventListener('click', function() {
+            const toggleBtns = document.querySelectorAll('.btn-toggle');
+            toggleBtns.forEach(btn => {
+                if (btn.classList.contains('expanded')) {
+                    btn.classList.remove('expanded');
+                    const row = btn.closest('.category-row');
+                    const categoryId = row.dataset.id;
+                    hideChildren(categoryId);
+                }
+            });
+        });
+    }
+});
+
+// Глобальная функция для раскрытия/скрытия категорий
+function toggleCategory(categoryId) {
+    const button = document.querySelector(`.category-row[data-id="${categoryId}"] .btn-toggle`);
+    const isExpanded = button.classList.contains('expanded');
+    
+    if (isExpanded) {
+        button.classList.remove('expanded');
+        hideChildren(categoryId);
+    } else {
+        button.classList.add('expanded');
+        showChildren(categoryId);
+    }
+}
+
+function showChildren(parentId) {
+    const children = document.querySelectorAll(`.category-row[data-parent="${parentId}"]`);
+    children.forEach(child => {
+        child.style.display = '';
+        
+        // Если дочерний элемент был развернут, показываем и его детей
+        const toggle = child.querySelector('.btn-toggle.expanded');
+        if (toggle) {
+            const childId = child.dataset.id;
+            showChildren(childId);
+        }
+    });
+}
+
+function showAllChildren(parentId, matchingRows) {
+    const children = document.querySelectorAll(`.category-row[data-parent="${parentId}"]`);
+    children.forEach(child => {
+        child.style.display = '';
+        matchingRows.add(child.dataset.id);
+        
+        // Рекурсивно показываем всех детей
+        showAllChildren(child.dataset.id, matchingRows);
+    });
+}
+
+function hideChildren(parentId) {
+    const children = document.querySelectorAll(`.category-row[data-parent="${parentId}"]`);
+    children.forEach(child => {
+        child.style.display = 'none';
+        
+        // Рекурсивно скрываем всех потомков
+        const childId = child.dataset.id;
+        hideChildren(childId);
+        
+        // Сбрасываем состояние развернутости
+        const toggle = child.querySelector('.btn-toggle');
+        if (toggle) toggle.classList.remove('expanded');
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

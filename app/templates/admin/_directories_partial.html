@@ -1,0 +1,366 @@
+{# app/templates/admin/_directories_partial.html #}
+
+<!-- Навигационная панель -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- Кнопка "На уровень выше" -->
+    <div>
+        {% if current_dir and current_dir.parent_id %}
+            <button type="button" class="btn btn-outline-secondary dirLink" data-dir-id="{{ current_dir.parent_id }}">
+                <i class="fas fa-arrow-left me-2"></i>На уровень выше
+            </button>
+        {% elif current_dir and current_dir.id %}
+            <button type="button" class="btn btn-outline-secondary dirLink" data-dir-id="0">
+                <i class="fas fa-arrow-left me-2"></i>В корневой каталог
+            </button>
+        {% else %}
+            <button type="button" class="btn btn-outline-secondary" disabled>
+                <i class="fas fa-home me-2"></i>Корневой каталог
+            </button>
+        {% endif %}
+    </div>
+    
+    <!-- Текущее местоположение -->
+    <div class="text-muted">
+        <i class="fas fa-folder-open me-2"></i>
+        {% if current_dir %}
+            {{ current_dir.name }}
+        {% else %}
+            Корневой каталог
+        {% endif %}
+    </div>
+</div>
+
+<!-- Breadcrumbs навигация -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb bg-light p-2 rounded">
+        <li class="breadcrumb-item">
+            <button type="button" class="btn btn-link p-0 text-decoration-none dirLink" data-dir-id="0">
+                <i class="fas fa-home me-1"></i>Корень
+            </button>
+        </li>
+        {% if current_dir and current_dir.id %}
+            {% if current_dir.parent %}
+                <li class="breadcrumb-item">
+                    <button type="button" class="btn btn-link p-0 text-decoration-none dirLink" data-dir-id="{{ current_dir.parent.id }}">
+                        {{ current_dir.parent.name }}
+                    </button>
+                </li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{{ current_dir.name }}</li>
+        {% else %}
+            <li class="breadcrumb-item active" aria-current="page">Корневой каталог</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<!-- Статистика текущего каталога -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                                                 <div class="h6 mb-0">{{ subdirs|length if subdirs else 0 }}</div>
+                        <div class="small">Подкаталогов</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-folder fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="h6 mb-0">{{ images|length if images else 0 }}</div>
+                        <div class="small">Изображений</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-images fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="h6 mb-0">~{{ '%.1f'|format((images|length * 0.5) if images else 0) }} МБ</div>
+                        <div class="small">Примерный размер</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-hdd fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Кнопки управления -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDirectoryModal">
+            <i class="fas fa-folder-plus me-2"></i>Создать каталог
+        </button>
+        <button class="btn btn-success" data-bs-toggle="modal" id="upShow" data-bs-target="#uploadImageModal" data-dir_id="{{current_dir.id if current_dir else 0}}">
+            <i class="fas fa-upload me-2"></i>Загрузить изображение
+        </button>
+    </div>
+</div>
+
+<!-- Содержимое каталога -->
+{% if subdirs or images %}
+    <div class="row g-3" id="imageGrid">
+        <!-- Подкаталоги -->
+        {% for d in subdirs %}
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="card h-100 shadow-sm directory-card">
+                    <div class="card-body text-center p-3">
+                        <div class="mb-3">
+                            <i class="fas fa-folder fa-3x text-warning"></i>
+                        </div>
+                        <h6 class="card-title mb-2">{{ d.name }}</h6>
+                                                 <div class="small text-muted mb-3">
+                             {{ d.subdirectories|length if d.subdirectories else 0 }} папок, 
+                             {{ d.images|length if d.images else 0 }} файлов
+                         </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm dirLink" data-dir-id="{{ d.id }}">
+                                <i class="fas fa-folder-open me-1"></i>Открыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Изображения -->
+        {% for img in images %}
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="card h-100 shadow-sm image-card">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
+                             class="card-img-top chooseImageItem"
+                             data-image-id="{{ img.id }}"
+                             data-filename="{{ img.filename }}"
+                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                             alt="{{ img.alt or img.filename }}">
+                        
+                        <!-- Overlay с действиями -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light btn-outline-secondary rounded-circle opacity-75" 
+                                        data-bs-toggle="dropdown" 
+                                        style="width: 32px; height: 32px;">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <button class="dropdown-item chooseImageItem" 
+                                                data-image-id="{{ img.id }}"
+                                                data-filename="{{ img.filename }}">
+                                            <i class="fas fa-check me-2"></i>Выбрать
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" onclick="editImage({{ img.id }}, '{{ img.alt|e }}', {{ img.directory_id or 'null' }})">
+                                            <i class="fas fa-edit me-2"></i>Редактировать
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item text-danger" onclick="deleteImage({{ img.id }}, '{{ img.filename|e }}')">
+                                            <i class="fas fa-trash me-2"></i>Удалить
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-1 text-truncate" style="font-size: 0.85rem;">{{ img.filename }}</h6>
+                        <div class="small text-muted">
+                            ID: {{ img.id }} | 
+                            <span class="text-success">{{ img.created_at.strftime('%d.%m.%Y') if img.created_at else 'Н/Д' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <!-- Пустой каталог -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-folder-open fa-5x text-muted"></i>
+        </div>
+        <h4 class="text-muted mb-3">Каталог пуст</h4>
+        <p class="text-muted mb-4">В этом каталоге пока нет подкаталогов и изображений</p>
+        <div class="d-flex gap-2 justify-content-center">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadImageModal" data-dir_id="{{current_dir.id if current_dir else 0}}">
+                <i class="fas fa-upload me-2"></i>Загрузить изображения
+            </button>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+// Навигация по каталогам
+document.addEventListener('DOMContentLoaded', function() {
+    // Привязываем обработчики к элементам навигации
+    bindDirectoryLinks();
+});
+
+function bindDirectoryLinks() {
+    // Обработка кликов по каталогам для навигации
+    document.querySelectorAll('.dirLink').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dirId = this.dataset.dirId || this.getAttribute('data-dir-id');
+            
+            // Простая навигация через обновление страницы
+            if (dirId !== undefined) {
+                if (dirId == '0' || dirId === null) {
+                    window.location.href = "{{ url_for('admin.admin_directories_view') }}";
+                } else {
+                    window.location.href = "{{ url_for('admin.admin_directories_view', dir_id=1) }}".replace('/1', '/' + dirId);
+                }
+            }
+        });
+    });
+}
+
+// Функции для dropdown действий
+function editDirectory(id, name) {
+    const newName = prompt('Введите новое название каталога:', name);
+    if (newName && newName !== name) {
+        // AJAX запрос на переименование
+        fetch("{{ url_for('admin.admin_directories_update', dir_id=1) }}".replace('/1', '/' + id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'name=' + encodeURIComponent(newName) + '&csrf_token=' + getCsrfToken()
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                location.reload(); // Обновляем страницу
+            } else {
+                alert('Ошибка переименования: ' + (data.message || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка переименования каталога');
+        });
+    }
+}
+
+function deleteDirectory(id, name) {
+    if (confirm('Вы уверены, что хотите удалить каталог "' + name + '"?\nВсе файлы в нем также будут удалены.')) {
+        fetch("{{ url_for('admin.admin_directories_delete', dir_id=1) }}".replace('/1', '/' + id), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'csrf_token=' + getCsrfToken()
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload(); // Обновляем страницу
+            } else {
+                alert('Ошибка удаления каталога');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка удаления каталога');
+        });
+    }
+}
+
+function editImage(id, alt, directoryId) {
+    const newAlt = prompt('Введите alt-текст для изображения:', alt || '');
+    if (newAlt !== null) {
+        // AJAX запрос на изменение alt-текста
+        fetch("{{ url_for('admin.admin_images_update', image_id=1) }}".replace('/1', '/' + id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'alt=' + encodeURIComponent(newAlt) + '&directory_id=' + (directoryId || '') + '&csrf_token=' + getCsrfToken()
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload(); // Обновляем страницу
+            } else {
+                alert('Ошибка изменения изображения');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка изменения изображения');
+        });
+    }
+}
+
+function deleteImage(id, filename) {
+    if (confirm('Вы уверены, что хотите удалить изображение "' + filename + '"?')) {
+        fetch("{{ url_for('admin.admin_images_delete', image_id=1) }}".replace('/1', '/' + id), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'csrf_token=' + getCsrfToken()
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload(); // Обновляем страницу
+            } else {
+                alert('Ошибка удаления изображения');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка удаления изображения');
+        });
+    }
+}
+
+// Функция для получения CSRF токена
+function getCsrfToken() {
+    if (window.csrfToken) {
+        return window.csrfToken;
+    }
+    const tokenInput = document.querySelector('input[name="csrf_token"]');
+    if (tokenInput) {
+        return tokenInput.value;
+    }
+    const forms = document.querySelectorAll('form');
+    for (let i = 0; i < forms.length; i++) {
+        const token = forms[i].querySelector('input[name="csrf_token"]');
+        if (token) {
+            return token.value;
+        }
+    }
+    console.warn('CSRF token not found');
+    return '';
+}
+</script>
+
+
+
+
+
+
+

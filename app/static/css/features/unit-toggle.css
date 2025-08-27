@@ -1,0 +1,36 @@
+.toggle-btn {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 50%;
+	background-color: black;
+	border-radius: 50px;
+	transition: left 0.3s ease;
+	z-index: 1;
+	left: 0;
+}
+
+/* Кнопка справа */
+#unitSwitch.active #toggle-btn {
+	left: 50% !important;
+}
+
+/* Активное состояние — кнопка на cm */
+#unitSwitch.active #inch {
+	color: rgb(2, 2, 2);
+}
+#unitSwitch.active #cm {
+	color: white;
+}
+
+/* Неактивное состояние — кнопка на in */
+#unitSwitch #inch {
+	color: white;
+}
+#unitSwitch #cm {
+	color: black;
+}
+
+.unit-toggle__btn.active {
+	color: white;
+}

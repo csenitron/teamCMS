@@ -1,0 +1,98 @@
+{% include 'front/header.html' %}
+
+<!-- CSRF Token -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<div class="container-fluid">
+    <h1>Корзина</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if cart_items %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Опции</th>
+                <th>Цена</th>
+                <th>Количество</th>
+                <th>Итого</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            {% set selected_options = item.selected_options if item.selected_options else {} %}
+            {% set item_price = item.price if item.price else item.product.price %}
+            {% set item_total = item_price * item.quantity %}
+            <tr class="product-item">
+                <td>
+                    <div class="d-flex align-items-center">
+                        {% if item.product.main_image %}
+                        <img src="/static/uploads/{{ item.product.main_image.filename }}" 
+                             alt="{{ item.product.name }}" 
+                             style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px;">
+                        {% endif %}
+                        <div>
+                            <strong>{{ item.product.name }}</strong>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% if selected_options %}
+                        {% for option_id, value_id in selected_options.items() %}
+                            {% set option = options_map.get(option_id | int) %}
+                            {% set value = option_values_map.get(value_id | int) if option else None %}
+                            {% if option and value %}
+                                <div class="small text-muted">
+                                    <strong>{{ option.name }}:</strong> {{ value.value }}
+                                </div>
+                            {% else %}
+                                <div class="small text-danger">
+                                    Опция не найдена: {{ option_id }} = {{ value_id }}
+                                    (option_id type: {{ option_id | type }}, value_id type: {{ value_id | type }})
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-muted">Без опций</span>
+                    {% endif %}
+                </td>
+                <td>{{ item_price }} р.</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item_total }} р.</td>
+                <td>
+                    <form action="{{ url_for('main.remove_from_cart') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if auth and item.cart_item_id %}
+                            <input type="hidden" name="cart_item_id" value="{{ item.cart_item_id }}">
+                        {% else %}
+                            <input type="hidden" name="cart_key" value="{{ item.cart_key }}">
+                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                            {% if selected_options %}
+                                <input type="hidden" name="selected_options" value="{{ selected_options | tojson | safe }}">
+                            {% endif %}
+                        {% endif %}
+                        <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h3>Общая сумма: {{ total_price }} р.</h3>
+    {% if auth %}
+    <a href="{{ url_for('main.checkout') }}" class="btn btn-primary">Оформить заказ</a>
+    {% else %}
+    <a href="{{ url_for('main.custom_auth') }}" class="btn btn-primary">Войти, чтобы оформить</a>
+    {% endif %}
+    {% else %}
+    <p>Ваша корзина пуста.</p>
+    {% endif %}
+</div>
+{% include 'front/footer.html' %}

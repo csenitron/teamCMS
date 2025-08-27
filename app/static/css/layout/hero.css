@@ -1,0 +1,6 @@
+.hero__content {
+	background-size: cover;
+	background-position: 75% center;
+	background-repeat: no-repeat;
+	min-height: 571px;
+}

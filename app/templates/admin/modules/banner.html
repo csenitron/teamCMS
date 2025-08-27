@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование слайд-баннера{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">Редактирование слайд-баннера</h1>
+                <div class="text-muted small">Настройка модуля слайд-баннера</div>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.modules_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Назад к модулям
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основная форма -->
+    <div class="bg-white rounded shadow-sm p-4 mb-4">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="action" value="save_banner">
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="title" class="form-label fw-medium">Название слайд-баннера</label>
+                        <input type="text" name="title" id="title" class="form-control"
+                               value="{{ banner.title if banner else '' }}" required>
+                        <div class="form-text">Внутреннее название для администраторов</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="cards_in_row" class="form-label fw-medium">Количество карточек в строке</label>
+                        <input type="number" name="cards_in_row" id="cards_in_row" class="form-control"
+                               value="{{ banner.cards_in_row if banner else '3' }}" min="1" max="4">
+                        <div class="form-text">От 1 до 4 карточек</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Настройки слайдера -->
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <h5 class="mb-3">Настройки слайдера</h5>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="status" id="status" value="on" 
+                               {{ 'checked' if settings and settings.get('status') else '' }}>
+                        <input type="hidden" name="status" value="off">
+                        <label class="form-check-label" for="status">Активный</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="show_arrows" id="show_arrows" value="on" 
+                                {{ 'checked' if settings and settings.get('show_arrows') else '' }}>
+                        <input type="hidden" name="show_arrows" value="off">
+                        <label class="form-check-label" for="show_arrows">Показывать стрелки</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="show_indicators" id="show_indicators" value="on" 
+                                {{ 'checked' if settings and settings.get('show_indicators') else '' }}>
+                        <input type="hidden" name="show_indicators" value="off">
+                        <label class="form-check-label" for="show_indicators">Показывать индикаторы</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="auto_scroll" id="auto_scroll" value="on" 
+                                {{ 'checked' if settings and settings.get('auto_scroll') else '' }}>
+                        <input type="hidden" name="auto_scroll" value="off">
+                        <label class="form-check-label" for="auto_scroll">Автопрокрутка</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="scroll_interval" class="form-label">Интервал автопрокрутки (мс)</label>
+                    <input type="number" name="scroll_interval" id="scroll_interval" class="form-control" 
+                            value="{{ settings.get('scroll_interval', 5000) if settings else '5000' }}" 
+                           min="1000" step="100">
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">Баннер-карточки</h5>
+                <button type="button" class="btn btn-primary btn-sm" onclick="addBanner()">
+                    <i class="fas fa-plus me-2"></i>Добавить карточку
+                </button>
+            </div>
+
+            <div id="banners-container" class="mb-4">
+                {% for item in banner_items %}
+                <div class="card mb-3 banner-item">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                        <h6 class="mb-0">Баннер {{ loop.index }}</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger delBanner">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-medium">Фоновое изображение</label>
+                                <div class="selected-image bg-light rounded p-2 text-center" 
+                                     data-bs-toggle="modal" data-bs-target="#chooseImageModal"
+                                     data-imagetype="banner-bg-{{ item.id }}" style="cursor: pointer;">
+                                    <img src="{{ url_for('static', filename='uploads/' ~ item.background_image.filename) }}"
+                                         alt="Фон" class="img-fluid" style="max-height: 100px;">
+                                    <div class="mt-2 small text-muted">Нажмите для выбора изображения</div>
+                                </div>
+                                <input type="hidden" name="banners[{{ item.id }}][background_image_id]"
+                                       value="{{ item.background_image_id }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label fw-medium">Текст</label>
+                                    <input type="text" name="banners[{{ item.id }}][text]" class="form-control"
+                                           value="{{ item.text }}">
+                                    <div class="form-text">Основной текст баннера</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label fw-medium">Текст ссылки</label>
+                                    <input type="text" name="banners[{{ item.id }}][link_text]" class="form-control"
+                                           value="{{ item.link_text }}">
+                                    <div class="form-text">Текст кнопки/ссылки</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label fw-medium">URL ссылки</label>
+                                    <input type="text" name="banners[{{ item.id }}][link_url]" class="form-control"
+                                           value="{{ item.link_url }}">
+                                    <div class="form-text">Куда ведет ссылка</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="text-center py-4" id="empty-banners" {% if banner_items %}style="display: none;"{% endif %}>
+                <div class="py-5">
+                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                    <h5>Нет баннеров</h5>
+                    <p class="text-muted">Нажмите кнопку "Добавить карточку", чтобы создать баннер</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                <a href="{{ url_for('admin.modules_list') }}" class="btn btn-outline-secondary px-4">Отмена</a>
+                <button type="submit" class="btn btn-primary px-5">
+                    <i class="fas fa-save me-2"></i>Сохранить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% include 'admin/chooseImage.html' %}
+
+{% block extra_css %}
+<style>
+/* Form Styles */
+.form-control, .form-select {
+    border-color: #e5e5e5;
+    padding: 0.625rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+.form-label {
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    color: #808080;
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+}
+
+/* Card Styles */
+.card {
+    border-color: #e5e5e5;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    border-color: #ccc;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom-color: #e5e5e5;
+}
+
+.selected-image {
+    border: 1px dashed #ccc;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.selected-image:hover {
+    border-color: #0066ff;
+    background-color: #f0f7ff;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentBannerIndex = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const chooseImageModal = document.getElementById('chooseImageModal');
+        const emptyBanners = document.getElementById('empty-banners');
+        const bannersContainer = document.getElementById('banners-container');
+
+        function updateEmptyState() {
+            if (bannersContainer.children.length === 0) {
+                emptyBanners.style.display = 'block';
+            } else {
+                emptyBanners.style.display = 'none';
+            }
+        }
+
+        if (chooseImageModal) {
+            chooseImageModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                window.currentImageType = button.getAttribute('data-imagetype');
+                currentBannerIndex = window.currentImageType.split('-').pop();
+                fetchDirectory(0);
+            });
+        }
+
+        function fetchDirectory(dirId) {
+            const bodyEl = document.getElementById('directoryAjaxContent');
+            if (!bodyEl) return;
+            bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+
+            fetch("{{ url_for('admin.admin_directories_view', dir_id=0) }}".replace('0', dirId), {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(resp => resp.text())
+            .then(html => {
+                bodyEl.innerHTML = html;
+                attachDirLinks();
+            })
+            .catch(err => {
+                bodyEl.innerHTML = `<p class="text-danger">Ошибка загрузки каталога</p>`;
+                console.error(err);
+            });
+        }
+
+        function attachDirLinks() {
+            const contentEl = document.getElementById('directoryAjaxContent');
+            if (!contentEl) return;
+            const links = contentEl.querySelectorAll('.dirLink');
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const dirId = link.dataset.dirId || '';
+                    fetchDirectory(dirId);
+                });
+            });
+        }
+
+        // Обработчик удаления баннера
+        document.addEventListener('click', function (event) {
+            if (event.target.closest('.delBanner')) {
+                const bannerItem = event.target.closest('.banner-item');
+                bannerItem.remove();
+                updateEmptyState();
+            }
+        });
+    });
+
+    function addBanner() {
+        const container = document.getElementById('banners-container');
+        const emptyBanners = document.getElementById('empty-banners');
+        const bannerIndex = Date.now(); // Используем timestamp для уникального индекса
+        const bannerHTML = `
+            <div class="card mb-3 banner-item">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                    <h6 class="mb-0">Новый баннер</h6>
+                    <button type="button" class="btn btn-sm btn-outline-danger delBanner">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Фоновое изображение</label>
+                            <div class="selected-image bg-light rounded p-2 text-center" 
+                                 data-bs-toggle="modal" data-bs-target="#chooseImageModal" 
+                                 data-imagetype="banner-bg-${bannerIndex}" style="cursor: pointer;">
+                                <i class="fas fa-image fa-3x text-muted my-3"></i>
+                                <div class="mt-2 small text-muted">Нажмите для выбора изображения</div>
+                            </div>
+                            <input type="hidden" name="banners[${bannerIndex}][background_image_id]">
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label fw-medium">Текст</label>
+                                <input type="text" name="banners[${bannerIndex}][text]" class="form-control">
+                                <div class="form-text">Основной текст баннера</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label fw-medium">Текст ссылки</label>
+                                <input type="text" name="banners[${bannerIndex}][link_text]" class="form-control">
+                                <div class="form-text">Текст кнопки/ссылки</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label fw-medium">URL ссылки</label>
+                                <input type="text" name="banners[${bannerIndex}][link_url]" class="form-control">
+                                <div class="form-text">Куда ведет ссылка</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML("beforeend", bannerHTML);
+        
+        // Скрываем сообщение о пустом списке
+        if (emptyBanners) {
+            emptyBanners.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}

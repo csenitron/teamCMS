@@ -1,0 +1,127 @@
+{% for r in reviews %}
+  {% set display_name = r.guest_name or (r.customer.name if r.customer else 'Гость') %}
+  {% set parts = display_name.split() %}
+  {% set initials = (parts[0][:1] ~ (parts[1][:1] if parts|length > 1 else ''))|upper %}
+  <div class="border-top-1-light-gray border-bottom-1-light-gray py-4 mx-2 mt-12 d-flex flex-column position-relative flex-lg-row f-size-12" data-review-id="{{ r.id }}">
+    <div class="background-color-light-gray border-1-light-gray d-flex flex-column p-3 w-380 w-lg-300">
+      <div class="d-flex">
+        <div class="d-flex align-items-center justify-content-center rounded-circle background-color-black wh-48 color-white f-size-12 me-3">{{ initials }}</div>
+        <div class="d-flex flex-column">
+          <span>{{ display_name }}</span>
+          {% if r.customer_id %}
+          <span class="f-weight-600">Проверенный покупатель
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_1184_474)">
+                <path d="M6.25 12.3311C5.42188 12.3311 4.64453 12.1748 3.91797 11.8623C3.18359 11.5498 2.54492 11.1221 2.00195 10.5791C1.45898 10.0361 1.03125 9.39746 0.71875 8.66309C0.40625 7.93652 0.25 7.15918 0.25 6.33105C0.25 5.50293 0.40625 4.72559 0.71875 3.99902C1.03125 3.26465 1.45898 2.62598 2.00195 2.08301C2.54492 1.54004 3.18359 1.1123 3.91797 0.799805C4.64453 0.487305 5.42188 0.331055 6.25 0.331055C7.07812 0.331055 7.85547 0.487305 8.58203 0.799805C9.31641 1.1123 9.95508 1.54004 10.498 2.08301C11.041 2.62598 11.4688 3.26465 11.7812 3.99902C12.0938 4.72559 12.25 5.50293 12.25 6.33105C12.25 7.15918 12.0938 7.93652 11.7812 8.66309C11.4688 9.39746 11.041 10.0361 10.498 10.5791C9.95508 11.1221 9.31641 11.5498 8.58203 11.8623C7.85547 12.1748 7.07812 12.3311 6.25 12.3311ZM8.83984 3.64746L5.28906 7.18652L3.60156 5.51074L2.5 6.6123L5.28906 9.38965L9.94141 4.74902L8.83984 3.64746Z" fill="black"></path>
+              </g>
+              <defs>
+                <clipPath id="clip0_1184_474">
+                  <rect width="12" height="12" fill="white" transform="matrix(1 0 0 -1 0.25 12.3311)"></rect>
+                </clipPath>
+              </defs>
+            </svg>
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="d-flex flex-column">
+        {% if r.recommend %}
+        <div class="d-flex mt-3">
+          <div class="rounded-circle background-color-black wh-16 d-flex align-items-center justify-content-center me-1">
+            <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.58008 4.06055C9.58008 3.82617 9.4987 3.6276 9.33594 3.46484C9.17318 3.30208 8.97786 3.2207 8.75 3.2207H6.11328L6.51367 1.31641C6.52018 1.29688 6.52506 1.27572 6.52832 1.25293C6.53158 1.23014 6.5332 1.20898 6.5332 1.18945C6.5332 1.10482 6.5153 1.02344 6.47949 0.945312C6.44369 0.867188 6.39974 0.798828 6.34766 0.740234L5.9082 0.310547L3.16406 3.04492C3.08594 3.12305 3.02572 3.21256 2.9834 3.31348C2.94108 3.41439 2.91992 3.52344 2.91992 3.64062V7.81055C2.91992 8.03841 3.0013 8.23372 3.16406 8.39648C3.32682 8.55924 3.52214 8.64062 3.75 8.64062H7.5C7.67578 8.64062 7.83203 8.59342 7.96875 8.49902C8.10547 8.40462 8.20638 8.28255 8.27148 8.13281L9.52148 5.19336C9.54102 5.14779 9.55566 5.09896 9.56543 5.04688C9.5752 4.99479 9.58008 4.94271 9.58008 4.89062V4.06055ZM0.419922 8.64062H2.08008V3.64062H0.419922V8.64062Z" fill="white"></path></svg>
+          </div>
+          <p class="m-0">Рекомендую товар</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="div ps-4 position-relative w-100">
+      <div class="d-flex flex-column mt-12 mt-lg-0">
+        <div class="d-flex justify-content-between">
+          <div id="stars" class="d-flex gap-1">
+            {% for i in range(1,6) %}
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4.29378 17.9593C3.67672 18.345 3.31677 18.0879 3.48389 17.3937L4.87228 11.5316L0.334293 7.62349C-0.205637 7.1607 -0.0770826 6.72361 0.642824 6.67219L6.59491 6.19653L8.89604 0.642965C9.15315 -0.0255197 9.6031 -0.0255197 9.87306 0.642965L12.187 6.19653L18.1263 6.67219C18.8462 6.73646 18.9876 7.14784 18.4348 7.62349L13.8968 11.5316L15.2852 17.3937C15.4523 18.0879 15.1052 18.345 14.4753 17.9593L9.38455 14.8354L4.29378 17.9593Z" fill="{{ 'black' if i <= (r.rating or 0) else '#C0BFBF' }}"></path>
+            </svg>
+            {% endfor %}
+          </div>
+          <p class="m-0 f-size-12">{{ r.created_at.strftime('%d.%m.%Y') if r.created_at else '' }}</p>
+        </div>
+        {% if r.comment %}<article class="f-size-12 mt-2">{{ r.comment }}</article>{% endif %}
+      </div>
+      <div class="d-flex mt-32 f-size-12 flex-column flex-xxl-row">
+        <div class="fit-scale-static position-relative pb-4 me-32 w-278" data-active="{{ r.sizing_score or 3 }}">
+          <span>Размер <span class="color-gray ms-1">({{ r.sizing_score or 0 }}/5)</span></span>
+          <div class="f-size-lg-12 f-lh-16 d-flex">
+            <div class="f-size-10 position-absolute left-0 bottom-10">Маломерит</div>
+            <div class="f-size-10 bottom-10 absolute-center-x">В размер</div>
+            <div class="f-size-10 bottom-10 position-absolute right-0">Большемерит</div>
+          </div>
+          {% set p = ((r.sizing_score-1)/4*100) if r.sizing_score else 50 %}
+          <div class="mt-3 position-relative h-2 background-color-d3d mx-auto w-100 rounded-1">
+            <div class="fit-scale__progress-left position-absolute top-0 h-2 background-color-dark-gray end-50" style="width: {{ (50 - p)|round|int if p < 50 else 0 }}%"></div>
+            <div class="fit-scale__progress-right position-absolute top-0 h-2 background-color-dark-gray start-50" style="width: {{ (p - 50)|round|int if p > 50 else 0 }}%"></div>
+          </div>
+          <div class="dot fit-scale__dots d-flex justify-content-between align-items-center position-relative max-w-600 mx-auto h-24 transform-y-50">
+            <div class="dot progress-scale__dot wh-6 border-radius-50 background-color-db border-2-trans position-relative z-2 d-flex justify-content-center align-items-center flex-column" data-value="1"></div>
+            <div class="dot progress-scale__dot wh-6 border-radius-50 background-color-db border-2-trans position-relative z-2 d-flex justify-content-center align-items-center flex-column" data-value="2"></div>
+            <div class="dot fit-scale__center w-3 h-10 background-color-9a9 position-relative z-2 d-flex justify-content-center align-items-center flex-column" data-value="3"></div>
+            <div class="dot progress-scale__dot wh-6 border-radius-50 background-color-db border-2-trans position-relative z-2 d-flex justify-content-center align-items-center flex-column" data-value="4"></div>
+            <div class="dot progress-scale__dot wh-6 border-radius-50 background-color-db border-2-trans position-relative z-2 d-flex justify-content-center align-items-center flex-column" data-value="5"></div>
+          </div>
+        </div>
+        <div class="progress-scale position-relative w-278 me-32 mt-32 mt-lg-0" data-active="{{ r.quality_score or 3 }}">
+          <span class="">Качество товара <span class="color-gray ms-1">({{ r.quality_score or 0 }}/5)</span></span>
+          <div class="f-size-lg-12 f-lh-16 d-flex">
+            <div class="f-size-10 position-absolute left-0 bottom-0 bottom-lg-10">Низкое</div>
+            <div class="f-size-10 bottom-0 bottom-lg-10 position-absolute right-0">Высокое</div>
+          </div>
+          <div class="mt-3 position-relative h-2 background-color-db mx-auto w-278 rounded-1">
+            {% set qp = ((r.quality_score-1)/4*100) if r.quality_score else 0 %}
+            <div class="progress-scale__bar position-absolute top-0 h-2 transition" style="width: {{ qp|round|int }}%"></div>
+          </div>
+          <div class="progress-scale__dots d-flex justify-content-between align-items-center position-relative w-278 mx-auto h-24 transform-y-50">
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="1"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="2"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="3"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="4"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="5"></div>
+          </div>
+        </div>
+        <div class="progress-scale position-relative w-278 mt-32 mt-lg-0 mb-3 mb-lg-0" data-active="{{ r.comfort_score or 3 }}">
+          <span class="">Комфорт <span class="color-gray ms-1">({{ r.comfort_score or 0 }}/5)</span></span>
+          <div class="f-size-lg-12 f-lh-16 d-flex">
+            <div class="f-size-10 position-absolute left-0 bottom-0 bottom-lg-10">Низкий</div>
+            <div class="f-size-10 bottom-0 bottom-lg-10 position-absolute right-0">Высокий</div>
+          </div>
+          <div class="mt-3 position-relative h-2 background-color-db mx-auto w-278 rounded-1">
+            {% set cp = ((r.comfort_score-1)/4*100) if r.comfort_score else 0 %}
+            <div class="progress-scale__bar position-absolute top-0 h-2 transition" style="width: {{ cp|round|int }}%"></div>
+          </div>
+          <div class="progress-scale__dots d-flex justify-content-between align-items-center position-relative w-278 mx-auto h-24 transform-y-50">
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="1"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="2"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="3"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="4"></div>
+            <div class="progress-scale__dot wh-6 border-radius-50 border-2-trans position-relative z-2" data-value="5"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex justify-content-end position relative position-lg-absolute bottom-55 end-0 d-flex gap-12 align-items-center">
+      <p class="f-size-12 m-0">Отзыв был полезен?</p>
+      <div>
+        <svg class="like-icon cursor-pointer" width="12" height="11" viewBox="0 0 12 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.1855 5.31445C11.1855 5.0332 11.0879 4.79492 10.8926 4.59961C10.6973 4.4043 10.4629 4.30664 10.1895 4.30664H7.02539L7.50586 2.02148C7.51367 1.99805 7.51953 1.97266 7.52344 1.94531C7.52734 1.91797 7.5293 1.89258 7.5293 1.86914C7.5293 1.76758 7.50781 1.66992 7.46484 1.57617C7.42188 1.48242 7.36914 1.40039 7.30664 1.33008L6.7793 0.814453L3.48633 4.0957C3.39258 4.18945 3.32031 4.29688 3.26953 4.41797C3.21875 4.53906 3.19336 4.66992 3.19336 4.81055V9.81445C3.19336 10.0879 3.29102 10.3223 3.48633 10.5176C3.68164 10.7129 3.91602 10.8105 4.18945 10.8105H8.68945C8.90039 10.8105 9.08789 10.7539 9.25195 10.6406C9.41602 10.5273 9.53711 10.3809 9.61523 10.2012L11.1152 6.67383C11.1387 6.61914 11.1562 6.56055 11.168 6.49805C11.1797 6.43555 11.1855 6.37305 11.1855 6.31055V5.31445ZM0.193359 10.8105H2.18555V4.81055H0.193359V10.8105Z" fill="gray"></path>
+        </svg>
+        <span class="f-size-12">{{ r.likes }}</span>
+      </div>
+      <div>
+        <svg class="dislike-icon cursor-pointer" width="12" height="11" viewBox="0 0 12 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9.84375 6.81055H11.8359V0.810547H9.84375V6.81055ZM7.83984 0.810547H3.33984C3.12891 0.810547 2.94141 0.867188 2.77734 0.980469C2.61328 1.09375 2.49219 1.24023 2.41406 1.41992L0.914062 4.94727C0.890625 5.00195 0.873047 5.06055 0.861328 5.12305C0.849609 5.18555 0.84375 5.24805 0.84375 5.31055V6.30664C0.84375 6.58789 0.941406 6.82617 1.13672 7.02148C1.33203 7.2168 1.56641 7.31445 1.83984 7.31445H4.99219L4.52344 9.59961C4.51562 9.62305 4.50977 9.64648 4.50586 9.66992C4.50195 9.69336 4.5 9.7207 4.5 9.75195C4.5 9.85352 4.52148 9.94922 4.56445 10.0391C4.60742 10.1289 4.66016 10.209 4.72266 10.2793L5.25 10.8066L8.54297 7.51367C8.63672 7.42773 8.70898 7.32422 8.75977 7.20312C8.81055 7.08203 8.83594 6.95117 8.83594 6.81055V1.80664C8.83594 1.5332 8.73828 1.29883 8.54297 1.10352C8.34766 0.908203 8.11328 0.810547 7.83984 0.810547Z" fill="gray"></path>
+        </svg>
+        <span class="f-size-12">{{ r.dislikes }}</span>
+      </div>
+    </div>
+  </div>
+{% endfor %}

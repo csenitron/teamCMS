@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="de.achimonline.quickjinja.settings.QuickJinjaProjectSettingsState">
+    <option name="settings">
+      <QuickJinjaProjectSettings>
+        <option name="loadVariablesFromFile" value="true" />
+        <option name="templateFilePath" value="$PROJECT_DIR$/app/templates/admin/modules/tabs_module.html" />
+        <option name="templatePinned" value="true" />
+      </QuickJinjaProjectSettings>
+    </option>
+  </component>
+</project>

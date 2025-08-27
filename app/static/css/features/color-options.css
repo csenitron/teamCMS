@@ -1,0 +1,249 @@
+/* Стили для цветовых опций товаров */
+
+.color-options {
+    margin-top: 1rem;
+}
+
+.color-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.color-option:hover {
+    transform: translateY(-2px);
+}
+
+.color-option.active .pallete-color {
+    border-color: #007bff !important;
+    transform: scale(1.1);
+}
+
+.color-option.active .color-check {
+    display: block !important;
+}
+
+.pallete-color {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pallete-color:hover {
+    border-color: #007bff;
+    transform: scale(1.1);
+}
+
+.color-check {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
+.color-name {
+    font-size: 10px;
+    text-align: center;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+/* Дополнительные цвета для русских названий */
+.pallete-color-красный {
+    background: #e31e2b;
+}
+
+.pallete-color-белый {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+}
+
+.pallete-color-черный {
+    background: #000000;
+}
+
+.pallete-color-синий {
+    background: #008cda;
+}
+
+.pallete-color-голубой {
+    background: #b6e9f2;
+}
+
+.pallete-color-зеленый {
+    background: #08b423;
+}
+
+.pallete-color-желтый {
+    background: #ebb40c;
+}
+
+.pallete-color-оранжевый {
+    background: #f26622;
+}
+
+.pallete-color-розовый {
+    background: #ea398c;
+}
+
+.pallete-color-фиолетовый {
+    background: #a04ce4;
+}
+
+.pallete-color-серый {
+    background: #afafaf;
+}
+
+.pallete-color-коричневый {
+    background: #966127;
+}
+
+.pallete-color-бежевый {
+    background: #f4eee8;
+}
+
+.pallete-color-кремовый {
+    background: #ffefde;
+}
+
+.pallete-color-лавандовый {
+    background: #dac6ef;
+}
+
+.pallete-color-мятный {
+    background: #90f2c3;
+}
+
+.pallete-color-бирюзовый {
+    background: #d8ecef;
+}
+
+.pallete-color-бордовый {
+    background: #a70055;
+}
+
+.pallete-color-темно-синий {
+    background: #2d2d66;
+}
+
+.pallete-color-светло-серый {
+    background: #e2e2e7;
+}
+
+.pallete-color-платиновый {
+    background: #e2e2e7;
+}
+
+.pallete-color-золотой {
+    background: #ffd700;
+}
+
+.pallete-color-серебристый {
+    background: #c0c0c0;
+}
+
+/* Английские названия цветов */
+.pallete-color-red {
+    background: #e31e2b;
+}
+
+.pallete-color-white {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+}
+
+.pallete-color-black {
+    background: #000000;
+}
+
+.pallete-color-blue {
+    background: #008cda;
+}
+
+.pallete-color-sky {
+    background: #b6e9f2;
+}
+
+.pallete-color-green {
+    background: #08b423;
+}
+
+.pallete-color-yellow {
+    background: #ebb40c;
+}
+
+.pallete-color-orange {
+    background: #f26622;
+}
+
+.pallete-color-pink {
+    background: #ea398c;
+}
+
+.pallete-color-purple {
+    background: #a04ce4;
+}
+
+.pallete-color-silver {
+    background: #afafaf;
+}
+
+.pallete-color-brown {
+    background: #966127;
+}
+
+.pallete-color-ivory {
+    background: #f4eee8;
+}
+
+.pallete-color-cream {
+    background: #ffefde;
+}
+
+.pallete-color-lavender {
+    background: #dac6ef;
+}
+
+.pallete-color-mint {
+    background: #90f2c3;
+}
+
+.pallete-color-aqua {
+    background: #d8ecef;
+}
+
+.pallete-color-maroon {
+    background: #a70055;
+}
+
+.pallete-color-navy {
+    background: #2d2d66;
+}
+
+.pallete-color-platinum {
+    background: #e2e2e7;
+}
+
+.pallete-color-gold {
+    background: #ffd700;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .pallete-color {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .color-name {
+        font-size: 9px;
+    }
+} 

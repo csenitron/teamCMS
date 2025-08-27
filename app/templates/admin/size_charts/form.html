@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h4">{% if chart %}Редактировать{% else %}Создать{% endif %} размерную сетку</h1>
+
+<form method="post" id="sizeChartForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mb-3">
+    <label class="form-label">Заголовок</label>
+    <input class="form-control" name="title" value="{{ chart.title if chart else '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Изображение</label>
+    <input id="form-image_id" name="image_id" type="hidden" value="{{ chart.image_id if chart else '' }}">
+    <div class="image-preview p-3 bg-light rounded text-center mb-3">
+      <div id="chosenImagePreview" class="mb-2">
+        {% if chart and chart.image %}
+          <img src="{{ url_for('static', filename='uploads/' ~ chart.image.filename) }}" alt="" style="max-height:80px;">
+        {% else %}
+          <div class="text-muted py-4">
+            <i class="fas fa-image fa-2x mb-2"></i>
+            <div>Изображение не выбрано</div>
+          </div>
+        {% endif %}
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#chooseImageModal">
+          <i class="fas fa-upload me-2"></i>Выбрать изображение
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="clearImageBtn">Очистить</button>
+      </div>
+    </div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Описание</label>
+    <textarea class="form-control" rows="3" name="description">{{ chart.description if chart else '' }}</textarea>
+  </div>
+
+  <!-- Табличный редактор -->
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Таблица размеров</span>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="addColBtn">+ Столбец</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="addRowBtn">+ Строка</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearBtn">Очистить</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-nowrap mb-0" id="sizeTable">
+          <!-- будет заполнено JS -->
+        </table>
+      </div>
+      <small class="text-muted">Клик по ячейке, заголовку столбца или заголовку строки — редактирование. Удаление: кнопка «×» в заголовке.</small>
+    </div>
+  </div>
+
+  <!-- Скрытое поле с JSON -->
+  <input type="hidden" name="table_json" id="tableJson">
+
+  <button class="btn btn-primary">Сохранить</button>
+  <a class="btn btn-secondary" href="{{ url_for('admin.size_charts_list') }}">Отмена</a>
+</form>
+
+{% include 'admin/chooseImage.html' %}
+
+{% block extra_js %}
+<script>
+  (function(){
+    const initial = {{ chart.table_json|tojson if chart and chart.table_json else 'null' }};
+    let state = initial || { columns: [], rows: [] };
+
+    const table = document.getElementById('sizeTable');
+    const tableJsonInput = document.getElementById('tableJson');
+
+    function ensureDimensions() {
+      // минимальная таблица 2x2
+      if (!Array.isArray(state.columns)) state.columns = [];
+      if (!Array.isArray(state.rows)) state.rows = [];
+      if (state.columns.length === 0) state.columns = ['UK','US'];
+      if (state.rows.length === 0) state.rows = [ {label:'XS', values:['','']}, {label:'S', values:['','']} ];
+      // выравниваем длины values под количество columns
+      state.rows.forEach(r => {
+        if (!Array.isArray(r.values)) r.values = [];
+        while (r.values.length < state.columns.length) r.values.push('');
+        if (r.values.length > state.columns.length) r.values = r.values.slice(0, state.columns.length);
+      });
+    }
+
+    function render() {
+      ensureDimensions();
+      table.innerHTML = '';
+
+      // header
+      const thead = document.createElement('thead');
+      const hr = document.createElement('tr');
+      let th0 = document.createElement('th');
+      th0.textContent = '';
+      hr.appendChild(th0);
+      state.columns.forEach((c, idx) => {
+        const th = document.createElement('th');
+        th.appendChild(editableSpan(c, val=>{ state.columns[idx]=val; sync(); }));
+        const del = document.createElement('button');
+        del.type='button'; del.className='btn btn-sm btn-link text-danger ms-2'; del.textContent='×';
+        del.onclick=()=>{ removeColumn(idx); };
+        th.appendChild(del);
+        hr.appendChild(th);
+      });
+      thead.appendChild(hr);
+      table.appendChild(thead);
+
+      // body
+      const tbody = document.createElement('tbody');
+      state.rows.forEach((row, rIdx)=>{
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        th.appendChild(editableSpan(row.label||'', val=>{ state.rows[rIdx].label=val; sync(); }));
+        const delr = document.createElement('button');
+        delr.type='button'; delr.className='btn btn-sm btn-link text-danger ms-2'; delr.textContent='×';
+        delr.onclick=()=>{ removeRow(rIdx); };
+        th.appendChild(delr);
+        tr.appendChild(th);
+        state.columns.forEach((_, cIdx)=>{
+          const td = document.createElement('td');
+          td.appendChild(editableSpan(row.values[cIdx]||'', val=>{ state.rows[rIdx].values[cIdx]=val; sync(); }));
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+
+      // синхронизация JSON
+      syncJson();
+    }
+
+    function editableSpan(text, onChange){
+      const span = document.createElement('span');
+      span.contentEditable = 'true';
+      span.className = 'd-inline-block px-1';
+      span.textContent = text || '';
+      span.addEventListener('blur', ()=> onChange(span.textContent.trim()));
+      span.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); span.blur(); }});
+      return span;
+    }
+
+    function addColumn(){ state.columns.push(''); state.rows.forEach(r=>r.values.push('')); render(); }
+    function addRow(){ state.rows.push({label:'', values: new Array(state.columns.length).fill('')}); render(); }
+    function removeColumn(idx){ state.columns.splice(idx,1); state.rows.forEach(r=>r.values.splice(idx,1)); render(); }
+    function removeRow(idx){ state.rows.splice(idx,1); render(); }
+    function clearAll(){ state={columns:[], rows:[]}; render(); }
+    function syncJson(){ tableJsonInput.value = JSON.stringify(state); }
+    function sync(){ syncJson(); }
+
+    document.getElementById('addColBtn').addEventListener('click', addColumn);
+    document.getElementById('addRowBtn').addEventListener('click', addRow);
+    document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+    // submit: убедимся, что JSON обновлён
+    document.getElementById('sizeChartForm').addEventListener('submit', syncJson);
+
+    render();
+  })();
+
+  document.getElementById('clearImageBtn').addEventListener('click', function(){
+    const input = document.getElementById('form-image_id');
+    const preview = document.getElementById('chosenImagePreview');
+    if (input) input.value = '';
+    if (preview) preview.innerHTML = '<div class="text-muted py-4"><i class="fas fa-image fa-2x mb-2"></i><div>Изображение не выбрано</div></div>';
+  });
+</script>
+{% endblock %}
+{% endblock %}
+

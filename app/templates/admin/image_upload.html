@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h1>Загрузить изображение</h1>
+  <form method="post" enctype="multipart/form-data">
+    {{ form.csrf_token }}
+    <div class="mb-3">
+      {{ form.image.label(class="form-label") }}
+      {{ form.image(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.alt.label(class="form-label") }}
+      {{ form.alt(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.directory.label(class="form-label") }}
+      {{ form.directory(class="form-select") }}
+    </div>
+    <button type="submit" class="btn btn-success">{{ form.submit.label.text }}</button>
+  </form>
+</div>
+{% endblock %}

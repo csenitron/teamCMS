@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Редактирование слайд-баннера</h1>
+    <form method="POST">
+        {% if csrf_token %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% endif %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Название слайд-баннера</label>
+                    <input type="text" name="title" id="title" class="form-control" value="{{ banner.title if banner else '' }}" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="cards_in_row" class="form-label">Карточек в строке</label>
+                    <input type="number" name="cards_in_row" id="cards_in_row" class="form-control" value="{{ banner.cards_in_row if banner else '3' }}" min="1" max="6">
+                </div>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="show_arrows" id="show_arrows" value="on" {{ 'checked' if module_instance and json.loads(module_instance.settings).get('show_arrows') else '' }}>
+                    <input type="hidden" name="show_arrows" value="off">
+                    <label class="form-check-label" for="show_arrows">Показывать стрелки</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="show_indicators" id="show_indicators" value="on" {{ 'checked' if module_instance and json.loads(module_instance.settings).get('show_indicators') else '' }}>
+                    <input type="hidden" name="show_indicators" value="off">
+                    <label class="form-check-label" for="show_indicators">Показывать индикаторы</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="auto_scroll" id="auto_scroll" value="on" {{ 'checked' if module_instance and json.loads(module_instance.settings).get('auto_scroll') else '' }}>
+                    <input type="hidden" name="auto_scroll" value="off">
+                    <label class="form-check-label" for="auto_scroll">Автопрокрутка</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="scroll_interval" class="form-label">Интервал автопрокрутки (мс)</label>
+                <input type="number" name="scroll_interval" id="scroll_interval" class="form-control" value="{{ json.loads(module_instance.settings).get('scroll_interval', 5000) if module_instance else '5000' }}" min="1000" step="100">
+            </div>
+        </div>
+        <h3 class="mt-4">Карточки слайд-баннера</h3>
+        <div id="banners-container">
+            {% for item in banner_items %}
+            <div class="card mb-3 banner-item">
+                <div class="card-body">
+                    <h5 class="card-title">Баннер {{ loop.index }}</h5>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label class="form-label">Фон</label>
+                            <div class="selected-image" data-bs-toggle="modal" data-bs-target="#chooseImageModal" data-imagetype="banner-bg-{{ loop.index0 }}">
+                                {% if item.background_image %}
+                                <img src="{{ item.background_image.url }}" alt="Фон" class="img-thumbnail">
+                                {% else %}
+                                <span class="text-muted btn-light">Выбрать</span>
+                                {% endif %}
+                            </div>
+                            <input type="hidden" name="banners[{{ loop.index0 }}][background_image_id]" value="{{ item.background_image_id }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Текст</label>
+                            <textarea name="banners[{{ loop.index0 }}][text]" class="form-control">{{ item.text }}</textarea>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Текст ссылки</label>
+                            <input type="text" name="banners[{{ loop.index0 }}][link_text]" class="form-control" value="{{ item.link_text }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Ссылка</label>
+                            <input type="text" name="banners[{{ loop.index0 }}][link_url]" class="form-control" value="{{ item.link_url }}">
+                        </div>
+                        <div class="col-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger delBanner">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-secondary mt-3" onclick="addBanner()">Добавить баннер</button>
+        <button type="submit" class="btn btn-primary mt-3">Сохранить</button>
+    </form>
+    <hr>
+</div>
+{% include 'admin/chuseImage.html' %}
+<script>
+    let currentImageType = null;
+    let currentBannerIndex = null;
+    document.addEventListener('DOMContentLoaded', function () {
+        const chooseImageModal = document.getElementById('chooseImageModal');
+        if (chooseImageModal) {
+            chooseImageModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                currentImageType = button.getAttribute('data-imagetype');
+                currentBannerIndex = currentImageType.split('-').pop();
+                fetchDirectory(0);
+            });
+        }
+        function fetchDirectory(dirId) {
+            const bodyEl = document.getElementById('directoryAjaxContent');
+            if (!bodyEl) return;
+            bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+            fetch("{{ url_for('admin.admin_directories_view', dir_id=0) }}".replace('0', dirId), {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(resp => resp.text())
+            .then(html => {
+                bodyEl.innerHTML = html;
+                attachDirLinks();
+                attachImgClick();
+            })
+            .catch(err => {
+                bodyEl.innerHTML = `<p class=\"text-danger\">Ошибка загрузки каталога</p>`;
+                console.error(err);
+            });
+        }
+        function attachDirLinks() {
+            const contentEl = document.getElementById('directoryAjaxContent');
+            if (!contentEl) return;
+            const links = contentEl.querySelectorAll('.dirLink');
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const dirId = link.dataset.dirId || '';
+                    fetchDirectory(dirId);
+                });
+            });
+        }
+        function attachImgClick() {
+            document.getElementById('directoryAjaxContent').addEventListener('click', function (e) {
+                if (e.target.classList.contains('chooseImageItem')) {
+                    const imageId = e.target.dataset.imageId;
+                    const imgSrc = e.target.src;
+                    if (!currentImageType) return;
+                    let field = document.querySelector(`input[name=\"banners[${currentBannerIndex}][background_image_id]\"]`);
+                    if (field) {
+                        field.value = imageId;
+                    }
+                    let preview = document.querySelector(`[data-imagetype=\"banner-bg-${currentBannerIndex}\"]`);
+                    if (preview) {
+                        preview.innerHTML = `<img src=\"${imgSrc}\" class=\"img-thumbnail\">`;
+                    }
+                    bootstrap.Modal.getInstance(chooseImageModal).hide();
+                }
+            });
+        }
+    });
+    function addBanner() {
+        const container = document.getElementById('banners-container');
+        const bannerIndex = container.children.length;
+        const bannerHTML = `
+            <div class=\"card mb-3 banner-item\">
+                <div class=\"card-body\">
+                    <h5 class=\"card-title\">Новый баннер</h5>
+                    <div class=\"row\">
+                        <div class=\"col-md-2\">
+                            <label class=\"form-label\">Фон</label>
+                            <div class=\"selected-image\" data-bs-toggle=\"modal\" data-bs-target=\"#chooseImageModal\" data-imagetype=\"banner-bg-${bannerIndex}\">
+                                <span class=\"text-muted btn-light\">Выбрать</span>
+                            </div>
+                            <input type=\"hidden\" name=\"banners[${bannerIndex}][background_image_id]\">
+                        </div>
+                        <div class=\"col-md-3\">
+                            <label class=\"form-label\">Текст</label>
+                            <textarea name=\"banners[${bannerIndex}][text]\" class=\"form-control\"></textarea>
+                        </div>
+                        <div class=\"col-md-3\">
+                            <label class=\"form-label\">Текст ссылки</label>
+                            <input type=\"text\" name=\"banners[${bannerIndex}][link_text]\" class=\"form-control\">
+                        </div>
+                        <div class=\"col-md-3\">
+                            <label class=\"form-label\">Ссылка</label>
+                            <input type=\"text\" name=\"banners[${bannerIndex}][link_url]\" class=\"form-control\">
+                        </div>
+                        <div class=\"col-1 d-flex align-items-end\">
+                            <button type=\"button\" class=\"btn btn-danger delBanner\">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML("beforeend", bannerHTML);
+    }
+    document.addEventListener('click', function (event) {
+        if (event.target.classList.contains('delBanner')) {
+            event.target.closest('.banner-item').remove();
+        }
+    });
+</script>
+{% endblock %}

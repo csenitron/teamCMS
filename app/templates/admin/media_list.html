@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Медиа-галерея</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/all.min.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        /* Скрываем элементы когда страница открыта в iframe */
+        .iframe-hidden {
+            display: none !important;
+        }
+        
+        /* Стили для чекбоксов массового выбора */
+        .image-checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border: 2px solid #007bff;
+            border-radius: 3px;
+            cursor: pointer;
+            opacity: 0.9;
+        }
+        
+        .image-checkbox:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .image-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        /* Подсветка карточки при выборе */
+        .image-card.selected {
+            border: 2px solid #007bff;
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+        }
+        
+        /* Стили для кнопки подтверждения выбора */
+        .confirm-selection-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .confirm-selection-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<script>
+    // Проверяем, открыта ли страница в iframe
+    function isInIframe() {
+        try {
+            return window !== window.top;
+        } catch (e) {
+            return true;
+        }
+    }
+    
+    // Если страница открыта в iframe, скрываем ненужные элементы
+    if (isInIframe()) {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Скрываем кнопку "Назад в админку" если она есть
+            const backButtons = document.querySelectorAll('button[onclick*="window.location.href"], a[href*="admin"]');
+            backButtons.forEach(btn => {
+                if (btn.textContent.includes('Назад') || btn.textContent.includes('админ')) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            // Добавляем класс для скрытия элементов
+            document.body.classList.add('iframe-mode');
+        });
+    }
+</script>
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">
+                    {% if request.args.get('tinymce') == 'true' %}
+                        Выбор изображения для редактора
+                    {% elif request.args.get('multiple') == 'true' %}
+                        Массовый выбор изображений
+                    {% else %}
+                        Управление медиафайлами
+                    {% endif %}
+                </h1>
+                <div class="text-muted small">
+                    {% if request.args.get('tinymce') == 'true' %}
+                        Выберите изображение для вставки в описание товара
+                    {% elif request.args.get('multiple') == 'true' %}
+                        Выберите несколько изображений для массового добавления
+                    {% else %}
+                        Управление изображениями и каталогами
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                {% if request.args.get('multiple') == 'true' %}
+                <button type="button" class="btn btn-success confirm-selection-btn" onclick="confirmMultipleSelection()">
+                    <i class="fas fa-check me-2"></i>Подтвердить выбор (0)
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистические карточки -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="h6 mb-0">{{ directories|length if directories else 0 }}</div>
+                            <div class="small">Подкаталогов</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-folder fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="h6 mb-0">{{ images|length if images else 0 }}</div>
+                            <div class="small">Изображений</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-images fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="h6 mb-0">~{{ '%.1f'|format((images|length * 0.5) if images else 0) }} МБ</div>
+                            <div class="small">Примерный размер</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hdd fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навигационная панель -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- Кнопка "На уровень выше" -->
+        <div>
+            {% if current_directory_id %}
+                <button type="button" class="btn btn-outline-secondary" onclick="navigateToDirectory(0)">
+                    <i class="fas fa-arrow-left me-2"></i>В корневой каталог
+                </button>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary" disabled>
+                    <i class="fas fa-home me-2"></i>Корневой каталог
+                </button>
+            {% endif %}
+        </div>
+        
+        <!-- Текущее местоположение -->
+        <div class="text-muted">
+            <i class="fas fa-folder-open me-2"></i>
+            {% if current_directory_id %}
+                {% for directory in directories %}
+                    {% if directory.id == current_directory_id %}
+                        {{ directory.name }}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                Корневой каталог
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Breadcrumbs навигация -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb bg-light p-2 rounded">
+            <li class="breadcrumb-item">
+                <button type="button" class="btn btn-link p-0 text-decoration-none" onclick="navigateToDirectory(0)">
+                    <i class="fas fa-home me-1"></i>Корень
+                </button>
+            </li>
+            {% if current_directory_id %}
+                {% for directory in directories %}
+                    {% if directory.id == current_directory_id %}
+                        <li class="breadcrumb-item active" aria-current="page">{{ directory.name }}</li>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <li class="breadcrumb-item active" aria-current="page">Корневой каталог</li>
+            {% endif %}
+        </ol>
+    </nav>
+
+    <!-- Mass Selection Toolbar -->
+    {% if request.args.get('multiple') == 'true' %}
+    <div class="alert alert-info mb-3">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Массовый выбор:</strong> Отметьте галочками нужные изображения, затем нажмите "Подтвердить выбор"
+    </div>
+    {% endif %}
+
+    <!-- Кнопки управления -->
+    <div class="mb-4">
+        <div class="btn-group" role="group">
+            <button class="btn btn-success" data-bs-toggle="modal" id="upShow" data-bs-target="#uploadImageModal" data-dir_id="{{current_directory_id if current_directory_id else 0}}">
+                <i class="fas fa-upload me-2"></i>Загрузить изображение
+            </button>
+        </div>
+    </div>
+
+    <!-- Содержимое каталога -->
+    {% if directories or images %}
+        <div class="row g-3" id="imageGrid">
+            <!-- Подкаталоги -->
+            {% for directory in directories %}
+                {% if directory.parent_id == current_directory_id or (not current_directory_id and not directory.parent_id) %}
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="card h-100 shadow-sm directory-card">
+                        <div class="card-body text-center p-3">
+                            <div class="mb-3">
+                                <i class="fas fa-folder fa-3x text-warning"></i>
+                            </div>
+                            <h6 class="card-title mb-2">{{ directory.name }}</h6>
+                            <div class="small text-muted mb-3">
+                                {{ directory.images|length if directory.images else 0 }} файлов
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="navigateToDirectory({{ directory.id }})">
+                                    <i class="fas fa-folder-open me-1"></i>Открыть
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Изображения -->
+            {% for image in images %}
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="card h-100 shadow-sm image-card">
+                        <div class="position-relative">
+                            {% if request.args.get('multiple') == 'true' %}
+                            <div class="position-absolute top-0 start-0 p-2" style="z-index: 10;">
+                                <input type="checkbox" class="form-check-input image-checkbox" 
+                                       data-image-id="{{ image.id }}" 
+                                       data-image-url="{{ image.url }}" 
+                                       data-image-alt="{{ image.alt }}"
+                                       data-image-filename="{{ image.filename }}"
+                                       style="background-color: white; border: 2px solid #007bff;">
+                            </div>
+                            {% endif %}
+                            
+                            <img src="{{ image.url }}"
+                                 class="card-img-top chooseImageItem"
+                                 data-image-id="{{ image.id }}"
+                                 data-filename="{{ image.filename }}"
+                                 style="height: 200px; object-fit: cover; cursor: pointer;"
+                                 alt="{{ image.alt or image.filename }}"
+                                 {% if request.args.get('multiple') != 'true' %}onclick="selectImage('{{ image.url }}', '{{ image.alt or image.filename }}')"{% endif %}>
+                            
+                            <!-- Overlay с действиями -->
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light btn-outline-secondary rounded-circle opacity-75" 
+                                            data-bs-toggle="dropdown" 
+                                            style="width: 32px; height: 32px;">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        {% if request.args.get('multiple') != 'true' %}
+                                        <li>
+                                            <button class="dropdown-item" onclick="selectImage('{{ image.url }}', '{{ image.alt or image.filename }}')">
+                                                <i class="fas fa-check me-2"></i>Выбрать
+                                            </button>
+                                        </li>
+                                        {% endif %}
+                                        <li>
+                                            <button class="dropdown-item" onclick="editImage({{ image.id }}, '{{ image.alt|e }}', {{ image.directory_id or 'null' }})">
+                                                <i class="fas fa-edit me-2"></i>Редактировать
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" onclick="deleteImage({{ image.id }}, '{{ image.filename|e }}')">
+                                                <i class="fas fa-trash me-2"></i>Удалить
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1 text-truncate" style="font-size: 0.85rem;">{{ image.filename }}</h6>
+                            <div class="small text-muted">
+                                ID: {{ image.id }} | 
+                                <span class="text-success">{{ image.created_at.strftime('%d.%m.%Y') if image.created_at else 'Н/Д' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Пустой каталог -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-folder-open fa-5x text-muted"></i>
+            </div>
+            <h4 class="text-muted mb-3">Каталог пуст</h4>
+            <p class="text-muted mb-4">В этом каталоге пока нет подкаталогов и изображений</p>
+            <!-- Кнопка загрузки убрана -->
+        </div>
+    {% endif %}
+</div>
+
+<!-- Модальное окно для загрузки изображений -->
+<div class="modal fade" id="uploadImageModal" tabindex="-1" aria-labelledby="uploadImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadImageModalLabel">
+                    <i class="fas fa-upload me-2"></i>Загрузить изображения
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <!-- Drag & Drop зона -->
+                    <div class="drop-zone mb-4 p-5 border border-2 border-dashed rounded text-center" id="dropZone">
+                        <div class="mb-3">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted"></i>
+                        </div>
+                        <h5>Перетащите файлы сюда</h5>
+                        <p class="text-muted mb-3">или нажмите кнопку ниже для выбора файлов</p>
+                        <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open me-2"></i>Выбрать файлы
+                        </button>
+                        <input type="file" id="fileInput" name="image" multiple accept="image/*" class="d-none">
+                    </div>
+                    
+                    <!-- Список выбранных файлов -->
+                    <div id="fileList" class="d-none">
+                        <h6>Выбранные файлы:</h6>
+                        <div id="selectedFiles" class="mb-3"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="uploadDirectory" class="form-label">Каталог для загрузки</label>
+                        <select class="form-select" id="uploadDirectory" name="directory_id">
+                            <option value="">Корневой каталог</option>
+                            {% for directory in directories %}
+                                <option value="{{ directory.id }}" 
+                                        {% if current_directory_id and directory.id == current_directory_id %}selected{% endif %}>
+                                    {{ directory.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success" id="uploadBtn" disabled onclick="uploadImages()">
+                        <i class="fas fa-upload me-2"></i>Загрузить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Глобальные переменные для массового выбора
+var selectedImages = [];
+var isMultipleMode = false;
+
+// Функция для навигации по каталогам
+function navigateToDirectory(directoryId) {
+    var currentUrl = new URL(window.location);
+    if (directoryId && directoryId !== 0) {
+        currentUrl.searchParams.set('directory_id', directoryId);
+    } else {
+        currentUrl.searchParams.delete('directory_id');
+    }
+    window.location.href = currentUrl.toString();
+}
+
+// Функция для выбора изображения
+function selectImage(url, alt) {
+    // Проверяем, открыто ли окно для TinyMCE
+    var urlParams = new URLSearchParams(window.location.search);
+    var isTinyMCE = urlParams.get('tinymce') === 'true';
+    
+    if (isTinyMCE) {
+        // Отправляем сообщение в родительское окно (работает и для модального окна)
+        if (window.parent) {
+            window.parent.postMessage({
+                type: 'imageSelected',
+                src: url,
+                title: alt,
+                alt: alt
+            }, '*');
+        }
+    } else {
+        // Стандартное поведение для модального окна
+        if (window.parent && window.parent.tinymce) {
+            var editor = window.parent.tinymce.activeEditor;
+            if (editor) {
+                editor.insertContent('<img src="' + url + '" alt="' + alt + '" style="max-width: 100%; height: auto; margin: 10px 0;">');
+            }
+        }
+    }
+}
+
+// Функция для редактирования изображения
+function editImage(id, alt, directoryId) {
+    const newAlt = prompt('Введите alt-текст для изображения:', alt || '');
+    if (newAlt !== null) {
+        // AJAX запрос на изменение alt-текста
+        fetch("{{ url_for('admin.admin_images_update', image_id=1) }}".replace('/1', '/' + id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'alt=' + encodeURIComponent(newAlt) + '&directory_id=' + (directoryId || '') + '&csrf_token=' + getCsrfToken()
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload(); // Обновляем страницу
+            } else {
+                alert('Ошибка изменения изображения');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка изменения изображения');
+        });
+    }
+}
+
+// Функция для удаления изображения
+function deleteImage(id, filename) {
+    if (confirm('Вы уверены, что хотите удалить изображение "' + filename + '"?')) {
+        fetch("{{ url_for('admin.admin_images_delete', image_id=1) }}".replace('/1', '/' + id), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'csrf_token=' + getCsrfToken()
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload(); // Обновляем страницу
+            } else {
+                alert('Ошибка удаления изображения');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка удаления изображения');
+        });
+    }
+}
+
+// Функция для подтверждения массового выбора
+function confirmMultipleSelection() {
+    var checkboxes = document.querySelectorAll('.image-checkbox:checked');
+    var images = [];
+    
+    checkboxes.forEach(function(checkbox) {
+        images.push({
+            id: checkbox.dataset.imageId,
+            url: checkbox.dataset.imageUrl,
+            alt: checkbox.dataset.imageAlt,
+            filename: checkbox.dataset.imageFilename
+        });
+    });
+    
+    if (images.length === 0) {
+        alert('Выберите хотя бы одно изображение');
+        return;
+    }
+    
+    // Отправляем выбранные изображения в родительское окно
+    if (window.parent) {
+        var urlParams = new URLSearchParams(window.location.search);
+        var optionName = urlParams.get('option_name');
+        var optionValue = urlParams.get('option_value');
+        var uniqueId = urlParams.get('unique_id');
+        
+        window.parent.postMessage({
+            type: 'multipleImagesSelected',
+            images: images,
+            optionName: optionName,
+            optionValue: optionValue,
+            uniqueId: uniqueId
+        }, '*');
+    }
+}
+
+// Функция для получения CSRF токена
+function getCsrfToken() {
+    if (window.csrfToken) {
+        return window.csrfToken;
+    }
+    const tokenInput = document.querySelector('input[name="csrf_token"]');
+    if (tokenInput) {
+        return tokenInput.value;
+    }
+    const forms = document.querySelectorAll('form');
+    for (let i = 0; i < forms.length; i++) {
+        const token = forms[i].querySelector('input[name="csrf_token"]');
+        if (token) {
+            return token.value;
+        }
+    }
+    console.warn('CSRF token not found');
+    return '';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем режим массового выбора
+    var urlParams = new URLSearchParams(window.location.search);
+    isMultipleMode = urlParams.get('multiple') === 'true';
+    
+    if (isMultipleMode) {
+        // Инициализируем обработчики для чекбоксов
+        initMultipleSelection();
+    }
+    
+    // Drag & Drop функциональность
+    initDragAndDrop();
+});
+
+function initMultipleSelection() {
+    // Обработчик изменения чекбоксов
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('image-checkbox')) {
+            updateSelectionCount();
+            updateCardHighlight(e.target);
+        }
+    });
+    
+    // Обновляем счетчик при загрузке
+    updateSelectionCount();
+    
+    // Инициализируем подсветку для уже отмеченных чекбоксов
+    document.querySelectorAll('.image-checkbox:checked').forEach(checkbox => {
+        updateCardHighlight(checkbox);
+    });
+}
+
+// Функция для обновления подсветки карточки
+function updateCardHighlight(checkbox) {
+    const card = checkbox.closest('.image-card');
+    if (card) {
+        if (checkbox.checked) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    }
+}
+
+// Предотвращаем всплытие событий для чекбоксов
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('image-checkbox')) {
+        e.stopPropagation();
+    }
+});
+
+function updateSelectionCount() {
+    var checkboxes = document.querySelectorAll('.image-checkbox:checked');
+    var count = checkboxes.length;
+    
+    var confirmBtn = document.querySelector('.confirm-selection-btn');
+    if (confirmBtn) {
+        confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Подтвердить выбор (' + count + ')';
+        confirmBtn.disabled = count === 0;
+        
+        // Добавляем визуальную обратную связь
+        if (count > 0) {
+            confirmBtn.classList.add('btn-success');
+            confirmBtn.classList.remove('btn-secondary');
+        } else {
+            confirmBtn.classList.add('btn-secondary');
+            confirmBtn.classList.remove('btn-success');
+        }
+    }
+}
+
+// Drag & Drop функциональность
+function initDragAndDrop() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    if (!dropZone || !fileInput || !fileList || !selectedFiles || !uploadBtn) {
+        return;
+    }
+
+    // Drag & Drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        dropZone.classList.add('border-primary', 'bg-light');
+    }
+
+    function unhighlight() {
+        dropZone.classList.remove('border-primary', 'bg-light');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            fileList.classList.remove('d-none');
+            selectedFiles.innerHTML = '';
+            uploadBtn.disabled = false;
+
+            Array.from(files).forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'border rounded p-2 mb-2 d-flex align-items-center';
+                fileItem.innerHTML = `
+                    <i class="fas fa-image me-2 text-success"></i>
+                    <span class="me-auto">${file.name}</span>
+                    <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                `;
+                selectedFiles.appendChild(fileItem);
+            });
+        }
+    }
+}
+
+// Функция для загрузки изображений через AJAX
+function uploadImages() {
+    const form = document.getElementById('uploadForm');
+    const formData = new FormData(form);
+    
+    // Добавляем CSRF токен
+    formData.append('csrf_token', getCsrfToken());
+    
+    // Добавляем заголовок для AJAX запроса
+    const headers = {
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    
+    // Показываем индикатор загрузки
+    const uploadBtn = document.getElementById('uploadBtn');
+    const originalText = uploadBtn.innerHTML;
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Загрузка...';
+    
+    fetch('{{ url_for("admin.admin_images_upload_post") }}', {
+        method: 'POST',
+        body: formData,
+        headers: headers
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('uploadImageModal'));
+            modal.hide();
+            
+            // Проверяем, находимся ли мы в iframe
+            if (window !== window.top) {
+                // Если в iframe, обновляем только содержимое без перезагрузки страницы
+                // Отправляем сообщение родительскому окну для обновления iframe
+                window.parent.postMessage({
+                    type: 'refreshMediaList',
+                    directoryId: data.dir_id || 0
+                }, '*');
+            } else {
+                // Если не в iframe, обновляем страницу
+                location.reload();
+            }
+        } else {
+            alert('Ошибка загрузки: ' + (data.errors ? data.errors.join(', ') : 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Ошибка загрузки файлов');
+    })
+    .finally(() => {
+        // Восстанавливаем кнопку
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = originalText;
+    });
+}
+</script>
+
+<script src="/static/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

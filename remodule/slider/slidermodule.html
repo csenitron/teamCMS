@@ -1,0 +1,76 @@
+{% if module.slider %}
+    <section id="slider-{{ module.row_index }}-{{ module.col_index }}"
+             class="hero carousel {% if module.slider.transition_type == 'fade' %}carousel-fade{% endif %} {% if module.slider.transition_type == 'slide' %}slide{% endif %}"
+             data-bs-ride="carousel"
+             aria-label="Главная коллекция"
+             style="width: {{ module.slider.width|default(100) }}%;">
+        {% if module.slider.show_indicators and module.slides|length > 1 %}
+            <div class="carousel-indicators">
+                {% for slide in module.slides %}
+                    <button type="button"
+                            data-bs-target="#slider-{{ module.row_index }}-{{ module.col_index }}"
+                            data-bs-slide-to="{{ loop.index0 }}"
+                            {% if loop.first %}class="active" aria-current="true"{% endif %}
+                            aria-label="Slide {{ loop.index }}"></button>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="carousel-inner">
+            {% for slide in module.slides %}
+                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                    <div class="hero__content d-flex flex-column align-items-center justify-content-end justify-content-lg-center color-white pb-70 p-1 pb-lg-0 p-lg-0"
+                         data-bg-src="/static/uploads/{{ slide.image_pc.filename if slide.image_pc else '/static/default.jpg' }}"
+                         style="background-image: url('/static/uploads/{{ slide.image_pc.filename if slide.image_pc else '/static/default.jpg' }}');">
+                        {% if slide.title or slide.description or slide.buttons %}
+                            <div class="carousel-caption d-none d-md-block">
+                                {% if slide.title %}
+                                    <h1 class="hero__title f-size-28 f-size-lg-46 f-lh-34 f-lh-lg-54 f-weight-400 text-center m-0"
+                                        style="color: {{ slide.text_color or '#000000' }};">
+                                        {{ slide.title | safe }}
+                                    </h1>
+                                {% endif %}
+                                {% if slide.description %}
+                                    <p class="hero__subtitle f-size-16 f-lh-24 m-0 mt-1 mt-lg-2 text-center"
+                                       style="color: {{ slide.text_color or '#000000' }};">
+                                        {{ slide.description }}
+                                    </p>
+                                {% endif %}
+                                {% if slide.buttons %}
+                                    <div class="d-flex flex-row flex-wrap justify-content-center gap-2 mt-5">
+                                        {% for btn in slide.buttons %}
+                                            <a href="{{ btn.link }}"
+                                               class="hero__btn button-animation f-size-12 f-lh-16 p-3 border-none border-radius-50 transition text-decoration-none"
+                                               style="background-color: {{ btn.color or '#000000' }}; color: {{ btn.text_color or '#FFFFFF' }};">
+                                               {{ btn.text }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if module.slider.show_arrows and module.slides|length > 1 %}
+            <button class="carousel-control-prev"
+                    type="button"
+                    data-bs-target="#slider-{{ module.row_index }}-{{ module.col_index }}"
+                    data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next"
+                    type="button"
+                    data-bs-target="#slider-{{ module.row_index }}-{{ module.col_index }}"
+                    data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        {% endif %}
+    </section>
+{% else %}
+    <p>Ошибка: данные слайдера не найдены.</p>
+{% endif %}

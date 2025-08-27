@@ -1,0 +1,131 @@
+.footer__input,
+.footer__btn {
+	background-color: transparent;
+	border: none;
+	border-radius: 0;
+	border-bottom: 1px solid var(--white);
+	padding: 1rem 0.5rem;
+	text-align: left;
+}
+
+.footer__input::placeholder {
+	color: var(--white);
+	opacity: 0.7;
+}
+
+.footer__btn {
+	text-align: center;
+}
+
+.footer__input:focus {
+	background-color: transparent;
+	color: var(--white);
+	box-shadow: none;
+	border-color: var(--white);
+}
+
+.footer__socials svg {
+	transition: opacity 0.2s ease-in-out;
+}
+
+.footer__socials a:hover svg {
+	opacity: 0.7;
+}
+
+.footer-accordion .accordion-item {
+	background-color: transparent;
+	border: none;
+}
+
+.footer-accordion .accordion-button {
+	background-color: transparent;
+	color: var(--white);
+	font-weight: 600;
+	padding: 1.5rem 0;
+}
+
+.footer-accordion .accordion-button:focus {
+	box-shadow: none;
+}
+
+.footer-accordion .accordion-button:not(.collapsed) {
+	background-color: transparent;
+	color: var(--white);
+	box-shadow: none;
+}
+
+.footer-accordion .accordion-button::after {
+	background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+.footer-accordion .accordion-body {
+	padding-top: 0;
+}
+.footer-accordion .accordion-body a {
+	opacity: 0.7;
+	transition: opacity 0.2s ease-in-out;
+	font-size: 12px;
+}
+
+.footer-accordion .accordion-item .accordion-header {
+	font-size: 12px;
+	font-weight: 400;
+	color: white;
+}
+.footer-accordion .accordion-body a:hover {
+	opacity: 1;
+}
+
+/* Custom Dropdown Styles */
+.footer .dropdown-menu {
+	background-color: #000;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 0;
+}
+
+.footer .dropdown-item {
+	color: #fff;
+	transition: background-color 0.2s ease-in-out;
+}
+
+.footer .dropdown-item:hover,
+.footer .dropdown-item:focus {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+/* Mobile & Desktop Layout for bottom section */
+.footer__bottom-layout {
+	position: relative;
+}
+
+.footer__chat {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	transform: translateY(50%);
+	background-color: #000;
+	padding: 4px 1rem;
+}
+
+@media (min-width: 992px) {
+	.footer__bottom-layout {
+		display: flex;
+		align-items: center;
+		gap: 3rem;
+	}
+
+	.footer__lang-container {
+		border: none !important;
+		padding: 0 !important;
+		order: 2;
+	}
+
+	.footer__chat {
+		position: static;
+		transform: none;
+		background-color: transparent;
+		padding: 0;
+		order: 1;
+	}
+}

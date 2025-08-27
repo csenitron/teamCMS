@@ -1,0 +1,23 @@
+table {
+	border-collapse: separate;
+	border-spacing: 8px;
+	margin-bottom: 8px !important;
+}
+tr {
+	height: 66px;
+}
+th,
+td {
+	vertical-align: middle;
+	padding: 17px !important;
+	text-align: center;
+	font-size: 15px !important;
+	line-height: 16px !important;
+	font-weight: 400 !important;
+	min-width: 115px !important;
+	border: 1px solid #ebebeb !important;
+}
+th {
+	color: white !important;
+	background-color: black !important;
+}

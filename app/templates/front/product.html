@@ -1,0 +1,38 @@
+{% include 'front/header.html' %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="row">
+        <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/category/{{product.category.slug}}">{{product.category.name}}</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">{{product.name}}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="row">
+        <div class="col-7">
+            <div class="main-img">
+                <img src="/static/uploads/{{product.main_image.filename}}" class="img-fluid">
+            </div>
+            <div class="d-flex flex-nowrap">
+                {% for img in product.additional_images %}
+                    <img src="/static/uploads/{{img.filename}}" class="img-thumbnail" style="width: 100px">
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-5">
+            <h1>{{product.name}}</h1>
+            <div class="description">
+                {{product.description | safe}}
+            </div>
+            <span class="price">{{product.price}}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+</body>
+</html>

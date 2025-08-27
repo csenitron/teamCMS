@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; media-src 'self'; object-src 'none'">
+    <meta name="description" content="{{seo.meta_description}}">
+    <link rel="icon" href="/static/uploads/{{site_settings.logo.filename}}">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/swiper-bundle.min.css">
+    <link rel="stylesheet" href="/static/css/features/pallets.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/color-options.css') }}">
+    <link rel="stylesheet" href="/static/css/features/favorite.css">
+    <link rel="stylesheet" href="/static/css/features/filter-modal.css">
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/code.jquery.com_jquery-3.7.0.js"></script>
+    <script src="/static/js/search.js"></script>
+    <script src="/static/js/favorite.js"></script>
+    <script src="/static/js/cart.js"></script>
+    <title>{{seo.meta_title}}</title>
+</head>
+<body>
+<div class="bg-black">
+    <div class="container">
+        <div class="row justify-content-center">
+            <h6 class="text-white text-center">Окончательные скидки | Скидка до 70%</h6>
+        </div>
+    </div>
+</div>
+<nav class="navbar navbar-expand-lg bg-body-tertiary sticky-top bg-white">
+    <div class="container-fluid">
+        <!-- Кнопка для мобильной версии -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list"
+                 viewBox="0 0 16 16">
+                <path fill-rule="evenodd"
+                      d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
+            </svg>
+        </button>
+        <button class="d-md-none d-block" style="background: transparent; border: none" id="search-mobile"
+                data-bs-toggle="offcanvas" data-bs-target="#searchCanvas" aria-controls="offcanvasRight">
+            <img src="/static/icons/search.png" style="width: 15px">
+        </button>
+
+        <!-- Мобильный логотип и иконки -->
+        <a class="navbar-brand mx-auto d-md-none d-block" href="/">
+            <img src="/static/uploads/{{site_settings.logo.filename}}" alt="Logo" height="40">
+        </a>
+        <ul class="navbar-nav d-md-none d-flex flex-row">
+            <li class="nav-item">
+                <a class="nav-link" href="/favorites"><img src="/static/icons/heart.png"></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="modal" data-bs-target="#{% if auth %}custom{% else %}auth{% endif %}Modal"><img
+                                src="/static/icons/Login.png"></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/cart"><img src="/static/icons/cart.png"></a>
+            </li>
+        </ul>
+
+        <!-- Контент навигации -->
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <!-- Левая часть: категории -->
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100">
+                {% if main_menu and main_menu.menu_style == 'mega' %}
+                    {% set module_instance = main_menu.module_instance %}
+                    {% set menu_title = main_menu.menu_title %}
+                    {% set menu_style = main_menu.menu_style %}
+                    {% set show_icons = main_menu.show_icons %}
+                    {% set enable_videos = main_menu.enable_videos %}
+                    {% set max_depth = main_menu.max_depth %}
+                    {% set menu_tree = main_menu.menu_tree %}
+                    <div class="w-100">
+                        {% include 'front/extations/menumodule.html' with context %}
+                    </div>
+                {% else %}
+                    {% for category in categories %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/category/{{category.slug}}">{{category.name}}</a>
+                    </li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+
+            <!-- Центральный логотип -->
+            <a class="navbar-brand position-absolute top-50 start-50 translate-middle d-md-block d-none" href="/">
+                <img src="/static/uploads/{{site_settings.logo.filename}}" alt="Logo" height="40">
+            </a>
+
+            <!-- Правая часть: поиск и иконки -->
+            <div class="d-md-flex align-items-center d-none ms-auto">
+                <!-- Поиск -->
+                <button class="input-group-text" id="searchbox" data-bs-toggle="offcanvas"
+                        data-bs-target="#searchCanvas" aria-controls="offcanvasRight" style="border-radius: 1.3em">
+                    <img src="/static/icons/search.png"><span class="px-1" style="font-size: 0.8rem">Поиск</span>
+                </button>
+
+                <!-- Иконки -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link"{% if auth %} href="/favorites"{% else %} data-bs-toggle="modal" data-bs-target="#authModal"{% endif %}><img src="/static/icons/heart.png"></a>
+                    </li>
+                    <li class="nav-item dropdown d-flex ">
+                        <button class="nav-link dropdown-toggle btn btn-link p-0 m-0" id="profileMenu" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none;">
+                            <img src="/static/icons/Login.png" alt="Профиль">
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileMenu">
+                            {% if auth %}
+                            <li><a class="dropdown-item" href="/account">Личный кабинет</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">Выйти</a></li>
+                            {% else %}
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#authModal">Войти</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart"><img src="/static/icons/cart.png"></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+{% include 'front/search.html' %}
+{% if auth %}
+{% include 'front/forms/custom_form.html' %}
+{% else %}
+{% include 'front/forms/auth.html' %}
+{% endif %}

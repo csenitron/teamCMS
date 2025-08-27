@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}Товары{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h3 mb-1">Товары</h1>
+                <div class="text-muted small">Управление товарами магазина</div>
+            </div>
+            <a class="btn btn-primary px-4" href="{{ url_for('admin.product_form') }}">
+                <i class="fas fa-plus me-2"></i>Добавить товар
+            </a>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Всего товаров</div>
+                            <div class="h4 mb-0">{{ products.total }}</div>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-box text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Категорий</div>
+                            <div class="h4 mb-0">{{ categories|length }}</div>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-folder text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Текущая страница</div>
+                            <div class="h4 mb-0">{{ products.page }} из {{ products.pages }}</div>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-file text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="bg-white rounded shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Сортировка</div>
+                            <div class="h4 mb-0">{{ sort|capitalize if sort else 'По умолчанию' }}</div>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-sort text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-light rounded p-3 mb-4">
+        <form method="get" action="{{ url_for('admin.list_products') }}" class="row g-2">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control border-start-0" 
+                           placeholder="Поиск по названию" value="{{ search or '' }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">Все категории</option>
+                    {% for category, level in categories_with_levels %}
+                    <option value="{{ category.id }}" {% if category.id == category_id %}selected{% endif %}>
+                        {{ "— " * level }}{{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="sort" class="form-select">
+                    <option value="name" {% if sort == 'name' %}selected{% endif %}>По названию</option>
+                    <option value="price" {% if sort == 'price' %}selected{% endif %}>По цене</option>
+                    <option value="stock" {% if sort == 'stock' %}selected{% endif %}>По количеству</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="fas fa-filter me-2"></i>Применить
+                </button>
+                <a href="{{ url_for('admin.list_products') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Products Table -->
+    <div class="bg-white rounded shadow-sm">
+        <!-- Mass Actions Toolbar -->
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom" id="massActionsToolbar" style="display: none;">
+            <div class="d-flex align-items-center">
+                <span class="text-muted me-3">Выбрано: <span id="selectedCount">0</span></span>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="massDelete()">
+                        <i class="fas fa-trash me-1"></i>Удалить
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="massToggleIndex()">
+                        <i class="fas fa-eye-slash me-1"></i>Переключить индексацию
+                    </button>
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
+                <i class="fas fa-times me-1"></i>Снять выделение
+            </button>
+        </div>
+        
+        <form id="massActionsForm" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" id="massAction" value="">
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4" style="width: 40px;">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </div>
+                            </th>
+                            <th>Название</th>
+                            <th>Категория</th>
+                            <th>Цена</th>
+                            <th>Количество</th>
+                            <th>Индексация</th>
+                            <th class="text-end pe-4">Действия</th>
+                        </tr>
+                    </thead>
+                <tbody>
+                    {% if products.items %}
+                        {% for product in products.items %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input product-checkbox" 
+                                           name="selected_ids" value="{{ product.id }}">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if product.images and product.images|length > 0 %}
+                                    <div class="product-image me-3">
+                                        <img src="{{ url_for('static', filename='uploads/' ~ product.images[0].filename) }}" 
+                                             alt="" class="img-thumbnail" width="40" height="40">
+                                    </div>
+                                    {% else %}
+                                    <div class="product-no-image me-3">
+                                        <i class="fas fa-box text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-medium">{{ product.name }}</div>
+                                        <div class="text-muted small">ID: {{ product.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if product.category %}
+                                <span class="badge bg-light text-dark">
+                                    {{ product.category.full_name() }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">Без категории</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-medium">{{ product.price }}</span>
+                                {% if product.old_price and product.old_price > product.price %}
+                                <span class="text-decoration-line-through text-muted ms-2">{{ product.old_price }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if product.stock > 10 %}bg-success-subtle text-success{% elif product.stock > 0 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %}">
+                                    {{ product.stock }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if product.is_indexed %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}">
+                                    <i class="fas {% if product.is_indexed %}fa-eye{% else %}fa-eye-slash{% endif %} me-1"></i>
+                                    {{ 'Да' if product.is_indexed else 'Нет' }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="actions">
+                                    <a href="{{ url_for('admin.product_form', product_id=product.id) }}"
+                                       class="action-btn edit-btn"
+                                       title="Редактировать">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="action-btn copy-btn"
+                                            onclick="copyProduct({{ product.id }}, '{{ product.name }}')"
+                                            title="Копировать">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="action-btn delete-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteProductModal"
+                                            data-product-id="{{ product.id }}"
+                                            data-product-name="{{ product.name }}"
+                                            title="Удалить">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="fas fa-box-open fa-3x text-muted"></i>
+                                </div>
+                                <h5>Товары не найдены</h5>
+                                <p class="text-muted">Попробуйте изменить параметры поиска или создайте новый товар</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </form>
+        
+        <!-- Pagination -->
+        {% if products.pages > 1 %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-top">
+            <div class="text-muted small">
+                Показано {{ products.items|length }} из {{ products.total }} товаров
+            </div>
+            <nav aria-label="Пагинация">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if products.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.list_products', page=products.prev_num, search=search, category=category_id, sort=sort) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                    </li>
+                    {% endif %}
+
+                    {% for page in products.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page %}
+                    <li class="page-item {% if page == products.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.list_products', page=page, search=search, category=category_id, sort=sort) }}">{{ page }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.list_products', page=products.next_num, search=search, category=category_id, sort=sort) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Удаление товара</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить товар "<span id="productNameToDelete"></span>"?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteProductForm" method="post" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger px-4" type="submit">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+/* Base Styles */
+.table {
+    --bs-table-hover-bg: rgba(250, 250, 250, 0.7);
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.875rem 0.75rem;
+    background: none;
+    border-bottom-color: #f0f0f0;
+}
+
+/* Product Image */
+.product-image img {
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.product-no-image {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e5e5;
+    background: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    border-color: #ccc;
+    color: #333;
+}
+
+.edit-btn:hover {
+    background-color: #f8f9fa;
+    color: #0066ff;
+}
+
+.delete-btn:hover {
+    background-color: #fff5f5;
+    color: #ff3333;
+}
+
+.copy-btn:hover {
+    background-color: #f0f8ff;
+    color: #0066cc;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    border-color: #e5e5e5;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+.input-group-text {
+    color: #999;
+}
+
+/* Pagination */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    color: #0066ff;
+    border-color: #e5e5e5;
+    padding: 0.375rem 0.75rem;
+}
+
+.page-link:hover {
+    background-color: #f8f9fa;
+    border-color: #e5e5e5;
+    color: #0050cc;
+}
+
+.page-item.active .page-link {
+    background-color: #0066ff;
+    border-color: #0066ff;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    border-color: #e5e5e5;
+}
+
+/* Modal Styles */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+/* Statistics Cards */
+.h4 {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Delete Modal Functionality
+    const deleteModal = document.getElementById('deleteProductModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const productId = button.dataset.productId;
+            const productName = button.dataset.productName;
+            
+            this.querySelector('#productNameToDelete').textContent = productName;
+            this.querySelector('#deleteProductForm').action = 
+                "{{ url_for('admin.delete_product', product_id=0) }}".replace('0', productId);
+        });
+    }
+
+    // Mass Actions Functionality
+    const selectAll = document.getElementById('selectAll');
+    const productCheckboxes = document.querySelectorAll('.product-checkbox');
+    const massActionsToolbar = document.getElementById('massActionsToolbar');
+    const selectedCount = document.getElementById('selectedCount');
+
+    // Select All functionality
+    selectAll.addEventListener('change', function() {
+        productCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateMassActionsToolbar();
+    });
+
+    // Individual checkbox functionality
+    productCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateMassActionsToolbar();
+        });
+    });
+
+    function updateSelectAllState() {
+        const checkedCount = document.querySelectorAll('.product-checkbox:checked').length;
+        const totalCount = productCheckboxes.length;
+        
+        if (checkedCount === 0) {
+            selectAll.indeterminate = false;
+            selectAll.checked = false;
+        } else if (checkedCount === totalCount) {
+            selectAll.indeterminate = false;
+            selectAll.checked = true;
+        } else {
+            selectAll.indeterminate = true;
+            selectAll.checked = false;
+        }
+    }
+
+    function updateMassActionsToolbar() {
+        const checkedCount = document.querySelectorAll('.product-checkbox:checked').length;
+        selectedCount.textContent = checkedCount;
+        
+        if (checkedCount > 0) {
+            massActionsToolbar.style.display = 'flex';
+        } else {
+            massActionsToolbar.style.display = 'none';
+        }
+    }
+});
+
+// Mass Actions Functions
+function massDelete() {
+    const checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Выберите товары для удаления');
+        return;
+    }
+    
+    if (confirm(`Вы уверены, что хотите удалить ${checkedBoxes.length} товаров? Это действие нельзя отменить.`)) {
+        document.getElementById('massAction').value = 'delete_selected';
+        document.getElementById('massActionsForm').submit();
+    }
+}
+
+function massToggleIndex() {
+    const checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Выберите товары для изменения индексации');
+        return;
+    }
+    
+    if (confirm(`Переключить флаг индексации для ${checkedBoxes.length} товаров?`)) {
+        document.getElementById('massAction').value = 'toggle_index_selected';
+        document.getElementById('massActionsForm').submit();
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selectAll').checked = false;
+    document.getElementById('selectAll').indeterminate = false;
+    document.getElementById('massActionsToolbar').style.display = 'none';
+}
+
+// Функция копирования товара
+function copyProduct(productId, productName) {
+    if (confirm(`Копировать товар "${productName}"?`)) {
+        // Показываем индикатор загрузки
+        const button = event.target.closest('.copy-btn');
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        fetch('{{ url_for("admin.copy_product") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                product_id: productId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Товар "${productName}" успешно скопирован как "${data.copied_name}"`);
+                // Перезагружаем страницу для отображения нового товара
+                location.reload();
+            } else {
+                alert('Ошибка при копировании товара: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка при копировании товара');
+        })
+        .finally(() => {
+            // Восстанавливаем кнопку
+            button.innerHTML = originalIcon;
+            button.disabled = false;
+        });
+    }
+}
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{% if post %}Редактирование поста{% else %}Новый пост{% endif %}</h1>
+
+    <form method="post" id="postForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row g-4">
+            <div class="col-md-8">
+                <!-- Основные настройки поста -->
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control") }}
+                </div>
+                <!-- Slug -->
+                <div class="mb-3">
+                    {{ form.slug.label(class="form-label") }}
+                    {{ form.slug(class="form-control") }}
+                </div>
+                <!-- Категория -->
+                <div class="mb-3">
+                    {{ form.category.label(class="form-label") }}
+                    {{ form.category(class="form-select") }}
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Статус публикации -->
+                <div class="mb-3">
+                    {{ form.is_published(class="form-check-input") }}
+                    {{ form.is_published.label(class="form-check-label") }}
+                </div>
+                <!-- Изображение -->
+                <div class="mb-3">
+                    <label class="form-label">Выбранное изображение</label>
+                    <div id="chosenImagePreview">
+                        {% if post and post.image %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ post.image.filename) }}" alt="" style="max-height:50px;">
+                            <span class="ms-2 text-muted">{{ post.image.filename }}</span>
+                        {% else %}
+                            <span class="text-muted">(не выбрано)</span>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary mt-2" data-bs-toggle="modal" data-bs-target="#chooseImageModal">
+                        Выбрать / Загрузить изображение
+                    </button>
+                    <input id="form-image_id" name="image_id" hidden>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <!-- Контент с TinyMCE -->
+                <div class="mb-3">
+                    {{ form.content.label(class="form-label") }}
+                    {{ form.content(class="form-control", id="contentField") }}
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- SEO-блок -->
+        <h4>SEO-настройки</h4>
+        <div class="mb-3">
+            {{ form.meta_title.label(class="form-label") }}
+            {{ form.meta_title(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.meta_description.label(class="form-label") }}
+            {{ form.meta_description(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.meta_keywords.label(class="form-label") }}
+            {{ form.meta_keywords(class="form-control") }}
+        </div>
+
+        <hr>
+
+        <!-- Динамическое добавление блоков с модулями -->
+        <h4>Структура страницы</h4>
+        <div id="layoutEditor" class="mt-3">
+            <!-- JS будет рендерить строки и столбцы с модулями -->
+        </div>
+
+        <!-- Кнопка добавления строки -->
+        <div>
+            <button type="button" class="btn btn-secondary" id="addRowBtn">Добавить строку</button>
+        </div>
+
+        <!-- Скрытое поле для JSON -->
+        <input type="hidden" name="layout_json" id="layout_json" value="">
+
+        <button type="submit" class="btn btn-primary mt-3">Сохранить</button>
+    </form>
+</div>
+
+<!-- Модальное окно для выбора / загрузки изображения -->
+{% include 'admin/chooseImage.html' %}
+
+<!-- Подключение Select2 и TinyMCE -->
+<link href="{{ url_for('static', filename='css/select2.min.css') }}" rel="stylesheet"/>
+<script src="{{ url_for('static', filename='js/select2.min.js') }}"></script>
+<script src="/static/js/tinymce/tinymce.min.js"></script>
+
+<script>
+    // Инициализация TinyMCE
+    tinymce.init({
+        selector: '#contentField',
+        height: 300,
+        plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor'],
+        toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | removeformat | help',
+        language: 'ru',
+        language_url: '/static/js/tinymce/langs/ru.js'
+    });
+
+    // Объявляем переменные вне DOMContentLoaded, чтобы избежать повторного объявления
+    let layoutData = [];
+    
+    // Существующие ячейки для инициализации
+    let existingCells = [
+        {% if layout_cells %}
+            {% for cell in layout_cells %}
+            {
+                "rowIndex": {{ cell.row_index }},
+                "colIndex": {{ cell.col_index }},
+                "colWidth": {{ cell.col_width }},
+                "moduleInstanceId": {{ cell.module_instance_id if cell.module_instance_id else 'null' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        {% endif %}
+    ];
+
+    // Модули из Python
+    let modulesData = [
+        {% for mod in modules %}
+        {
+            "id": {{ mod.id }},
+            "name": "{{ mod.name }}"
+        },
+        {% endfor %}
+    ];
+
+    // Экземпляры для каждого модуля
+    let moduleInstancesByModule = {
+        {% for mod in modules %}
+        {{ mod.id }}: [
+        {% if mod.id in module_instances_by_module %}
+            {% for inst in module_instances_by_module[mod.id] %}
+                { "id": {{ inst.id }}, "label": "{{ inst.label|replace('"','\\"') }}" },
+            {% endfor %}
+        {% else %}
+        {% endif %}
+        ],
+        {% endfor %}
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const layoutEditor = document.getElementById('layoutEditor');
+        const addRowBtn = document.getElementById('addRowBtn');
+        const layoutJson = document.getElementById('layout_json');
+
+        // 1) Инициализация layoutData
+        function initLayout(cells) {
+            let grouped = {};
+            cells.forEach(c => {
+                if (!grouped[c.rowIndex]) grouped[c.rowIndex] = [];
+                grouped[c.rowIndex].push({
+                    colIndex: c.colIndex,
+                    colWidth: c.colWidth,
+                    moduleInstanceId: c.moduleInstanceId
+                });
+            });
+            Object.keys(grouped).forEach(rIdx => {
+                layoutData.push({
+                    rowIndex: parseInt(rIdx),
+                    columns: grouped[rIdx].sort((a, b) => a.colIndex - b.colIndex)
+                });
+            });
+            // сортируем строки
+            layoutData.sort((a, b) => a.rowIndex - b.rowIndex);
+        }
+        initLayout(existingCells);
+
+        // 2) Добавить строку
+        addRowBtn.addEventListener('click', function () {
+            addNewRow();
+            renderLayout();
+        });
+
+        function addNewRow() {
+            const nextRowIndex = layoutData.length;  // индекс новой строки
+            const newRow = {
+                rowIndex: nextRowIndex,
+                columns: []
+            };
+            // Создаём 4 столбца, width=3
+            for (let i = 0; i < 4; i++) {
+                newRow.columns.push({
+                    colIndex: i,
+                    colWidth: 3,
+                    moduleInstanceId: null
+                });
+            }
+            layoutData.push(newRow);
+        }
+
+        // 3) Отрисовка
+        function renderLayout() {
+            layoutEditor.innerHTML = "";
+
+            layoutData.forEach((row, rIdx) => {
+                // Обёртка для строки
+                let rowWrapper = document.createElement('div');
+                rowWrapper.classList.add('mb-4', 'p-2', 'border');
+
+                // Шапка строки (заголовок, кнопка удаления)
+                let rowHeader = document.createElement('div');
+                rowHeader.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'mb-2');
+                rowHeader.innerHTML = `
+                    <h5 class="m-0">Строка #${row.rowIndex}</h5>
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-row">
+                        Удалить строку
+                    </button>
+                `;
+                rowWrapper.appendChild(rowHeader);
+
+                // Сам .row bootstrap
+                let rowEl = document.createElement('div');
+                rowEl.classList.add('row');
+                rowWrapper.appendChild(rowEl);
+
+                // Столбцы
+                row.columns.forEach((col, cIdx) => {
+                    let colDiv = document.createElement('div');
+                    colDiv.className = `col-sm-${col.colWidth} border bg-light p-2 position-relative`;
+                    colDiv.dataset.rIdx = rIdx;
+                    colDiv.dataset.cIdx = cIdx;
+
+                    colDiv.innerHTML = `
+                        <div class="mb-1">
+                            <strong>Столбец #${col.colIndex}</strong> (width=${col.colWidth})
+                            <button type="button" class="btn btn-sm btn-light float-end" data-action="delete-col">X</button>
+                        </div>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-secondary" data-action="dec-width">-</button>
+                            <button type="button" class="btn btn-sm btn-secondary" data-action="inc-width">+</button>
+                        </div>
+                        <div class="mb-2">
+                            ${renderModuleSelect(col.moduleInstanceId)}
+                        </div>
+                    `;
+                    rowEl.appendChild(colDiv);
+                });
+
+                layoutEditor.appendChild(rowWrapper);
+            });
+
+            // сохраняем layoutData в hidden поле
+            layoutJson.value = JSON.stringify(layoutData);
+        }
+
+        // 4) Рендер селекта с модулями/экземплярами
+        function renderModuleSelect(moduleInstId) {
+            let html = `<select class="form-select" data-action="select-module">`;
+            html += `<option value="">--- Не выбрано ---</option>`;
+            modulesData.forEach(mod => {
+                html += `<optgroup label="${mod.name} (module #${mod.id})">`;
+                let arr = moduleInstancesByModule[mod.id] || [];
+                arr.forEach(inst => {
+                    let selected = (inst.id == moduleInstId) ? 'selected' : '';
+                    html += `<option value="${inst.id}" ${selected}>${inst.label}</option>`;
+                });
+                html += `</optgroup>`;
+            });
+            html += `</select>`;
+            return html;
+        }
+
+        // 5) События клика
+        layoutEditor.addEventListener('click', function (e) {
+            let btn = e.target.closest('button');
+            if (!btn) return;
+
+            let action = btn.dataset.action;
+            if (!action) return;
+
+            // Удаление строки?
+            if (action === 'delete-row') {
+                let rowWrapper = btn.closest('.mb-4.p-2.border');
+                // выясним индекс строки
+                let rowEls = Array.from(layoutEditor.querySelectorAll('.mb-4.p-2.border'));
+                let idx = rowEls.indexOf(rowWrapper);
+                if (idx >= 0) {
+                    layoutData.splice(idx, 1);
+                    // Переиндексируем rowIndex + colIndex
+                    layoutData.forEach((r, i) => {
+                        r.rowIndex = i;
+                        r.columns.forEach((col, j) => col.colIndex = j);
+                    });
+                    renderLayout();
+                }
+                return;
+            }
+
+            // Иначе управление столбцами
+            let colDiv = btn.closest('.col-sm-1,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-10,.col-sm-11,.col-sm-12');
+            if (!colDiv) return;
+            let rIdx = parseInt(colDiv.dataset.rIdx);
+            let cIdx = parseInt(colDiv.dataset.cIdx);
+            let row = layoutData[rIdx];
+
+            if (action === 'delete-col') {
+                row.columns.splice(cIdx, 1);
+                row.columns.forEach((c, i) => c.colIndex = i);
+                // пересчитаем ширину
+                let n = row.columns.length;
+                if (n > 0) {
+                    let base = Math.floor(12 / n);
+                    let rem = 12 - (base * n);
+                    row.columns.forEach((cc, ii) => {
+                        cc.colWidth = base + (ii < rem ? 1 : 0);
+                    });
+                }
+                renderLayout();
+            } else if (action === 'inc-width' || action === 'dec-width') {
+                let delta = (action === 'inc-width') ? 1 : -1;
+                changeWidth(rIdx, cIdx, delta);
+                renderLayout();
+            }
+        });
+
+        // 6) change для селекта (выбор модуля/экземпляра)
+        layoutEditor.addEventListener('change', function (e) {
+            if (e.target.dataset.action === 'select-module') {
+                let sel = e.target;
+                let colDiv = sel.closest('.col-sm-1,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-10,.col-sm-11,.col-sm-12');
+                if (!colDiv) return;
+                let rIdx = parseInt(colDiv.dataset.rIdx);
+                let cIdx = parseInt(colDiv.dataset.cIdx);
+                let value = parseInt(sel.value) || null;
+                layoutData[rIdx].columns[cIdx].moduleInstanceId = value;
+                layoutJson.value = JSON.stringify(layoutData);
+            }
+        });
+
+        // 7) Функция changeWidth(rIdx, cIdx, delta)
+        function changeWidth(rIdx, cIdx, delta) {
+            let row = layoutData[rIdx];
+            let col = row.columns[cIdx];
+            let neighborIdx = (cIdx < row.columns.length - 1) ? cIdx + 1 : cIdx - 1;
+            if (neighborIdx < 0) return;
+            let neighbor = row.columns[neighborIdx];
+            let newW = col.colWidth + delta;
+            let nW = neighbor.colWidth - delta;
+            if (newW < 1 || newW > 12) return;
+            if (nW < 1 || nW > 12) return;
+            col.colWidth = newW;
+            neighbor.colWidth = nW;
+        }
+
+        // Инициализация
+        function init() {
+            if (layoutData.length === 0) {
+                // Если нет существующих ячеек, создаём одну строку
+                addNewRow();
+            }
+            renderLayout();
+        }
+
+        init();
+    });
+</script>
+
+{% endblock %}

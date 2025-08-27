@@ -1,0 +1,97 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script>
+<div class="slidebanner-container position-relative overflow-hidden py-4">
+    <div class="slidebanner d-flex transition-transform" id="slidebanner" data-auto-scroll="{{ module.settings.auto_scroll }}" data-interval="{{ module.settings.scroll_interval }}">
+        {% for item in module.banner_items %}
+        <div class="banner-item flex-shrink-0 w-100" style="background-image: url('{{ item.background_image.url if item.background_image else '' }}'); background-size: cover; background-position: center; height: 400px;">
+            <div class="banner-content position-absolute bottom-0 start-50 translate-middle-x p-4 text-center text-white w-100" style="background: rgba(0,0,0,0.3);">
+                <p class="fs-4">{{ item.text }}</p>
+                {% if item.link_url %}
+                <a href="{{ item.link_url }}" class="btn btn-primary mt-2">{{ item.link_text }}</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if module.settings.show_arrows %}
+    <button class="prev-btn btn btn-dark position-absolute top-50 start-0 translate-middle-y">&#8592;</button>
+    <button class="next-btn btn btn-dark position-absolute top-50 end-0 translate-middle-y">&#8594;</button>
+    {% endif %}
+    {% if module.settings.show_indicators %}
+    <div class="indicators position-absolute bottom-0 start-50 translate-middle-x d-flex gap-2 mb-3">
+        {% for item in module.banner_items %}
+        <span class="indicator rounded-circle bg-secondary" style="width: 12px; height: 12px;"></span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+<style>
+.slidebanner-container { max-width: 1200px; margin: 0 auto; }
+.slidebanner { transition: transform 0.5s cubic-bezier(.4,0,.2,1); }
+.banner-item { min-width: 100%; position: relative; }
+.banner-content { background: rgba(0,0,0,0.3); border-radius: 12px; }
+.indicator.bg-primary { background: #0d6efd !important; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const slidebanner = document.getElementById('slidebanner');
+    const items = document.querySelectorAll('.banner-item');
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
+    const indicators = document.querySelectorAll('.indicator');
+    const autoScroll = slidebanner.dataset.autoScroll === 'true';
+    const interval = parseInt(slidebanner.dataset.interval) || 5000;
+    let currentIndex = 0;
+    function updateSlider() {
+        slidebanner.style.transform = `translateX(-${currentIndex * 100}%)`;
+        items.forEach((item, idx) => item.classList.toggle('active', idx === currentIndex));
+        indicators.forEach((ind, idx) => {
+            ind.classList.toggle('bg-primary', idx === currentIndex);
+            ind.classList.toggle('bg-secondary', idx !== currentIndex);
+        });
+    }
+    if (prevBtn) prevBtn.addEventListener('click', () => { currentIndex = (currentIndex - 1 + items.length) % items.length; updateSlider(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { currentIndex = (currentIndex + 1) % items.length; updateSlider(); });
+    if (indicators.length) indicators.forEach((ind, idx) => { ind.addEventListener('click', () => { currentIndex = idx; updateSlider(); }); });
+    if (autoScroll) setInterval(() => { currentIndex = (currentIndex + 1) % items.length; updateSlider(); }, interval);
+    updateSlider();
+});
+</script>

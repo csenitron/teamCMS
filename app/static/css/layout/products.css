@@ -1,0 +1,15 @@
+.products .promotional-item {
+	background-size: cover;
+	background-position: center;
+	color: white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 480px;
+}
+
+@media (max-width: 991px) {
+	.products .promotional-item {
+		min-height: 420px;
+	}
+}

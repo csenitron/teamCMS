@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/components/reviews.css">
+<h1 class="h4">{% if review %}Редактировать{% else %}Создать{% endif %} отзыв</h1>
+
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Товар</label>
+      <select name="product_id" class="form-select" required>
+        {% for p in products %}
+        <option value="{{ p.id }}" {% if review and review.product_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Покупатель (ID)</label>
+      <select name="customer_id" class="form-select">
+        {% for c in customers %}
+        <option value="{{ c.id }}" {% if review and review.customer_id == c.id %}selected{% endif %}>{{ c.id }} — {{ c.email or c.name }}</option>
+        {% endfor %}
+      </select>
+      <div class="form-text">Можно оставить пустым для гостевого отзыва</div>
+    </div>
+    <div class="col-md-12">
+      <label class="form-label">Рейтинг</label>
+      <div class="stars" data-input="rating">
+        {% for i in range(1,6) %}
+        <svg class="star {% if review and review.rating and i <= review.rating %}active{% endif %}" data-value="{{ i }}" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.571 8.332 1.151-6.064 5.722 1.516 8.273L12 18.896l-7.452 4.408 1.516-8.273L0 9.309l8.332-1.151z"/></svg>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="rating" id="rating" value="{{ review.rating if review else '' }}" required>
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Размер</label>
+      <div class="fit-scale position-relative w-100 py-2" data-input="sizing_score">
+        <div class="fit-scale__labels"><span>Маломерит</span><span class="center">В размер</span><span>Большемерит</span></div>
+        <div class="position-relative h-2 background-color-db mx-auto w-100 max-w-600">
+          <div class="fit-scale__progress-left position-absolute top-0 h-2 background-color-dark-gray transition end-50 w-0"></div>
+          <div class="fit-scale__progress-right position-absolute top-0 h-2 background-color-dark-gray transition start-50 w-0"></div>
+          <div class="fit-scale__handle" style="left:50%"></div>
+        </div>
+        <div class="fit-scale__dots d-flex justify-content-between align-items-center position-relative max-w-600 mx-auto h-24 transform-y-50">
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="1"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="2"></div>
+          <div class="fit-scale__center w-3 h-10 border-none background-color-dark-gray cursor-pointer" data-value="3"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="4"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="5"></div>
+        </div>
+      </div>
+      <input type="hidden" name="sizing_score" id="sizing_score" value="{{ review.sizing_score if review else 3 }}">
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Качество</label>
+      <div class="fit-scale position-relative w-100 py-2" data-input="quality_score">
+        <div class="fit-scale__labels"><span>Низкое</span><span class="center"></span><span>Высокое</span></div>
+        <div class="position-relative h-2 background-color-db mx-auto w-100 max-w-600">
+          <div class="fit-scale__progress-left position-absolute top-0 h-2 background-color-dark-gray transition end-50 w-0"></div>
+          <div class="fit-scale__progress-right position-absolute top-0 h-2 background-color-dark-gray transition start-50 w-0"></div>
+          <div class="fit-scale__handle" style="left:50%"></div>
+        </div>
+        <div class="fit-scale__dots d-flex justify-content-between align-items-center position-relative max-w-600 mx-auto h-24 transform-y-50">
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="1"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="2"></div>
+          <div class="fit-scale__center w-3 h-10 border-none background-color-dark-gray cursor-pointer" data-value="3"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="4"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="5"></div>
+        </div>
+      </div>
+      <input type="hidden" name="quality_score" id="quality_score" value="{{ review.quality_score if review else 3 }}">
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Комфорт</label>
+      <div class="fit-scale position-relative w-100 py-2" data-input="comfort_score">
+        <div class="fit-scale__labels"><span>Низкий</span><span class="center"></span><span>Высокий</span></div>
+        <div class="position-relative h-2 background-color-db mx-auto w-100 max-w-600">
+          <div class="fit-scale__progress-left position-absolute top-0 h-2 background-color-dark-gray transition end-50 w-0"></div>
+          <div class="fit-scale__progress-right position-absolute top-0 h-2 background-color-dark-gray transition start-50 w-0"></div>
+          <div class="fit-scale__handle" style="left:50%"></div>
+        </div>
+        <div class="fit-scale__dots d-flex justify-content-between align-items-center position-relative max-w-600 mx-auto h-24 transform-y-50">
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="1"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="2"></div>
+          <div class="fit-scale__center w-3 h-10 border-none background-color-dark-gray cursor-pointer" data-value="3"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="4"></div>
+          <div class="dot wh-10 border-radius-50 background-color-db border-2-trans position-relative z-2 cursor-pointer" data-value="5"></div>
+        </div>
+      </div>
+      <input type="hidden" name="comfort_score" id="comfort_score" value="{{ review.comfort_score if review else 3 }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Текст отзыва</label>
+      <textarea name="comment" rows="4" class="form-control">{{ review.comment if review else '' }}</textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Имя гостя</label>
+      <input type="text" name="guest_name" class="form-control" value="{{ review.guest_name if review else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email гостя</label>
+      <input type="email" name="guest_email" class="form-control" value="{{ review.guest_email if review else '' }}">
+    </div>
+    <div class="col-12 form-check mt-2">
+      <input type="checkbox" name="approved" id="approved" class="form-check-input" {% if review and review.approved %}checked{% endif %}>
+      <label class="form-check-label" for="approved">Одобрен</label>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <button class="btn btn-primary">Сохранить</button>
+    <a class="btn btn-secondary" href="{{ url_for('admin.reviews_list') }}">Отмена</a>
+  </div>
+</form>
+<script src="/static/js/reviews.js"></script>
+{% endblock %}
+
+

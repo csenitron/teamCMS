@@ -1,0 +1,55 @@
+.trending .pallete-slider,
+.trending .product-card__cart-btn {
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
+}
+
+.trending .product-card.is-interactive .pallete-slider,
+.trending .product-card.is-interactive .product-card__cart-btn {
+	display: flex;
+	opacity: 1;
+}
+
+.trending .pallete-slider {
+	display: none;
+}
+
+/* On mobile viewports, show the palette only for the active slide */
+@media (max-width: 767.98px) {
+	.trending .swiper-slide-active .product-card .pallete-slider,
+	.trending .swiper-slide-active .product-card .product-card__cart-btn {
+		display: flex;
+		opacity: 1;
+	}
+}
+
+/* On desktop viewports, show the palette on hover */
+@media (min-width: 768px) {
+	.trending .swiper-slide:hover .pallete-slider {
+		display: flex;
+	}
+}
+
+.product-card .pallete-slider,
+.product-card .product-card__cart-btn {
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.3s, visibility 0.3s;
+}
+
+.product-card.is-interactive .pallete-slider,
+.product-card.is-interactive .product-card__cart-btn {
+	opacity: 1;
+	visibility: visible;
+}
+
+.trending .swiper-slide {
+	/* min-height: 500px; */
+}
+
+@media (max-width: 992px) {
+	.trending {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+}

@@ -1,0 +1,310 @@
+<div class="modal fade" id="chooseImageModal" tabindex="-1" aria-labelledby="chooseImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">  <!-- Широкая модалка, чтобы поместились каталоги + картинки -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Выбрать / Загрузить изображение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body" id="directoryAjaxContent">
+                <!-- Сюда AJAX-ом подгружаем partial _directories_partial.html -->
+                <p class="text-muted">Загрузка...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="uploadImageModal" tabindex="-1" aria-labelledby="uploadImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Уберём action, чтобы не было перезагрузки -->
+            <form id="uploadImageForm" method="post" enctype="multipart/form-data">
+                {{ img_form.csrf_token }}
+                {{ img_form.directory_id(value=img_form.directory_id.data) }}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadImageModalLabel">Загрузить изображение</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        {{ img_form.image.label(class="form-label") }}
+                        {{ img_form.image(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ img_form.alt.label(class="form-label") }}
+                        {{ img_form.alt(class="form-control") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">Отмена
+                    </button>
+                    <button type="submit" id="upIMGm" class="btn btn-primary">{{ img_form.submit.label.text }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="createDirectoryModal" tabindex="-1" aria-labelledby="createDirectoryModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="createDirectoryFrom" action="{{ url_for('admin.admin_directories_create') }}">
+                {{ dir_form.csrf_token }}
+                {{ dir_form.parent_id(value=dir_form.parent_id.data) }}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createDirectoryModalLabel">Новый каталог</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        {{ dir_form.name.label(class="form-label") }}
+                        {{ dir_form.name(class="form-control") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" id="createDir" class="btn btn-primary">{{ dir_form.submit.label.text }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+        /**
+         * При открытии модалки #chooseImageModal делаем AJAX-запрос
+         * на admin_directories_view с заголовком X-Requested-With.
+         */
+        const chooseModalEl = document.getElementById('chooseImageModal');
+        if (chooseModalEl) {
+            chooseModalEl.addEventListener('show.bs.modal', function (event) {
+                const bodyEl = document.getElementById('directoryAjaxContent');
+                bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+
+                // Делаем AJAX-запрос (fetch) с header { 'X-Requested-With': 'XMLHttpRequest' }
+                fetch("{{ url_for('admin.admin_directories_view', dir_id=0) }}", {
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                })
+                    .then(response => response.text())
+                    .then(html => {
+                        bodyEl.innerHTML = html;
+                        // После вставки partial — навешиваем события
+                        attachDirectoryLinks();
+                        attachImageClickHandler();
+                    })
+                    .catch(err => {
+                        bodyEl.innerHTML = `<p class="text-danger">Ошибка загрузки каталога</p>`;
+                        console.error(err);
+                    });
+            });
+        }
+
+
+        /**
+         * attachDirectoryLinks():
+         * В partial _directories_partial.html предполагается, что ссылки на подкаталоги имеют класс .dirLink
+         * и атрибут data-dir-id="..."
+         */
+        function attachDirectoryLinks() {
+            const contentEl = document.getElementById('directoryAjaxContent');
+            if (!contentEl) return;
+
+            const links = contentEl.querySelectorAll('.dirLink');
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const dirId = link.dataset.dirId || '';
+                    loadDirectory(dirId);
+                });
+            });
+        }
+
+        function loadDirectory(dirId) {
+            const bodyEl = document.getElementById('directoryAjaxContent');
+            bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+            // Подставляем '0' для Jinja, а потом replace('0', dirId)
+            let url = "{{ url_for('admin.admin_directories_view', dir_id=0) }}".replace('0', dirId);
+
+            fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                .then(r => r.text())
+                .then(html => {
+                    bodyEl.innerHTML = html;
+                    attachDirectoryLinks();
+                    attachImageClickHandler();
+                })
+                .catch(err => {
+                    bodyEl.innerHTML = `<p class="text-danger">Ошибка загрузки</p>`;
+                    console.error(err);
+                });
+        }
+
+        /**
+         * attachImageClickHandler():
+         * В partial _directories_partial.html предполагается, что миниатюры имеют класс .chooseImageItem,
+         * у каждой img data-image-id="..." data-filename="..."
+         */
+        function attachImageClickHandler() {
+            const contentEl = document.getElementById('directoryAjaxContent');
+            if (!contentEl) return;
+
+            const imageGrid = contentEl.querySelector('#imageGrid');
+            if (!imageGrid) return;
+
+            imageGrid.addEventListener('click', function (e) {
+                const target = e.target;
+                if (target.classList.contains('chooseImageItem')) {
+                    const imageId = target.dataset.imageId;
+                    const imageSrc = target.src;
+                    const filename = target.dataset.filename;
+
+                    // Найдём скрытое поле (из category_form) name="image_id"
+                    const imageIdField = document.getElementById('form-image_id');
+                    if (imageIdField) {
+                        imageIdField.value = imageId;
+                    }
+
+                    // Обновим превью
+                    const preview = document.getElementById('chosenImagePreview');
+                    if (preview) {
+                        preview.innerHTML = `
+                    <img src="${imageSrc}" alt="" style="max-height:50px;">
+                    <span class="ms-2 text-muted">${filename}</span>
+                  `;
+                    }
+
+                    // Закрываем модалку
+                    const modalEl = document.getElementById('chooseImageModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+                }
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.id === 'upIMGm') {
+                e.preventDefault();
+
+                const form = document.getElementById('uploadImageForm');
+                const data = new FormData(form);
+
+                // Предположим, dir_id лежит в data-атрибуте data-dir_id="..."
+                const dir_id = document.getElementById('upShow').dataset.dir_id;
+                data.set('directory_id', dir_id);
+
+                fetch("{{ url_for('admin.admin_images_upload_post') }}", {
+                    method: "POST",
+                    body: data,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error("Ошибка загрузки: " + response.status);
+                        }
+                        return response.json();  // <- Парсим JSON
+                    })
+                    .then(data => {
+                        if (!data.ok) {
+                            // Если ok=False, можно обработать ошибку
+                            throw new Error("Ошибка загрузки (ok=false)");
+                        }
+                        // data.dir_id — каталог, куда загрузили файл
+
+                        // 1) Закрываем uploadImageModal
+                        const uploadEl = document.getElementById('uploadImageModal');
+                        if (uploadEl) {
+                            const uploadModal = bootstrap.Modal.getInstance(uploadEl);
+                            if (uploadModal) {
+                                uploadModal.hide();
+                            }
+                        }
+
+                        // 2) Открываем chooseImageModal
+                        const chooseEl = document.getElementById('chooseImageModal');
+                        if (chooseEl) {
+                            // Установим data-load-dir, чтобы в событии show.bs.modal
+                            // мы могли передать нужный dirId в loadDirectory(...)
+                            chooseEl.dataset.loadDir = data.dir_id;
+
+                            // Показываем модалку через Bootstrap 5
+                            const chooseModal = bootstrap.Modal.getOrCreateInstance(chooseEl);
+                            chooseModal.show();
+
+                            // Можно сразу вызвать loadDirectory(data.dir_id)
+                            // либо пусть это делает сам show.bs.modal
+                            loadDirectory(data.dir_id);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Произошла ошибка при загрузке изображения");
+                    });
+            }
+        });
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.id === 'createDir') {
+                e.preventDefault();
+
+                const form = document.getElementById('createDirectoryFrom');
+                const data = new FormData(form);
+
+                // Предположим, dir_id лежит в data-атрибуте data-dir_id="..."
+                const dir_id = document.getElementById('upShow').dataset.dir_id;
+                data.set('parent_id', dir_id);
+
+                fetch("{{ url_for('admin.admin_directories_create') }}", {
+                    method: "POST",
+                    body: data,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error("Ошибка загрузки: " + response.status);
+                        }
+                        return response.json();  // <- Парсим JSON
+                    })
+                    .then(data => {
+                        if (!data.ok) {
+                            // Если ok=False, можно обработать ошибку
+                            throw new Error("Ошибка загрузки (ok=false)");
+                        }
+                        // data.dir_id — каталог, куда загрузили файл
+
+                        // 1) Закрываем uploadImageModal
+                        const createDirectoryEl = document.getElementById('createDirectoryModal');
+                        if (createDirectoryEl) {
+                            const createDirectory = bootstrap.Modal.getInstance(createDirectoryEl);
+                            if (createDirectory) {
+                                createDirectory.hide();
+                            }
+                        }
+
+                        // 2) Открываем chooseImageModal
+                        const chooseEl = document.getElementById('chooseImageModal');
+                        if (chooseEl) {
+                            // Установим data-load-dir, чтобы в событии show.bs.modal
+                            // мы могли передать нужный dirId в loadDirectory(...)
+                            chooseEl.dataset.loadDir = data.dir_id;
+
+                            // Показываем модалку через Bootstrap 5
+                            const chooseModal = bootstrap.Modal.getOrCreateInstance(chooseEl);
+                            chooseModal.show();
+
+                            // Можно сразу вызвать loadDirectory(data.dir_id)
+                            // либо пусть это делает сам show.bs.modal
+                            loadDirectory(data.dir_id);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Произошла ошибка при загрузке изображения");
+                    });
+            }
+        });
+    });
+</script>

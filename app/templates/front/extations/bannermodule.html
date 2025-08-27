@@ -1,0 +1,102 @@
+{% if module.banner and (module.settings is not defined or module.settings.get('status', True)) %}
+{% set settings = module.settings if module.settings else {} %}
+<div class="slidebanner-container position-relative overflow-hidden mt-4">
+    <div class="slidebanner d-flex transition-transform" id="slidebanner" data-auto-scroll="{{ settings.get('auto_scroll', false) }}" data-interval="{{ settings.get('scroll_interval', 5000) }}">
+        {% for item in module.banner_items %}
+        <div class="banner-item flex-shrink-0" style="width: calc(100vw / {{ module.banner.cards_in_row }}); background-image: url('/static/uploads/{{ item.background_image.filename if item.background_image else '' }}'); background-size: cover; background-position: center; height: 500px;">
+            <div class="banner-content position-absolute bottom-0 start-0 p-4 text-white w-100" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                <h3 class="fs-3 fw-bold mb-3">{{ item.text }}</h3>
+                {% if item.link_url %}
+                <a href="{{ item.link_url }}" class="btn btn-light text-dark px-4 py-2 rounded-pill fw-semibold">{{ item.link_text }}</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if settings.get('show_arrows', false) %}
+    <button class="prev-btn btn btn-dark position-absolute top-50 start-0 translate-middle-y rounded-circle" style="width: 50px; height: 50px; opacity: 0.8;">&#8592;</button>
+    <button class="next-btn btn btn-dark position-absolute top-50 end-0 translate-middle-y rounded-circle" style="width: 50px; height: 50px; opacity: 0.8;">&#8594;</button>
+    {% endif %}
+    {% if settings.get('show_indicators', false) %}
+    <div class="indicators position-absolute bottom-0 start-50 translate-middle-x d-flex gap-2 mb-3">
+        {% for i in range((module.banner_items|length / module.banner.cards_in_row)|round(0, 'ceil')|int) %}
+        <span class="indicator rounded-circle bg-secondary" style="width: 12px; height: 12px;"></span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+<style>
+.slidebanner-container { width: 100vw; margin-left: calc(-50vw + 50%); }
+.slidebanner { transition: transform 0.5s cubic-bezier(.4,0,.2,1); }
+.banner-item { position: relative; }
+.banner-content { border-radius: 0 0 12px 12px; }
+.indicator.bg-primary { background: #0d6efd !important; }
+.prev-btn:hover, .next-btn:hover { opacity: 1 !important; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const slidebanner = document.getElementById('slidebanner');
+    const items = document.querySelectorAll('.banner-item');
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
+    const indicators = document.querySelectorAll('.indicator');
+    const autoScroll = slidebanner.dataset.autoScroll === 'true';
+    const interval = parseInt(slidebanner.dataset.interval) || 5000;
+    const cardsInRow = {{ module.banner.cards_in_row }};
+    const totalSlides = Math.ceil(items.length / cardsInRow);
+    let currentIndex = 0;
+    let autoScrollInterval;
+    
+    function updateSlider() {
+        slidebanner.style.transform = `translateX(-${currentIndex * 100}%)`;
+        items.forEach((item, idx) => item.classList.toggle('active', idx >= currentIndex * cardsInRow && idx < (currentIndex + 1) * cardsInRow));
+        indicators.forEach((ind, idx) => {
+            ind.classList.toggle('bg-primary', idx === currentIndex);
+            ind.classList.toggle('bg-secondary', idx !== currentIndex);
+        });
+    }
+    
+    function nextSlide() {
+        currentIndex = (currentIndex + 1) % totalSlides;
+        updateSlider();
+    }
+    
+    function prevSlide() {
+        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+        updateSlider();
+    }
+    
+    if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+    if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+    
+    if (indicators.length) indicators.forEach((ind, idx) => { 
+        ind.addEventListener('click', () => { 
+            currentIndex = idx; 
+            updateSlider(); 
+        }); 
+    });
+    
+    if (autoScroll) {
+        autoScrollInterval = setInterval(nextSlide, interval);
+        
+        // Останавливаем автопрокрутку при наведении
+        slidebanner.addEventListener('mouseenter', () => {
+            if (autoScrollInterval) {
+                clearInterval(autoScrollInterval);
+            }
+        });
+        
+        // Возобновляем автопрокрутку при уходе мыши
+        slidebanner.addEventListener('mouseleave', () => {
+            if (autoScroll) {
+                autoScrollInterval = setInterval(nextSlide, interval);
+            }
+        });
+    }
+    
+    updateSlider();
+});
+</script>
+{% else %}
+<p>Слайд-баннер не найден.</p>
+{% endif %}

@@ -1,0 +1,5 @@
+.inspiration .swiper-slide {
+	background-position: center center;
+	background-size: cover;
+	min-height: 580px;
+}

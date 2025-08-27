@@ -1,0 +1,81 @@
+
+    {% if module.slider %}
+        <div id="slider-{{ module.row_index }}-{{ module.col_index }}" 
+             class="carousel {% if module.slider.transition_type == 'slide' %}slide{% endif %}" 
+             data-bs-ride="carousel" 
+             {% set settings = module.settings if module.settings is defined else (json.loads(module.module_instance.settings) if module.module_instance and module.module_instance.settings else {}) %}
+             data-auto-scroll="{{ settings.auto_scroll if settings and settings.auto_scroll is not none else false }}"
+             data-interval="{{ settings.scroll_interval if settings and settings.scroll_interval is not none else 5000 }}"
+             style="width: {{ module.slider.width }}%;">
+            {% if module.slider.show_indicators and module.slides|length > 1 %}
+                <div class="carousel-indicators">
+                    {% for slide in module.slides %}
+                        <button type="button" 
+                                data-bs-target="#slider-{{ module.row_index }}-{{ module.col_index }}" 
+                                data-bs-slide-to="{{ loop.index0 }}" 
+                                {% if loop.first %}class="active" aria-current="true"{% endif %} 
+                                aria-label="Slide {{ loop.index }}"></button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="carousel-inner">
+                {% for slide in module.slides %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="/static/uploads/{{slide.image_pc.filename if slide.image_pc else '/static/default.jpg' }}"
+                             class="d-block img-fluid"
+                             alt="{{ slide.title }}">
+                        {% if slide.title or slide.description or slide.link_url %}
+                            <div class="carousel-caption d-none d-md-block">
+                                {% if slide.title %}<h5 style="color: {{ slide.title_color or '#ffffff' }}">{{ slide.title }}</h5>{% endif %}
+                                {% if slide.description %}<p style="color: {{ slide.description_color or '#ffffff' }}">{{ slide.description }}</p>{% endif %}
+                                {% if slide.buttons and slide.buttons|length %}
+                                  <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                    {% for btn in slide.buttons %}
+                                      <a href="{{ btn.url or '#' }}" class="btn" style="border-radius: 1.3em; background-color: {{ btn.bg_color or '#000000' }}; color: {{ btn.text_color or '#ffffff' }}">{{ btn.text }}</a>
+                                    {% endfor %}
+                                  </div>
+                                {% elif slide.link_url %}
+                                  <a href="{{ slide.link_url }}" class="btn btn-dark" style="border-radius: 1.3em">{{ slide.link_text or 'Learn More' }}</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% set show_arrows = (settings.show_arrows if settings else module.slider.show_arrows) %}
+            {% set show_indicators = (settings.show_indicators if settings else module.slider.show_indicators) %}
+            {% if show_arrows and module.slides|length > 1 %}
+                <button class="carousel-control-prev" 
+                        type="button" 
+                        data-bs-target="#slider-{{ module.row_index }}-{{ module.col_index }}" 
+                        data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" 
+                        type="button" 
+                        data-bs-target="#slider-{{ module.row_index }}-{{ module.col_index }}" 
+                        data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            {% endif %}
+        </div>
+        <script>
+        (function(){
+          try {
+            var el = document.getElementById('slider-{{ module.row_index }}-{{ module.col_index }}');
+            if (!el) return;
+            var auto = String(el.getAttribute('data-auto-scroll')) === 'true';
+            var interval = parseInt(el.getAttribute('data-interval')) || 5000;
+            if (auto && window.bootstrap && bootstrap.Carousel) {
+              var carousel = new bootstrap.Carousel(el, { interval: interval, ride: 'carousel', pause: false });
+            }
+          } catch(_) {}
+        })();
+        </script>
+    {% else %}
+        <p>Ошибка: данные слайдера не найдены.</p>
+    {% endif %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Редактор страниц{% endblock %}
+
+{% block content %}
+<h1>Редактор страниц</h1>
+<div id="page-editor">
+    <!-- Здесь будет содержимое редактора страниц -->
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="mb-3">
+            <label for="title" class="form-label">Заголовок</label>
+            <input type="text" class="form-control" id="title" name="title" required>
+        </div>
+        <div class="mb-3">
+            <label for="slug" class="form-label">URL (slug)</label>
+            <input type="text" class="form-control" id="slug" name="slug">
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Стили для редактора страниц */
+    #page-editor {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Скрипты для редактора страниц
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Редактор страниц загружен");
+        
+        // Генерация slug из заголовка
+        const titleInput = document.getElementById('title');
+        const slugInput = document.getElementById('slug');
+        
+        if (titleInput && slugInput) {
+            titleInput.addEventListener('input', function() {
+                if (!slugInput.value) {
+                    slugInput.value = titleInput.value
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^\w\-]+/g, '')
+                        .replace(/\-\-+/g, '-')
+                        .replace(/^-+/, '')
+                        .replace(/-+$/, '');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

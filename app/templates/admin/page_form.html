@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% block title %}{% if page.id %}Редактирование{% else %}Создание{% endif %} страницы{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">{% if page.id %}Редактирование{% else %}Создание{% endif %} страницы</h1>
+                <div class="text-muted small">
+                    {% if page.id %}
+                        Редактирование страницы "{{ page.title }}"
+                    {% else %}
+                        Создание новой страницы сайта
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.page_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Назад к списку
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="row g-4">
+            <!-- Основная информация -->
+            <div class="col-lg-8">
+                <div class="bg-white rounded shadow-sm p-4 mb-4">
+                    <h5 class="mb-3">Основная информация</h5>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Заголовок <span class="text-danger">*</span></label>
+                                <input type="text" name="title" value="{{ page.title or '' }}" class="form-control" required>
+                                <div class="form-text">Название страницы, отображаемое в заголовке</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">URL (slug) <span class="text-danger">*</span></label>
+                                <input type="text" name="slug" value="{{ page.slug or '' }}" class="form-control" required>
+                                <div class="form-text">Часть URL, например: about-us</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO информация -->
+                <div class="bg-white rounded shadow-sm p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">SEO информация</h5>
+                        <button type="button" class="btn btn-sm btn-light" data-bs-toggle="collapse" data-bs-target="#seoSection">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="seoSection" class="collapse show">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Meta Title</label>
+                                    <input type="text" name="meta_title" value="{{ page.meta_title or '' }}" class="form-control">
+                                    <div class="form-text">Заголовок страницы для поисковых систем</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Meta Keywords</label>
+                                    <input type="text" name="meta_keywords" value="{{ page.meta_keywords or '' }}" class="form-control">
+                                    <div class="form-text">Ключевые слова через запятую</div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Meta Description</label>
+                                    <textarea name="meta_description" class="form-control" rows="3">{{ page.meta_description or '' }}</textarea>
+                                    <div class="form-text">Краткое описание страницы для поисковых систем</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Структура страницы -->
+                <div class="bg-white rounded shadow-sm p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Структура страницы</h5>
+                        <button type="button" id="addRowBtn" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>Добавить строку
+                        </button>
+                    </div>
+                    
+                    <div id="layoutEditor" class="mt-3">
+                        <!-- Здесь JS будет рендерить строки/столбцы -->
+                    </div>
+                    
+                    <!-- Скрытое поле для JSON -->
+                    <input type="hidden" name="layout_json" id="layout_json" value="">
+                </div>
+            </div>
+            
+            <!-- Боковая панель -->
+            <div class="col-lg-4">
+                <!-- Статус и действия -->
+                <div class="bg-white rounded shadow-sm p-4 mb-4">
+                    <h5 class="mb-3">Действия</h5>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_homepage" id="isHomepage" value="1" {% if page.is_homepage %}checked{% endif %}>
+                        <label class="form-check-label" for="isHomepage">
+                            Сделать главной страницей
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Сохранить
+                        </button>
+                        {% if page.id %}
+                        <a href="/{{ page.slug }}" target="_blank" class="btn btn-outline-secondary">
+                            <i class="fas fa-external-link-alt me-2"></i>Просмотр
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Информация о странице -->
+                {% if page.id %}
+                <div class="bg-white rounded shadow-sm p-4">
+                    <h5 class="mb-3">Информация</h5>
+                    
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">ID:</span>
+                            <span>{{ page.id }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Создано:</span>
+                            <span>{{ page.created_at.strftime('%d.%m.%Y %H:%M') if page.created_at else 'Н/Д' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Обновлено:</span>
+                            <span>{{ page.updated_at.strftime('%d.%m.%Y %H:%M') if page.updated_at else 'Н/Д' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">URL:</span>
+                            <span class="text-truncate ms-2">{{ page.slug }}</span>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block extra_css %}
+<style>
+/* Form Styles */
+.form-control, .form-select {
+    border-color: #e5e5e5;
+    padding: 0.6rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+.form-text {
+    color: #888;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Layout Editor */
+.layout-row {
+    background-color: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+.layout-row-header {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.layout-column {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.layout-column:hover {
+    border-color: #ccc;
+}
+
+.layout-column-header {
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+}
+
+.layout-column .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* List Group */
+.list-group-item {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-color: #f0f0f0;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// layoutData: [{
+//   rowIndex,
+//   columns: [ {colIndex, colWidth, moduleInstanceId}, ... ]
+// }]
+
+// Объявляем переменные вне DOMContentLoaded, чтобы избежать повторного объявления
+let layoutData = [];
+
+let existingCells = [
+{% for cell in layout_cells %}
+  {
+    "rowIndex": {{cell.row_index}},
+    "colIndex": {{cell.col_index}},
+    "colWidth": {{cell.col_width}},
+    "moduleInstanceId": {{cell.module_instance_id if cell.module_instance_id else 'null'}}
+  }{% if not loop.last %},{% endif %}
+{% endfor %}
+];
+
+// Модули из Python
+let modulesData = [
+{% for mod in modules %}
+  {
+    "id": {{mod.id}},
+    "name": "{{mod.name}}"
+  }{% if not loop.last %},{% endif %}
+{% endfor %}
+];
+
+// Экземпляры для каждого модуля (module_id -> [{id, label}, ...])
+let moduleInstancesByModule = {
+{% for mod in modules %}
+  {{mod.id}}: [
+  {% if mod.id in module_instances_by_module %}
+    {% for inst in module_instances_by_module[mod.id] %}
+      {
+        "id": {{inst.id}},
+        "label": "{{inst.label|replace('"','\\"')}}"
+      }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  {% endif %}
+  ]{% if not loop.last %},{% endif %}
+{% endfor %}
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  const layoutEditor = document.getElementById('layoutEditor');
+  const addRowBtn = document.getElementById('addRowBtn');
+  const layoutJson = document.getElementById('layout_json');
+
+  // 1) Инициализация layoutData
+  function initLayout(cells) {
+    let grouped = {};
+    cells.forEach(c => {
+      if(!grouped[c.rowIndex]) grouped[c.rowIndex] = [];
+      grouped[c.rowIndex].push({
+        colIndex: c.colIndex,
+        colWidth: c.colWidth,
+        moduleInstanceId: c.moduleInstanceId
+      });
+    });
+    Object.keys(grouped).forEach(rIdx => {
+      layoutData.push({
+        rowIndex: parseInt(rIdx),
+        columns: grouped[rIdx].sort((a,b)=> a.colIndex - b.colIndex)
+      });
+    });
+    // сортируем строки
+    layoutData.sort((a,b)=> a.rowIndex - b.rowIndex);
+  }
+  initLayout(existingCells);
+
+  // 2) Добавить строку
+  addRowBtn.addEventListener('click', function(){
+    addNewRow();
+    renderLayout();
+  });
+
+  function addNewRow() {
+    let rowIndex = layoutData.length;  // индекс новой строки
+    let newRow = {
+      rowIndex: rowIndex,
+      columns: []
+    };
+    // Создаём 4 столбца, width=3
+    for(let i=0; i<4; i++){
+      newRow.columns.push({
+        colIndex: i,
+        colWidth: 3,
+        moduleInstanceId: null
+      });
+    }
+    layoutData.push(newRow);
+  }
+
+  // 3) Отрисовка
+  function renderLayout() {
+    layoutEditor.innerHTML = "";
+
+    if (layoutData.length === 0) {
+      layoutEditor.innerHTML = `
+        <div class="text-center py-4 bg-light rounded">
+          <i class="fas fa-columns fa-2x text-muted mb-2"></i>
+          <p class="mb-0">Нет строк в макете. Нажмите "Добавить строку", чтобы начать.</p>
+        </div>
+      `;
+      return;
+    }
+
+    layoutData.forEach((row, rIdx)=> {
+      // Обёртка для строки
+      let rowWrapper = document.createElement('div');
+      rowWrapper.classList.add('layout-row', 'mb-4');
+
+      // Шапка строки (заголовок, кнопка удаления)
+      let rowHeader = document.createElement('div');
+      rowHeader.classList.add('layout-row-header', 'd-flex', 'justify-content-between', 'align-items-center');
+      rowHeader.innerHTML = `
+         <h6 class="m-0 fw-bold">Строка #${row.rowIndex + 1}</h6>
+         <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-row">
+           <i class="fas fa-trash me-1"></i>Удалить строку
+         </button>
+      `;
+      rowWrapper.appendChild(rowHeader);
+
+      // Сам .row bootstrap
+      let rowEl = document.createElement('div');
+      rowEl.classList.add('row', 'g-3', 'mt-1');
+      rowWrapper.appendChild(rowEl);
+
+      // Столбцы
+      row.columns.forEach((col, cIdx) => {
+        let colDiv = document.createElement('div');
+        colDiv.className = `col-sm-${col.colWidth}`;
+        colDiv.dataset.rIdx = rIdx;
+        colDiv.dataset.cIdx = cIdx;
+
+        let colContent = document.createElement('div');
+        colContent.className = 'layout-column';
+
+        colContent.innerHTML = `
+          <div class="layout-column-header d-flex justify-content-between align-items-center">
+            <span class="fw-medium">Столбец #${col.colIndex + 1} (${col.colWidth}/12)</span>
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-action="dec-width" title="Уменьшить ширину">
+                <i class="fas fa-minus"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-action="inc-width" title="Увеличить ширину">
+                <i class="fas fa-plus"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-col" title="Удалить столбец">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="module-select">
+            <label class="form-label small">Выберите модуль</label>
+            ${renderModuleSelect(col.moduleInstanceId)}
+          </div>
+        `;
+        colDiv.appendChild(colContent);
+        rowEl.appendChild(colDiv);
+      });
+
+      // Кнопка добавления столбца
+      let addColDiv = document.createElement('div');
+      addColDiv.className = 'd-flex justify-content-center mt-3';
+      addColDiv.innerHTML = `
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="add-column" data-row-idx="${rIdx}">
+          <i class="fas fa-plus me-1"></i>Добавить столбец
+        </button>
+      `;
+      rowWrapper.appendChild(addColDiv);
+
+      layoutEditor.appendChild(rowWrapper);
+    });
+
+    // сохраняем layoutData в hidden поле
+    layoutJson.value = JSON.stringify(layoutData);
+  }
+
+  // 4) Рендер селекта с модулями/экземплярами
+  function renderModuleSelect(moduleInstId) {
+    let html = `<select class="form-select" data-action="select-module">`;
+    html += `<option value="">--- Не выбрано ---</option>`;
+    modulesData.forEach(mod => {
+      html += `<optgroup label="${mod.name} (module #${mod.id})">`;
+      let arr= moduleInstancesByModule[mod.id]||[];
+      arr.forEach(inst=>{
+        let selected= (inst.id==moduleInstId) ? 'selected':'';
+        html += `<option value="${inst.id}" ${selected}>${inst.label}</option>`;
+      });
+      html += `</optgroup>`;
+    });
+    html += `</select>`;
+    return html;
+  }
+
+  // 5) События клика
+  layoutEditor.addEventListener('click', function(e){
+    let btn = e.target.closest('button');
+    if(!btn) return;
+
+    let action = btn.dataset.action;
+    if(!action) return;
+
+    // Удаление строки?
+    if(action === 'delete-row'){
+      let rowWrapper = btn.closest('.layout-row');
+      // выясним индекс строки
+      let rowEls = Array.from(layoutEditor.querySelectorAll('.layout-row'));
+      let idx = rowEls.indexOf(rowWrapper);
+      if(idx >= 0){
+        layoutData.splice(idx, 1);
+        // Переиндексируем rowIndex + colIndex
+        layoutData.forEach((r, i) => {
+          r.rowIndex = i;
+          r.columns.forEach((col, j) => col.colIndex = j);
+        });
+        renderLayout();
+      }
+      return;
+    }
+
+    // Добавление столбца?
+    if(action === 'add-column'){
+      let rowIdx = parseInt(btn.dataset.rowIdx);
+      if(rowIdx >= 0 && rowIdx < layoutData.length){
+        let row = layoutData[rowIdx];
+        let newColIdx = row.columns.length;
+        
+        // Пересчитаем ширину всех столбцов
+        let n = row.columns.length + 1;
+        let base = Math.floor(12/n);
+        let rem = 12 - (base*n);
+        
+        // Обновляем ширину существующих столбцов
+        row.columns.forEach((c, i) => {
+          c.colWidth = base + (i < rem ? 1 : 0);
+        });
+        
+        // Добавляем новый столбец
+        row.columns.push({
+          colIndex: newColIdx,
+          colWidth: base + (newColIdx < rem ? 1 : 0),
+          moduleInstanceId: null
+        });
+        
+        renderLayout();
+      }
+      return;
+    }
+
+    // Иначе управление столбцами
+    let colDiv = btn.closest('[data-r-idx]');
+    if(!colDiv) {
+      colDiv = btn.closest('.col-sm-1,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-10,.col-sm-11,.col-sm-12');
+    }
+    if(!colDiv) return;
+    
+    let rIdx = parseInt(colDiv.dataset.rIdx);
+    let cIdx = parseInt(colDiv.dataset.cIdx);
+    let row = layoutData[rIdx];
+
+    if(action === 'delete-col'){
+      if(row.columns.length <= 1) {
+        alert('Нельзя удалить единственный столбец. Удалите всю строку.');
+        return;
+      }
+      
+      row.columns.splice(cIdx, 1);
+      row.columns.forEach((c, i) => c.colIndex = i);
+      
+      // пересчитаем ширину
+      let n = row.columns.length;
+      if(n > 0){
+        let base = Math.floor(12/n);
+        let rem = 12 - (base*n);
+        row.columns.forEach((cc, ii) => {
+          cc.colWidth = base + (ii < rem ? 1 : 0);
+        });
+      }
+      renderLayout();
+    }
+    else if(action === 'inc-width' || action === 'dec-width'){
+      let delta = (action === 'inc-width') ? 1 : -1;
+      changeWidth(rIdx, cIdx, delta);
+      renderLayout();
+    }
+  });
+
+  // 6) change для селекта (выбор модуля/экземпляра)
+  layoutEditor.addEventListener('change', function(e){
+    if(e.target.dataset.action === 'select-module'){
+      let sel = e.target;
+      let colDiv = sel.closest('[data-r-idx]');
+      if(!colDiv) {
+        colDiv = sel.closest('.col-sm-1,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-10,.col-sm-11,.col-sm-12');
+      }
+      if(!colDiv) return;
+      
+      let rIdx = parseInt(colDiv.dataset.rIdx);
+      let cIdx = parseInt(colDiv.dataset.cIdx);
+      let value = parseInt(sel.value) || null;
+      layoutData[rIdx].columns[cIdx].moduleInstanceId = value;
+      layoutJson.value = JSON.stringify(layoutData);
+    }
+  });
+
+  // 7) Функция changeWidth(rIdx, cIdx, delta)
+  function changeWidth(rIdx, cIdx, delta){
+    let row = layoutData[rIdx];
+    let col = row.columns[cIdx];
+    let neighborIdx = (cIdx < row.columns.length-1) ? cIdx+1 : cIdx-1;
+    if(neighborIdx < 0) return;
+    
+    let neighbor = row.columns[neighborIdx];
+    let newW = col.colWidth + delta;
+    let nW = neighbor.colWidth - delta;
+    
+    if(newW < 1 || newW > 11) return;
+    if(nW < 1 || nW > 11) return;
+    
+    col.colWidth = newW;
+    neighbor.colWidth = nW;
+  }
+
+  // Инициализация
+  function init(){
+    if(layoutData.length === 0){
+      // Если нет существующих ячеек, создаём одну строку
+      addNewRow();
+    }
+    renderLayout();
+  }
+
+  init();
+});
+</script>
+{% endblock %}
+{% endblock %}

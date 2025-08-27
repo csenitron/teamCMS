@@ -1,0 +1,66 @@
+.product-card .color-options { margin-top: 10px; margin-bottom: 8px; }
+.product-card .color-dot,
+.card-product .color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.15);
+  position: relative;
+}
+.product-card .color-dot:hover, .card-product .color-dot:hover { box-shadow: inset 0 0 0 3px rgba(0,0,0,.25); }
+.product-card .color-dot.active, .card-product .color-dot.active { box-shadow: inset 0 0 0 3px #111; }
+
+.product-card .color-row, .card-product .color-row { display: flex; align-items: center; gap: 6px; }
+.product-card .swatches-scroll, .card-product .swatches-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.product-card .swatches-scroll::-webkit-scrollbar, .card-product .swatches-scroll::-webkit-scrollbar { display: none; }
+.product-card .swatch-next { border: none; background: #fff; width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,.12); cursor: pointer; line-height: 1; }
+.product-card .swatch-next:hover { box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+
+/* Крупные свотчи в фильтрах */
+.filters-color .swatches-scroll {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 6px; /* чтобы активная рамка не обрезалась у краев */
+}
+.filters-color .swatches-scroll::-webkit-scrollbar { display: none; }
+.filters-color .color-dot { width: 24px; height: 24px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.15); }
+.filters-color { display: flex; align-items: center; }
+
+/* Horizontal scroller for "Другие товары" */
+.other-products-scroller { overflow-x: auto; padding-bottom: 6px; }
+.other-products-scroller::-webkit-scrollbar { height: 6px; }
+.other-products-track { width: 100%; }
+.other-products-scroller .other-card { width: calc(25% - 0.75rem); }
+.other-products-scroller .product-image-container { position: relative; overflow: hidden; width: 100%; aspect-ratio: 3/4; }
+.other-products-scroller .product-image { width: 100%; height: 100%; }
+.other-products-scroller .product-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (max-width: 1199.98px) {
+  .other-products-scroller .other-card { width: calc(33.333% - 0.75rem); }
+}
+@media (max-width: 767.98px) {
+  .other-products-scroller .other-card { width: calc(50% - 0.75rem); }
+}
+
+/* Базовые цвета (fallback, если нет палитры из БД) */
+.pallete-color-черный { background:#000; }
+.pallete-color-белый { background:#fff; box-shadow: inset 0 0 0 1px #e0e0e0; }
+.pallete-color-красный { background:#e31e2b; }
+.pallete-color-синий { background:#304ffe; }
+.pallete-color-серый { background:#9e9e9e; }
+

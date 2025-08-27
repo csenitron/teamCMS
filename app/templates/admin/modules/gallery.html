@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Редактирование галереи</h1>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <!-- Основная форма -->
+        <input type="hidden" name="action" value="save_gallery">
+
+        <div class="mb-3">
+            <label class="form-label">Название галереи</label>
+            <input type="text" name="title" class="form-control" value="{{ gallery.title if gallery else '' }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Описание</label>
+            <textarea name="description" class="form-control">{{ gallery.description if gallery else '' }}</textarea>
+        </div>
+
+        <hr>
+        <h3>Элементы галереи</h3>
+        <div id="gallery-container">
+            {% for item in items %}
+            <div class="row mb-2 gallery-item">
+                <div class="col-md-2">
+                    <label class="form-label">Изображение</label>
+                    <!-- Клик -> открывает chooseImageModal -->
+                    <div data-bs-toggle="modal"
+                         data-bs-target="#chooseImageModal"
+                         data-imagetype="gallery-{{ item.id }}">
+                        <img src="{{ url_for('static', filename='uploads/' ~ item.image.filename) }}"
+                             class="img-thumbnail" alt="Gallery Image">
+                    </div>
+                    <input type="hidden" name="images[{{ item.id }}][image_id]" value="{{ item.image_id }}">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Подпись</label>
+                    <input type="text" name="images[{{ item.id }}][caption]" class="form-control"
+                           value="{{ item.caption }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger delItem">Удалить</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="addGalleryItem()">Добавить элемент</button>
+
+        <button type="submit" class="btn btn-primary mt-3">Сохранить</button>
+    </form>
+</div>
+
+{% include 'admin/chooseImage.html' %}
+
+<script>
+// 1) Функция добавить элемент галереи
+function addGalleryItem(){
+    let container = document.getElementById('gallery-container');
+    let index = container.querySelectorAll('.gallery-item').length;
+
+    let html = `
+    <div class="row mb-2 gallery-item">
+      <div class="col-md-2">
+        <label class="form-label">Изображение</label>
+        <div data-bs-toggle="modal" data-bs-target="#chooseImageModal" data-imagetype="gallery-new-${index}">
+          <span class="btn btn-light text-muted">Выбрать изображение</span>
+        </div>
+        <input type="hidden" name="images[new-${index}][image_id]">
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Подпись</label>
+        <input type="text" name="images[new-${index}][caption]" class="form-control">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="button" class="btn btn-danger delItem">Удалить</button>
+      </div>
+    </div>
+    `;
+    container.insertAdjacentHTML("beforeend", html);
+}
+
+// 2) Удаление элемента
+document.addEventListener('click', function(e){
+  if(e.target.classList.contains('delItem')){
+    e.target.closest('.gallery-item').remove();
+  }
+});
+
+
+// --------- ЛОГИКА chooseImageModal --------
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const chooseImageModal = document.getElementById('chooseImageModal');
+    if (!chooseImageModal) return;
+
+    // 2.1. При открытии модалки запоминаем, куда нужно вставить результат
+    chooseImageModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget; // Кнопка, открывшая модалку
+        window.currentImageType = button.getAttribute('data-imagetype');
+        // Например, "gallery-12" или "gallery-new-0"
+
+        // Делаем AJAX-запрос, чтобы показать директории / изображения (если используете partial)
+        fetchDirectory(0);
+    });
+
+    function fetchDirectory(dirId) {
+        const bodyEl = document.getElementById('directoryAjaxContent');
+        if (!bodyEl) return;
+
+        bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+
+        // Меняем 0 на dirId в url
+        let url = "{{ url_for('admin.admin_directories_view', dir_id=0) }}".replace('0', dirId);
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(resp => resp.text())
+        .then(html => {
+            bodyEl.innerHTML = html;
+            attachDirLinks();
+        })
+        .catch(err => {
+            console.error(err);
+            bodyEl.innerHTML = `<p class="text-danger">Ошибка загрузки каталога</p>`;
+        });
+    }
+
+    // 2.2. Переход по подкаталогам
+    function attachDirLinks(){
+        const contentEl = document.getElementById('directoryAjaxContent');
+        if(!contentEl) return;
+
+        const links = contentEl.querySelectorAll('.dirLink');
+        links.forEach(link => {
+            link.addEventListener('click', function(e){
+                e.preventDefault();
+                let dirId = link.dataset.dirId || '';
+                fetchDirectory(dirId);
+            });
+        });
+    }
+
+
+});
+</script>
+{% endblock %}

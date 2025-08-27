@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Табы с товарами</h1>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="action" value="save_tabs">
+
+        <!-- Заголовок всего модуля -->
+        <div class="mb-3">
+            <label>Заголовок модуля</label>
+            <input type="text" name="module_title" class="form-control"
+                   value="{{ tabs_instance.title if tabs_instance else '' }}">
+        </div>
+
+        <hr>
+        <h3>Список вкладок</h3>
+        <div id="tabsContainer">
+            {% for item in items %}
+            <div class="border p-2 mb-2 tabItem">
+                <div class="row">
+                    <div class="col-md-2">
+                        <label>Заголовок вкладки</label>
+                        <input type="text" class="form-control" name="tabs[{{ item.id }}][tab_title]"
+                               value="{{ item.tab_title }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label>Режим</label>
+                        <select class="form-select modeSelect" name="tabs[{{ item.id }}][mode]">
+                            <option value="category" {% if item.mode=='category' %}selected{% endif %}>Категория</option>
+                            <option value="custom" {% if item.mode=='custom' %}selected{% endif %}>Выбор товаров</option>
+                            <option value="all" {% if item.mode=='all' %}selected{% endif %}>Все товары</option>
+                        </select>
+                    </div>
+
+                    <!-- Категория + limit_count -->
+                    <div class="col-md-2 modeBlockCategory {% if item.mode != 'category' %}d-none{% endif %}">
+                        <label>Категория</label>
+                        <select class="form-select" name="tabs[{{ item.id }}][category_id]">
+                            <option value="">-- нет --</option>
+                            {% for cat in categories %}
+                              <option value="{{ cat.id }}"
+                                {% if cat.id == item.category_id %}selected{% endif %}>
+                                {{ cat.name }}
+                              </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-1 modeBlockCategory {% if item.mode != 'category' %}d-none{% endif %}">
+                        <label>Кол-во</label>
+                        <input type="number" class="form-control"
+                               name="tabs[{{ item.id }}][limit_count]"
+                               value="{{ item.limit_count }}">
+                    </div>
+
+                    <!-- Выбор товаров (Select2 multiple) -->
+                    <div class="col-md-4 modeBlockCustom {% if item.mode != 'custom' %}d-none{% endif %}">
+                        <label>Товары</label>
+                        <select multiple class="form-select productSelect2"
+                                name="tabs[{{ item.id }}][product_ids][]">
+                        </select>
+                        <!-- Если у item.product_ids есть значения,
+                             мы сохраняем их в hidden, чтобы заполнить Select2 -->
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Текст кнопки</label>
+                        <input type="text" class="form-control"
+                               name="tabs[{{ item.id }}][button_text]"
+                               value="{{ item.button_text }}">
+                    </div>
+
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger w-100 delTab">X</button>
+                    </div>
+                </div>
+
+                {% if item.mode == 'custom' and item.product_ids %}
+                <!-- Храним выбранные товары, например: "1,2,3" -->
+                <input type="hidden" class="initialProductIds" value="{{ item.product_ids }}">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" class="btn btn-secondary" id="addTabBtn">Добавить вкладку</button>
+        <hr>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+</div>
+
+{% include 'admin/chooseImage.html' %}
+
+<!-- Подключаем Select2 (jQuery уже подключен в base.html) -->
+<link href="{{ url_for('static', filename='css/select2.min.css') }}" rel="stylesheet"/>
+<script src="{{ url_for('static', filename='js/select2.min.js') }}"></script>
+
+<script>
+{# Передаём список товаров из Python #}
+{% if products %}
+  let allProducts = {{ products|map(attribute='id')|list|tojson }}.map((id, index) => ({
+    id: id.toString(),
+    text: {{ products|map(attribute='name')|list|tojson }}[index]
+  }));
+{% else %}
+  let allProducts = [];
+{% endif %}
+
+document.addEventListener('DOMContentLoaded', function(){
+    initSelect2ForExisting();
+    document.getElementById('addTabBtn').addEventListener('click', function(){
+        addNewTab();
+    });
+
+    document.addEventListener('click', function(e){
+        if(e.target.classList.contains('delTab')){
+            e.target.closest('.tabItem').remove();
+        }
+    });
+
+    document.addEventListener('change', function(e){
+        if(e.target.classList.contains('modeSelect')){
+            let mode = e.target.value; // category / custom / all
+            let row = e.target.closest('.row');
+            if(!row) return;
+            let catBlocks = row.querySelectorAll('.modeBlockCategory');
+            let customBlock = row.querySelector('.modeBlockCustom');
+
+            if(mode==='category'){
+                catBlocks.forEach(el => el.classList.remove('d-none'));
+                customBlock.classList.add('d-none');
+            } else if(mode==='custom'){
+                catBlocks.forEach(el => el.classList.add('d-none'));
+                customBlock.classList.remove('d-none');
+                let s2 = customBlock.querySelector('.productSelect2');
+                if(s2 && !s2.classList.contains('select2-initialized')){
+                    initOneSelect2(s2);
+                }
+            } else {
+                catBlocks.forEach(el => el.classList.add('d-none'));
+                customBlock.classList.add('d-none');
+            }
+        }
+    });
+});
+
+/** 1) Инициализация select2 для уже существующих вкладок */
+function initSelect2ForExisting(){
+    let tabItems = document.querySelectorAll('.tabItem');
+    tabItems.forEach(tItem => {
+        let s2 = tItem.querySelector('.productSelect2');
+        if(s2){
+            initOneSelect2(s2);
+            let hidden = tItem.querySelector('.initialProductIds');
+            if(hidden){
+                let pIds = hidden.value; // "1,2,3" или "[1,2]"
+                let arr = parseProductIds(pIds);
+                // Устанавливаем значения через jQuery
+                $(s2).val(arr).trigger('change');
+            }
+        }
+    });
+}
+
+/** 2) Инициализация одного select2 */
+function initOneSelect2(selectEl){
+    if(!selectEl) return;
+    if(selectEl.classList.contains('select2-initialized')) return;
+
+    $(selectEl).select2({
+        data: allProducts,
+        multiple: true
+        // ,width: '100%'  // при необходимости
+    });
+    selectEl.classList.add('select2-initialized');
+}
+
+/** 3) Функция разбора строки с product_ids */
+function parseProductIds(str){
+    if(!str) return [];
+    let trimmed = str.trim();
+    if(trimmed.startsWith('[')){
+        // JSON массив, напр. ["1","2"]
+        try {
+            let arr = JSON.parse(trimmed);
+            if(Array.isArray(arr)) return arr;
+            return [];
+        } catch(err){
+            return [];
+        }
+    } else {
+        // "1,2,3"
+        return trimmed.split(',').map(x => x.trim()).filter(x => x);
+    }
+}
+
+/** 4) Добавление новой вкладки */
+function addNewTab(){
+    let container = document.getElementById('tabsContainer');
+    let index = container.querySelectorAll('.tabItem').length;
+    let tabIndex = `new-${index}`;
+
+    let html = `
+      <div class="border p-2 mb-2 tabItem">
+        <div class="row">
+          <div class="col-md-2">
+            <label>Заголовок вкладки</label>
+            <input type="text" class="form-control" name="tabs[${tabIndex}][tab_title]" value="Вкладка">
+          </div>
+          <div class="col-md-2">
+            <label>Режим</label>
+            <select class="form-select modeSelect" name="tabs[${tabIndex}][mode]">
+              <option value="category">Категория</option>
+              <option value="custom">Выбор товаров</option>
+              <option value="all">Все товары</option>
+            </select>
+          </div>
+          <div class="col-md-2 modeBlockCategory">
+            <label>Категория</label>
+            <select class="form-select" name="tabs[${tabIndex}][category_id]">
+              <option value="">-- нет --</option>
+              {% for cat in categories %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-1 modeBlockCategory">
+            <label>Кол-во</label>
+            <input type="number" class="form-control" name="tabs[${tabIndex}][limit_count]" value="8">
+          </div>
+          <div class="col-md-4 modeBlockCustom d-none">
+            <label>Товары</label>
+            <select multiple class="form-select productSelect2"
+                    name="tabs[${tabIndex}][product_ids][]"></select>
+          </div>
+          <div class="col-md-2">
+            <label>Текст кнопки</label>
+            <input type="text" class="form-control" name="tabs[${tabIndex}][button_text]">
+          </div>
+          <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-danger w-100 delTab">X</button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.insertAdjacentHTML("beforeend", html);
+}
+</script>
+{% endblock %}

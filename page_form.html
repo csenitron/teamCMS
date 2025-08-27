@@ -1,0 +1,556 @@
+{% extends "base.html" %}
+
+{% block title %}{% if page.id %}Редактирование{% else %}Создание{% endif %} страницы{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1">{% if page.id %}Редактирование{% else %}Создание{% endif %} страницы</h1>
+                <div class="text-muted small">
+                    {% if page.id %}
+                        Редактирование страницы "{{ page.title }}"
+                    {% else %}
+                        Создание новой страницы сайта
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.page_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Назад к списку
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="row g-4">
+            <!-- Основная информация -->
+            <div class="col-lg-8">
+                <div class="bg-white rounded shadow-sm p-4 mb-4">
+                    <h5 class="mb-3">Основная информация</h5>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Заголовок <span class="text-danger">*</span></label>
+                                <input type="text" name="title" value="{{ page.title or '' }}" class="form-control" required>
+                                <div class="form-text">Название страницы, отображаемое в заголовке</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">URL (slug) <span class="text-danger">*</span></label>
+                                <input type="text" name="slug" value="{{ page.slug or '' }}" class="form-control" required>
+                                <div class="form-text">Часть URL, например: about-us</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO информация -->
+                <div class="bg-white rounded shadow-sm p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">SEO информация</h5>
+                        <button type="button" class="btn btn-sm btn-light" data-bs-toggle="collapse" data-bs-target="#seoSection">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="seoSection" class="collapse show">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Meta Title</label>
+                                    <input type="text" name="meta_title" value="{{ page.meta_title or '' }}" class="form-control">
+                                    <div class="form-text">Заголовок страницы для поисковых систем</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Meta Keywords</label>
+                                    <input type="text" name="meta_keywords" value="{{ page.meta_keywords or '' }}" class="form-control">
+                                    <div class="form-text">Ключевые слова через запятую</div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Meta Description</label>
+                                    <textarea name="meta_description" class="form-control" rows="3">{{ page.meta_description or '' }}</textarea>
+                                    <div class="form-text">Краткое описание страницы для поисковых систем</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Структура страницы -->
+                <div class="bg-white rounded shadow-sm p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Структура страницы</h5>
+                        <button type="button" id="addRowBtn" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>Добавить строку
+                        </button>
+                    </div>
+                    
+                    <div id="layoutEditor" class="mt-3">
+                        <!-- Здесь JS будет рендерить строки/столбцы -->
+                    </div>
+                    
+                    <!-- Скрытое поле для JSON -->
+                    <input type="hidden" name="layout_json" id="layout_json" value="">
+                </div>
+            </div>
+            
+            <!-- Боковая панель -->
+            <div class="col-lg-4">
+                <!-- Статус и действия -->
+                <div class="bg-white rounded shadow-sm p-4 mb-4">
+                    <h5 class="mb-3">Действия</h5>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_homepage" id="isHomepage" value="1" {% if page.is_homepage %}checked{% endif %}>
+                        <label class="form-check-label" for="isHomepage">
+                            Сделать главной страницей
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Сохранить
+                        </button>
+                        {% if page.id %}
+                        <a href="/{{ page.slug }}" target="_blank" class="btn btn-outline-secondary">
+                            <i class="fas fa-external-link-alt me-2"></i>Просмотр
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Информация о странице -->
+                {% if page.id %}
+                <div class="bg-white rounded shadow-sm p-4">
+                    <h5 class="mb-3">Информация</h5>
+                    
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">ID:</span>
+                            <span>{{ page.id }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Создано:</span>
+                            <span>{{ page.created_at.strftime('%d.%m.%Y %H:%M') if page.created_at else 'Н/Д' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Обновлено:</span>
+                            <span>{{ page.updated_at.strftime('%d.%m.%Y %H:%M') if page.updated_at else 'Н/Д' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">URL:</span>
+                            <span class="text-truncate ms-2">{{ page.slug }}</span>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block extra_css %}
+<style>
+/* Form Styles */
+.form-control, .form-select {
+    border-color: #e5e5e5;
+    padding: 0.6rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066ff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 255, 0.1);
+}
+
+.form-text {
+    color: #888;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Layout Editor */
+.layout-row {
+    background-color: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+.layout-row-header {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.layout-column {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.layout-column:hover {
+    border-color: #ccc;
+}
+
+.layout-column-header {
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+}
+
+.layout-column .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* List Group */
+.list-group-item {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-color: #f0f0f0;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const layoutEditor = document.getElementById('layoutEditor');
+  const addRowBtn = document.getElementById('addRowBtn');
+  const layoutJson = document.getElementById('layout_json');
+  
+  // Основная структура данных для хранения макета страницы
+  const layoutData = [];
+  
+  // Существующие ячейки для инициализации макета
+  const existingCells = [
+  {% for cell in layout_cells %}
+    {
+      rowIndex: {{cell.row_index}},
+      colIndex: {{cell.col_index}},
+      colWidth: {{cell.col_width}},
+      moduleInstanceId: {{cell.module_instance_id if cell.module_instance_id else 'null'}}
+    }{% if not loop.last %},{% endif %}
+  {% endfor %}
+  ];
+
+  // Модули из Python
+  const modulesData = [
+  {% for mod in modules %}
+    {
+      id: {{mod.id}},
+      name: "{{mod.name}}"
+    }{% if not loop.last %},{% endif %}
+  {% endfor %}
+  ];
+
+  // Экземпляры для каждого модуля (module_id -> [{id, label}, ...])
+  const moduleInstancesByModule = {
+  {% for mod in modules %}
+    {{mod.id}}: [
+    {% if mod.id in module_instances_by_module %}
+      {% for inst in module_instances_by_module[mod.id] %}
+        {
+          id: {{inst.id}},
+          label: "{{inst.label|replace('"','\\"')}}"
+        }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    {% endif %}
+    ]{% if not loop.last %},{% endif %}
+  {% endfor %}
+  };
+  
+  // 1) Инициализация layoutData
+  function initLayout(cells) {
+    let grouped = {};
+    cells.forEach(c => {
+      if(!grouped[c.rowIndex]) grouped[c.rowIndex] = [];
+      grouped[c.rowIndex].push({
+        colIndex: c.colIndex,
+        colWidth: c.colWidth,
+        moduleInstanceId: c.moduleInstanceId
+      });
+    });
+    Object.keys(grouped).forEach(rIdx => {
+      layoutData.push({
+        rowIndex: parseInt(rIdx),
+        columns: grouped[rIdx].sort((a,b)=> a.colIndex - b.colIndex)
+      });
+    });
+    // сортируем строки
+    layoutData.sort((a,b)=> a.rowIndex - b.rowIndex);
+  }
+  
+  // 2) Добавить строку
+  function addNewRow() {
+    const nextRowIndex = layoutData.length;  // индекс новой строки
+    const newRow = {
+      rowIndex: nextRowIndex,
+      columns: []
+    };
+    // Создаём 4 столбца, width=3
+    for(let i=0; i<4; i++){
+      newRow.columns.push({
+        colIndex: i,
+        colWidth: 3,
+        moduleInstanceId: null
+      });
+    }
+    layoutData.push(newRow);
+  }
+  
+  // 3) Отрисовка всего макета
+  function renderLayout() {
+    layoutEditor.innerHTML = "";
+    
+    if(layoutData.length === 0){
+      layoutEditor.innerHTML = `
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          Добавьте строки и выберите модули для страницы
+        </div>
+      `;
+      return;
+    }
+    
+    layoutData.forEach((row, rIdx) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'layout-row';
+      rowEl.innerHTML = `
+        <div class="layout-row-header d-flex justify-content-between align-items-center">
+          <div class="small text-muted">Строка ${rIdx + 1}</div>
+          <div>
+            <button type="button" class="btn btn-sm btn-outline-danger" 
+                    onclick="window.pageLayout.deleteRow(${rIdx})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="row g-3" id="row_${rIdx}">
+          ${renderColumns(row.columns, rIdx)}
+        </div>
+      `;
+      
+      layoutEditor.appendChild(rowEl);
+    });
+    
+    // сохраняем layoutData в hidden поле
+    layoutJson.value = JSON.stringify(layoutData);
+  }
+  
+  // 4) Отрисовка столбцов для строки
+  function renderColumns(columns, rIdx) {
+    return columns.map((col, cIdx) => {
+      return `
+        <div class="col-md-${col.colWidth}" id="col_${rIdx}_${cIdx}">
+          <div class="layout-column">
+            <div class="layout-column-header d-flex justify-content-between align-items-center">
+              <div class="small text-muted">Столбец ${cIdx + 1} (ширина: ${col.colWidth})</div>
+              <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-secondary" 
+                        onclick="window.pageLayout.adjustWidth(${rIdx}, ${cIdx}, -1)" 
+                        ${col.colWidth <= 2 ? 'disabled' : ''}>
+                  <i class="fas fa-minus"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" 
+                        onclick="window.pageLayout.adjustWidth(${rIdx}, ${cIdx}, 1)" 
+                        ${col.colWidth >= 12 ? 'disabled' : ''}>
+                  <i class="fas fa-plus"></i>
+                </button>
+                <button type="button" class="btn btn-outline-danger" 
+                        onclick="window.pageLayout.deleteColumn(${rIdx}, ${cIdx})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="module-selector mt-3">
+              <label class="form-label">Выбрать модуль</label>
+              <select class="form-select module-type-select" 
+                      onchange="window.pageLayout.selectModuleType(this.value, ${rIdx}, ${cIdx})">
+                <option value="">-- Выбрать модуль --</option>
+                ${renderModuleOptions(col.moduleInstanceId)}
+              </select>
+              
+              <div class="module-instance-container mt-2" id="moduleInstance_${rIdx}_${cIdx}" 
+                   ${!col.moduleInstanceId ? 'style="display:none"' : ''}>
+                <label class="form-label">Экземпляр модуля</label>
+                <select class="form-select module-instance-select" 
+                        onchange="window.pageLayout.selectModuleInstance(this.value, ${rIdx}, ${cIdx})">
+                  ${renderInstanceOptions(getModuleIdForInstance(col.moduleInstanceId), col.moduleInstanceId)}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // 5) Отрисовка опций для выпадающего списка модулей
+  function renderModuleOptions(selectedInstanceId) {
+    // Находим ID модуля по ID экземпляра (если выбран)
+    const moduleId = getModuleIdForInstance(selectedInstanceId);
+    
+    return modulesData.map(module => {
+      return `<option value="${module.id}" ${module.id === moduleId ? 'selected' : ''}>
+                ${module.name}
+              </option>`;
+    }).join('');
+  }
+  
+  // 6) Отрисовка опций для выпадающего списка экземпляров модуля
+  function renderInstanceOptions(moduleId, selectedInstanceId) {
+    if (!moduleId) return '<option value="">-- Сначала выберите модуль --</option>';
+    
+    const instances = moduleInstancesByModule[moduleId] || [];
+    if (instances.length === 0) {
+      return '<option value="">-- Нет доступных экземпляров --</option>';
+    }
+    
+    return instances.map(instance => {
+      return `<option value="${instance.id}" ${instance.id === selectedInstanceId ? 'selected' : ''}>
+                ${instance.label}
+              </option>`;
+    }).join('');
+  }
+  
+  // 7) Вспомогательная функция для получения ID модуля по ID экземпляра
+  function getModuleIdForInstance(instanceId) {
+    if (!instanceId) return null;
+    
+    // Перебираем все модули и их экземпляры
+    for (const moduleId in moduleInstancesByModule) {
+      const instances = moduleInstancesByModule[moduleId];
+      if (instances.some(inst => inst.id === instanceId)) {
+        return parseInt(moduleId);
+      }
+    }
+    return null;
+  }
+  
+  // 8) Изменение ширины столбца
+  function adjustWidth(rIdx, cIdx, delta) {
+    if (!layoutData[rIdx] || !layoutData[rIdx].columns[cIdx]) return;
+    
+    let newWidth = layoutData[rIdx].columns[cIdx].colWidth + delta;
+    
+    // Ограничение: минимум 1, максимум 12
+    if (newWidth < 1) newWidth = 1;
+    if (newWidth > 12) newWidth = 12;
+    
+    layoutData[rIdx].columns[cIdx].colWidth = newWidth;
+    renderLayout();
+  }
+  
+  // 9) Удаление строки
+  function deleteRow(idx) {
+    if (confirm('Вы уверены, что хотите удалить эту строку?')) {
+      layoutData.splice(idx, 1);
+      // Обновляем индексы строк
+      layoutData.forEach((r, i) => {
+        r.rowIndex = i;
+      });
+      renderLayout();
+    }
+  }
+  
+  // 10) Удаление столбца
+  function deleteColumn(rIdx, cIdx) {
+    if(!layoutData[rIdx]) return;
+    
+    if(layoutData[rIdx].columns.length <= 1){
+      if(confirm('Это последний столбец в строке. Удалить всю строку?')){
+        deleteRow(rIdx);
+      }
+      return;
+    }
+    
+    if(confirm('Вы уверены, что хотите удалить этот столбец?')){
+      layoutData[rIdx].columns.splice(cIdx, 1);
+      
+      // Обновляем индексы столбцов
+      layoutData[rIdx].columns.forEach((c, i) => {
+        c.colIndex = i;
+      });
+      
+      renderLayout();
+    }
+  }
+  
+  // 11) Выбор типа модуля
+  function selectModuleType(moduleId, rIdx, cIdx) {
+    if(rIdx >= 0 && rIdx < layoutData.length){
+      let row = layoutData[rIdx];
+      if(cIdx >= 0 && cIdx < row.columns.length){
+        // Сбрасываем текущий выбор экземпляра
+        row.columns[cIdx].moduleInstanceId = null;
+        
+        // Показываем/скрываем контейнер для выбора экземпляра
+        const containerEl = document.getElementById(`moduleInstance_${rIdx}_${cIdx}`);
+        const selectEl = containerEl.querySelector('select');
+        
+        if(moduleId){
+          containerEl.style.display = 'block';
+          selectEl.innerHTML = renderInstanceOptions(parseInt(moduleId), null);
+        } else {
+          containerEl.style.display = 'none';
+        }
+        
+        // Обновляем JSON
+        layoutJson.value = JSON.stringify(layoutData);
+      }
+    }
+  }
+  
+  // 12) Выбор экземпляра модуля
+  function selectModuleInstance(instanceId, rIdx, cIdx) {
+    if(instanceId && rIdx >= 0 && rIdx < layoutData.length){
+      layoutData[rIdx].columns[cIdx].moduleInstanceId = parseInt(instanceId);
+      layoutJson.value = JSON.stringify(layoutData);
+    }
+  }
+  
+  // Экспортируем функции для использования в inline-обработчиках
+  window.pageLayout = {
+    adjustWidth,
+    deleteRow,
+    deleteColumn,
+    selectModuleType,
+    selectModuleInstance
+  };
+  
+  // Добавление строки при клике на кнопку
+  addRowBtn.addEventListener('click', function() {
+    addNewRow();
+    renderLayout();
+  });
+  
+  // Инициализация
+  initLayout(existingCells);
+  renderLayout();
+});
+</script>
+{% endblock %}
+{% endblock %}

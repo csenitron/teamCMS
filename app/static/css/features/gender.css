@@ -1,0 +1,32 @@
+.gender-item:hover,
+.review-item:hover {
+	color: #000000;
+}
+.gender-item::after,
+.review-item::after {
+	content: "";
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 0;
+	height: 2px;
+	background: #000000;
+	transition: width 0.3s ease;
+}
+.review-item::after {
+	background: #e5e5e5;
+	height: 5px;
+}
+@media (min-width: 992px) {
+	.gender-item::after {
+		height: 5px;
+	}
+}
+.gender-item.active,
+.review-item.active {
+	color: #000000;
+}
+.gender-item.active::after,
+.review-item.active::after {
+	width: 100%;
+}

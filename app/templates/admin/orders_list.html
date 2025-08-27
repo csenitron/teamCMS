@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Заказы{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Заказы</h1>
+    <form class="d-flex" method="get">
+      <select name="status" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+        <option value="">Все статусы</option>
+        {% for s in ['new','processing','paid','shipped','completed','canceled'] %}
+          <option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-sm btn-outline-secondary" type="submit">Фильтр</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Клиент</th>
+            <th>Статус</th>
+            <th>Сумма</th>
+            <th>Создан</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders.items %}
+          <tr>
+            <td>#{{ o.id }}</td>
+            <td>{{ o.customer.name if o.customer else 'Гость' }}</td>
+            <td><span class="badge bg-light text-dark">{{ o.status }}</span></td>
+            <td>{{ o.total_price }} р.</td>
+            <td>{{ o.created_at.strftime('%Y-%m-%d %H:%M') if o.created_at }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('admin.admin_order_view', order_id=o.id) }}" class="btn btn-sm btn-primary">Открыть</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-body">
+      <nav>
+        <ul class="pagination mb-0">
+          {% if orders.has_prev %}
+          <li class="page-item"><a class="page-link" href="?page={{ orders.prev_num }}&status={{ status }}">Назад</a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Назад</span></li>
+          {% endif %}
+
+          <li class="page-item disabled"><span class="page-link">Стр. {{ orders.page }} из {{ orders.pages }}</span></li>
+
+          {% if orders.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ orders.next_num }}&status={{ status }}">Вперёд</a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Вперёд</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

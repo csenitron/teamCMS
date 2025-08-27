@@ -1,0 +1,185 @@
+.pallete-color {
+	cursor: pointer;
+	border-radius: 50%;
+	position: relative;
+	transition: transform 0.2s ease;
+	width: 26px;
+	height: 26px;
+	display: inline-block;
+}
+
+.pallete-color::before {
+	content: "";
+	position: absolute;
+	top: -7px;
+	left: -7px;
+	right: -7px;
+	bottom: -7px;
+	border: 2px solid rgba(0, 0, 0, 0.4);
+	border-radius: 50%;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+.pallete-color:not(.active):hover {
+	transform: scale(1.1);
+}
+.pallete-color.active::before {
+	opacity: 1;
+}
+.pallete-color-black {
+	background: #000000;
+}
+.pallete-color-white {
+	background: #ffffff;
+	border: 1px solid #e0e0e0;
+}
+.pallete-color-silver {
+	background: #afafaf;
+}
+.pallete-color-brown {
+	background: #966127;
+}
+.pallete-color-yellow {
+	background: #ebb40c;
+}
+.pallete-color-orange {
+	background: #f26622;
+}
+.pallete-color-red {
+	background: #e31e2b;
+}
+.pallete-color-pink {
+	background: #ea398c;
+}
+.pallete-color-purple {
+	background: #a04ce4;
+}
+.pallete-color-ivory {
+	background: #f4eee8;
+}
+.pallete-color-cream {
+	background: #ffefde;
+}
+.pallete-color-taupe {
+	background: #cec9c5;
+}
+.pallete-color-platinum {
+	background: #e2e2e7;
+}
+.pallete-color-navy {
+	background: #2d2d66;
+}
+.pallete-color-sky {
+	background: #b6e9f2;
+}
+.pallete-color-lavender {
+	background: #dac6ef;
+}
+.pallete-color-lime {
+	background: #08b423;
+}
+.pallete-color-aqua {
+	background: #d8ecef;
+}
+.pallete-color-mint {
+	background: #90f2c3;
+}
+.pallete-color-maroon {
+	background: #a70055;
+}
+.pallete-color-azure {
+	background: #008cda;
+}
+
+/* Русские названия цветов */
+.pallete-color-красный {
+	background: #e31e2b;
+}
+.pallete-color-белый {
+	background: #ffffff;
+	border: 1px solid #e0e0e0;
+}
+.pallete-color-черный {
+	background: #000000;
+}
+.pallete-color-синий {
+	background: #008cda;
+}
+.pallete-color-голубой {
+	background: #b6e9f2;
+}
+.pallete-color-зеленый {
+	background: #08b423;
+}
+.pallete-color-желтый {
+	background: #ebb40c;
+}
+.pallete-color-оранжевый {
+	background: #f26622;
+}
+.pallete-color-розовый {
+	background: #ea398c;
+}
+.pallete-color-фиолетовый {
+	background: #a04ce4;
+}
+.pallete-color-серый {
+	background: #afafaf;
+}
+.pallete-color-коричневый {
+	background: #966127;
+}
+.pallete-color-бежевый {
+	background: #f4eee8;
+}
+.pallete-color-кремовый {
+	background: #ffefde;
+}
+.pallete-color-лавандовый {
+	background: #dac6ef;
+}
+.pallete-color-мятный {
+	background: #90f2c3;
+}
+.pallete-color-бирюзовый {
+	background: #d8ecef;
+}
+.pallete-color-бордовый {
+	background: #a70055;
+}
+.pallete-color-темно-синий {
+	background: #2d2d66;
+}
+.pallete-color-светло-серый {
+	background: #e2e2e7;
+}
+.pallete-color-платиновый {
+	background: #e2e2e7;
+}
+.pallete-color-золотой {
+	background: #ffd700;
+}
+.pallete-color-серебристый {
+	background: #c0c0c0;
+}
+
+.pallete-color.active {
+	z-index: 1;
+	cursor: default;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .pallete-color {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pallete-color {
+        width: 20px;
+        height: 20px;
+    }
+}

@@ -1,0 +1,18 @@
+.button-animation:hover {
+	background-color: hsl(0, 0%, -10%);
+	transform: translateY(-2px);
+}
+.button-animation:active {
+	transform: translateY(0);
+}
+
+.heart-animation:hover {
+	transform: translateY(-2px);
+}
+.heart-animation:active {
+	transform: translateY(0);
+}
+
+.arrow-animation:hover {
+	border: 1px solid black;
+}

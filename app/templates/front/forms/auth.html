@@ -1,0 +1,92 @@
+<div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="authModalLabel">Авторизация</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Вывод сообщений flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <ul class="nav nav-tabs" id="authTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">Вход</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab" aria-controls="register" aria-selected="false">Регистрация</button>
+          </li>
+        </ul>
+        <div class="tab-content" id="authTabContent">
+          <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+            <form id="loginForm" class="mt-3" action="{{ url_for('main.custom_auth') }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="login">
+              <input type="hidden" name="next" value="{{ next|default('', true) }}">
+              <div class="mb-3">
+                <label for="loginEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="loginEmail" name="loginEmail" placeholder="Введите email" required>
+              </div>
+              <div class="mb-3">
+                <label for="loginPassword" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="loginPassword" name="loginPassword" placeholder="Введите пароль" required>
+              </div>
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                <label class="form-check-label" for="rememberMe">Запомнить меня</label>
+              </div>
+              <button type="submit" class="btn btn-primary w-100" onclick="setNextReferrer(this.form)">Войти</button>
+            </form>
+          </div>
+          <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
+            <form id="registerForm" class="mt-3" action="{{ url_for('main.custom_auth') }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="next" value="{{ next|default('', true) }}">
+              <input type="hidden" name="action" value="register">
+              <div class="mb-3">
+                <label for="registerName" class="form-label">Имя</label>
+                <input type="text" class="form-control" id="registerName" name="registerName" placeholder="Введите ваше имя" required>
+              </div>
+              <div class="mb-3">
+                <label for="registerEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="registerEmail" name="registerEmail" placeholder="Введите email" required>
+              </div>
+              <div class="mb-3">
+                <label for="registerPassword" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="registerPassword" name="registerPassword" placeholder="Введите пароль" required>
+              </div>
+              <div class="mb-3">
+                <label for="registerConfirmPassword" class="form-label">Подтверждение пароля</label>
+                <input type="password" class="form-control" id="registerConfirmPassword" name="registerConfirmPassword" placeholder="Подтвердите пароль" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100" onclick="setNextReferrer(this.form)">Зарегистрироваться</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if reload_page %}
+<script>
+    window.location.reload();
+</script>
+{% endif %}
+<script>
+  function setNextReferrer(form){
+    try {
+      var nextInput = form.querySelector('input[name="next"]');
+      if(nextInput){ nextInput.value = window.location.pathname + window.location.search; }
+    } catch(e) {}
+  }
+</script>

@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Редактирование слайдера</h1>
+
+    <!-- Основная форма -->
+    <form method="POST">
+        <input type="hidden" name="action" value="save_slider">
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Название слайдера</label>
+                    <input type="text" name="title" id="title" class="form-control"
+                           value="{{ slider.title if slider else '' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="width" class="form-label">Ширина (%)</label>
+                    <input type="number" name="width" id="width" class="form-control"
+                           value="{{ slider.width if slider else '100' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="transition_type" class="form-label">Тип перехода</label>
+                    <select name="transition_type" id="transition_type" class="form-control">
+                        <option value="fade" {% if slider and slider.transition_type==
+                        'fade' %}selected{% endif %}>Плавный</option>
+                        <option value="slide" {% if slider and slider.transition_type==
+                        'slide' %}selected{% endif %}>Слайд</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="status" id="status" class="form-check-input" {% if slider and
+                           slider.status %}checked{% endif %}>
+                    <label for="status" class="form-check-label">Активный</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="show_arrows" id="show_arrows" class="form-check-input" {% if slider and
+                           slider.show_arrows %}checked{% endif %}>
+                    <label for="show_arrows" class="form-check-label">Показывать стрелки</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="show_indicators" id="show_indicators" class="form-check-input" {% if
+                           slider and slider.show_indicators %}checked{% endif %}>
+                    <label for="show_indicators" class="form-check-label">Показывать индикаторы</label>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Сохранить</button>
+        <!-- Слайды -->
+        <h3 class="mt-3">Слайды</h3>
+        <div id="slides-container">
+            {% for slide in slides %}
+            <div class="card mb-3 slide-item">
+                <div class="card-body">
+                    <h5 class="card-title">Слайд {{ loop.index }}</h5>
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <label class="form-label">PC</label>
+                            <div class="selected-image" data-bs-toggle="modal" data-bs-target="#chooseImageModal"
+                                 data-imagetype="slide-pc-{{ slide.id }}">
+                                <img src="{{ url_for('static', filename='Uploads/' ~ slide.image_pc.filename) }}"
+                                     alt="ПК"
+                                     class="img-thumbnail">
+                            </div>
+                            <input type="hidden" name="slides[{{ slide.id }}][image_pc_id]"
+                                   value="{{ slide.image_pc_id }}">
+                        </div>
+
+                        <div class="col-md-1">
+                            <label class="form-label">mob</label>
+                            <div class="selected-image" data-bs-toggle="modal" data-bs-target="#chooseImageModal"
+                                 data-imagetype="slide-mobile-{{ slide.id }}">
+                                {% if slide.image_mobile %}
+                                <img src="{{ url_for('static', filename='Uploads/' ~ slide.image_mobile.filename) }}"
+                                     alt="Мобильное" class="img-thumbnail">
+                                {% else %}
+                                <span class="text-muted btn-light">Не выбрано</span>
+                                {% endif %}
+                            </div>
+                            <input type="hidden" name="slides[{{ slide.id }}][image_mobile_id]"
+                                   value="{{ slide.image_mobile_id }}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Заголовок</label>
+                            <input type="text" name="slides[{{ slide.id }}][title]" class="form-control"
+                                   value="{{ slide.title }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Описание</label>
+                            <input type="text" name="slides[{{ slide.id }}][description]" class="form-control"
+                                   value="{{ slide.description }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Цвет текста</label>
+                            <input type="color" name="slides[{{ slide.id }}][text_color]" class="form-control"
+                                   value="{{ slide.text_color or '#000000' }}">
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <label class="form-label">Кнопки</label>
+                            <div id="buttons-{{ slide.id }}" class="buttons-container">
+                                {% for button in slide.buttons %}
+                                <div class="row mb-2 button-item">
+                                    <div class="col-md-3">
+                                        <input type="text" name="slides[{{ slide.id }}][buttons][{{ loop.index - 1 }}][text]" class="form-control"
+                                               value="{{ button.text }}" placeholder="Текст кнопки">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" name="slides[{{ slide.id }}][buttons][{{ loop.index - 1 }}][link]" class="form-control"
+                                               value="{{ button.link }}" placeholder="Ссылка">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Цвет кнопки</label>
+                                        <input type="color" name="slides[{{ slide.id }}][buttons][{{ loop.index - 1 }}][color]" class="form-control"
+                                               value="{{ button.color or '#000000' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Цвет текста кнопки</label>
+                                        <input type="color" name="slides[{{ slide.id }}][buttons][{{ loop.index - 1 }}][text_color]" class="form-control"
+                                               value="{{ button.text_color or '#FFFFFF' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-danger remove-button">Удалить кнопку</button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="btn btn-secondary add-button" data-slide-key="{{ slide.id }}">Добавить кнопку</button>
+                        </div>
+                        <div class="col-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger delSlide">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                     class="bi bi-trash" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" class="btn btn-secondary mt-3" onclick="addSlide()">Добавить слайд</button>
+    </form>
+
+    <hr>
+</div>
+
+{% include 'admin/chuseImage.html' %}
+
+<script>
+    let currentImageType = null;
+    let currentSlideIndex = null;
+    let buttonCounters = {}; // Глобальная инициализация buttonCounters
+
+    // Инициализация счётчиков для существующих слайдов
+    {% for slide in slides %}
+        buttonCounters['{{ slide.id }}'] = {{ slide.buttons|length }};
+    {% endfor %}
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const chooseImageModal = document.getElementById('chooseImageModal');
+
+        if (chooseImageModal) {
+            chooseImageModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                currentImageType = button.getAttribute('data-imagetype');
+                currentSlideIndex = currentImageType.split('-').pop();
+
+                fetchDirectory(0);
+            });
+        }
+
+        function fetchDirectory(dirId) {
+            const bodyEl = document.getElementById('directoryAjaxContent');
+            if (!bodyEl) return;
+
+            bodyEl.innerHTML = "<p class='text-muted'>Загрузка...</p>";
+
+            fetch("{{ url_for('admin.admin_directories_view', dir_id=0) }}".replace('0', dirId), {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+                .then(resp => resp.text())
+                .then(html => {
+                    bodyEl.innerHTML = html;
+                    attachDirLinks();
+                    attachImgClick();
+                })
+                .catch(err => {
+                    bodyEl.innerHTML = `<p class="text-danger">Ошибка загрузки каталога</p>`;
+                    console.error(err);
+                });
+        }
+
+        function attachDirLinks() {
+            const contentEl = document.getElementById('directoryAjaxContent');
+            if (!contentEl) return;
+
+            const links = contentEl.querySelectorAll('.dirLink');
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const dirId = link.dataset.dirId || '';
+                    fetchDirectory(dirId);
+                });
+            });
+        }
+
+        function attachImgClick() {
+            document.getElementById('directoryAjaxContent').addEventListener('click', function (e) {
+                if (e.target.classList.contains('chooseImageItem')) {
+                    const imageId = e.target.dataset.imageId;
+                    const imgSrc = e.target.src;
+
+                    if (!currentImageType) return;
+
+                    let fieldType = currentImageType.includes('pc') ? 'image_pc_id' : 'image_mobile_id';
+                    const field = document.querySelector(`input[name="slides[${currentSlideIndex}][${fieldType}]"]`);
+                    if (field) {
+                        field.value = imageId;
+                    }
+
+                    const preview = document.querySelector(`[data-imagetype="${currentImageType}"]`);
+                    if (preview) {
+                        preview.innerHTML = `<img src="${imgSrc}" class="img-thumbnail">`;
+                    }
+
+                    bootstrap.Modal.getInstance(chooseImageModal).hide();
+                }
+            });
+        }
+
+        // Делегирование событий для кнопок "Добавить" и "Удалить"
+        document.addEventListener('click', function (event) {
+            if (event.target.classList.contains('add-button')) {
+                const slideKey = event.target.dataset.slideKey;
+                const container = document.getElementById(`buttons-${slideKey}`);
+                const btnIndex = buttonCounters[slideKey] || 0;
+                buttonCounters[slideKey] = btnIndex + 1;
+
+                const html = `
+                    <div class="row mb-2 button-item">
+                        <div class="col-md-3">
+                            <input type="text" name="slides[${slideKey}][buttons][${btnIndex}][text]" class="form-control" placeholder="Текст кнопки">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="slides[${slideKey}][buttons][${btnIndex}][link]" class="form-control" placeholder="Ссылка">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Цвет кнопки</label>
+                            <input type="color" name="slides[${slideKey}][buttons][${btnIndex}][color]" class="form-control" value="#000000">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Цвет текста кнопки</label>
+                            <input type="color" name="slides[${slideKey}][buttons][${btnIndex}][text_color]" class="form-control" value="#FFFFFF">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger remove-button">Удалить кнопку</button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            }
+
+            if (event.target.closest('.remove-button')) {
+                event.target.closest('.button-item').remove();
+            }
+
+            if (event.target.closest('.delSlide')) {
+                event.target.closest('.slide-item').remove();
+            }
+        });
+    });
+
+    function addSlide() {
+        const container = document.getElementById('slides-container');
+        const slideIndex = container.children.length;
+
+        buttonCounters['new' + slideIndex] = 0;
+
+        const slideHTML = `
+            <div class="card mb-3 slide-item">
+                <div class="card-body">
+                    <h5 class="card-title">Новый слайд</h5>
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <label class="form-label">PC</label>
+                            <div class="selected-image" data-bs-toggle="modal" data-bs-target="#chooseImageModal" data-imagetype="slide-pc-new${slideIndex}">
+                                <span class="text-muted btn-light"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-cloud-plus-fill" viewBox="0 0 16 16">
+  <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m.5 4v1.5H10a.5.5 0 0 1 0 1H8.5V10a.5.5 0 0 1-1 0V8.5H6a.5.5 0 0 1 0-1h1.5V6a.5.5 0 0 1 1 0"/>
+</svg></span>
+                            </div>
+                            <input type="hidden" name="slides[new${slideIndex}][image_pc_id]">
+                        </div>
+
+                        <div class="col-md-1">
+                            <label class="form-label">mob</label>
+                            <div class="selected-image" data-bs-toggle="modal" data-bs-target="#chooseImageModal" data-imagetype="slide-mobile-new${slideIndex}">
+                                <span class="text-muted btn-light"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-cloud-plus-fill" viewBox="0 0 16 16">
+  <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m.5 4v1.5H10a.5.5 0 0 1 0 1H8.5V10a.5.5 0 0 1-1 0V8.5H6a.5.5 0 0 1 0-1h1.5V6a.5.5 0 0 1 1 0"/>
+</svg></span>
+                            </div>
+                            <input type="hidden" name="slides[new${slideIndex}][image_mobile_id]">
+                        </div>
+
+                        <div class="col-3">
+                            <label class="form-label">Заголовок</label>
+                            <input type="text" name="slides[new${slideIndex}][title]" class="form-control">
+                        </div>
+                        <div class="col-2">
+                            <label class="form-label">Описание</label>
+                            <input type="text" name="slides[new${slideIndex}][description]" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Цвет текста</label>
+                            <input type="color" name="slides[new${slideIndex}][text_color]" class="form-control" value="#000000">
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <label class="form-label">Кнопки</label>
+                            <div id="buttons-new${slideIndex}" class="buttons-container">
+                            </div>
+                            <button type="button" class="btn btn-secondary add-button" data-slide-key="new${slideIndex}">Добавить кнопку</button>
+                        </div>
+                        <div class="col-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger delSlide">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                  <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML("beforeend", slideHTML);
+    }
+</script>
+{% endblock %}

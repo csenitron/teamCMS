@@ -1,0 +1,225 @@
+{% include 'front/header.html' %}
+
+{% block content %}
+<main class="container-fluid main p-3">
+    <!-- HEADER -->
+    <section class="catalogue row">
+        <div class="col-12 d-flex flex-column align-items-center justify-content-center">
+            <div class="w-500">
+                <nav aria-label="breadcrumb">
+                    <div class="d-flex overflow-auto flex-nowrap mb-4">
+                        <ol class="breadcrumb mb-0 d-flex flex-nowrap text-nowrap gap-2 align-items-center" role="list">
+                            <li class="breadcrumb-item" role="listitem">
+                                <a href="/" class="breadcrumb-link f-size-10 f-color-breadcrumb-gray text-decoration-none">Главная</a>
+                            </li>
+                            <li class="breadcrumb-item f-size-12" aria-current="page" role="listitem">
+                                <span class="breadcrumb-link color-black">Избранное</span>
+                            </li>
+                        </ol>
+                    </div>
+                </nav>
+                <div class="catalogue-header">
+                    <h1 class="catalogue-header-title f-weight-600 f-size-24 m-0 mt-lg-4">Избранные товары</h1>
+                    <p class="catalogue-header-text f-size-14 m-0 mt-lg-4">Ваши любимые товары</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section class="products">
+        <div class="row">
+            {% for fav in favorites %}
+            <div class="col-6 col-lg-3 mb-5 product-item">
+         <span class="fav-btn active" data-product-id="{{fav.product.id}}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                     class="bi bi-heart-fill" viewBox="0 0 16 16">
+                                  <path fill-rule="evenodd"
+                                        d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314"/>
+                                </svg>
+                                </span>
+                                    <a href="{{ url_for('main.product', product_slug=fav.product.slug) }}" data-product-id="{{fav.product.id}}"
+                               class="product_item">
+                                <div class="product-image-container">
+                                    {% set product_images = product_images_data.get(fav.product.id, []) %}
+                                    {% if product_images|length > 1 %}
+                                    <div class="product-image-slider" data-product-id="{{ fav.product.id }}">
+                                        {% for image in product_images %}
+                                        <div class="product-image-slide {% if loop.first %}active{% endif %}">
+                                            <img src="/static/uploads/{{ image.filename }}" alt="{{ fav.product.name }}"
+                                                 class="img-fluid w-100" data-image-index="{{ loop.index0 }}">
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                     <div class="product-image">
+                                         <img src="/static/uploads/{{ fav.product.main_image.filename }}" alt="{{ fav.product.name }}"
+                                              class="img-fluid w-100">
+                                     </div>
+                                    {% endif %}
+                                </div>
+                            </a>
+        <div class="row py-2">
+
+            <div class="col-6">
+                <a href="{{ url_for('main.product', product_slug=fav.product.slug) }}"
+                   data-product-id="{{fav.product.id}}" class="product_item">
+                    <h6>{{ fav.product.name }}</h6></a>
+            </div>
+            <div class="col-6 d-flex justify-content-end">
+                <p class="fs-6">{{ fav.product.price }} р.</p>
+                <button class="cat-catalog-btn add-to-cart-btn" id="add-to-cart"
+                        style="border: none; background: transparent"><img src="/static/icons/add-cart.png">
+                </button>
+            </div>
+            <div class="color-options mt-2">
+                {% set options = fav.product.product_options %}
+                {% if options %}
+                <div class="color-row">
+                    <div class="swatches-scroll" id="swatches-fav-{{ fav.product.id }}">
+                        {% for option in options %}
+                            {% if 'color' in (option['display_type']|string)|lower %}
+                                {% for color in option['values'] %}
+                                <div class="color-dot pallete-color pallete-color-{{ color.value | lower | replace(' ', '-') }}"
+                                     title="{{ color.value | capitalize }}"
+                                     data-color-name="{{ color.value | capitalize }}"></div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+<script src="/static/js/swiper-bundle.min.js"></script>
+<script src="/static/js/product.js"></script>
+
+<style>
+/* Стили для слайдера изображений товаров */
+.product-image-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 3/4;
+}
+
+.product-image-slider {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.product-image-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    display: block; /* Важно для отображения */
+}
+
+.product-image-slide.active {
+    opacity: 1;
+    z-index: 1; /* Активный слайд поверх остальных */
+}
+
+.product-image-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block; /* Убираем возможные отступы */
+}
+
+/* Обычное изображение (не слайдер) */
+.product-image { width: 100%; height: 100%; }
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Анимация при наведении */
+.product-item:hover .product-image-slide {
+    transition: opacity 0.5s ease-in-out;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Инициализация избранного
+    if (typeof initFavorites === 'function') {
+        initFavorites();
+    }
+    
+    // Инициализация слайдера изображений
+    initProductImageSliders();
+});
+
+// Функция для инициализации слайдера изображений товаров
+function initProductImageSliders() {
+    $('.product-image-slider').each(function() {
+        const $slider = $(this);
+        const $slides = $slider.find('.product-image-slide');
+        const totalSlides = $slides.length;
+        
+        if (totalSlides <= 1) return;
+        
+        let currentSlide = 0;
+        let slideInterval;
+        
+        // Функция для показа следующего слайда
+        function showNextSlide() {
+            $slides.removeClass('active');
+            currentSlide = (currentSlide + 1) % totalSlides;
+            $slides.eq(currentSlide).addClass('active');
+        }
+        
+        // Обработчик наведения мыши
+        $slider.closest('.product-item').on('mouseenter', function() {
+            // Запускаем автоматическое перелистывание
+            slideInterval = setInterval(showNextSlide, 1500); // 1.5 секунды между слайдами
+        });
+        
+        // Обработчик ухода мыши
+        $slider.closest('.product-item').on('mouseleave', function() {
+            // Останавливаем автоматическое перелистывание
+            if (slideInterval) {
+                clearInterval(slideInterval);
+                slideInterval = null;
+            }
+            
+            // Возвращаемся к первому слайду
+            $slides.removeClass('active');
+            currentSlide = 0;
+            $slides.eq(currentSlide).addClass('active');
+        });
+        
+        // Обработчик клика для ручного переключения
+        $slider.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Останавливаем автоматическое перелистывание
+            if (slideInterval) {
+                clearInterval(slideInterval);
+                slideInterval = null;
+            }
+            
+            showNextSlide();
+        });
+    });
+}
+</script>
+
+{% include 'front/footer.html' %}

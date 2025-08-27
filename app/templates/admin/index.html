@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Панель управления{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+  <!-- Header -->
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h3 mb-1">Панель управления</h1>
+        <div class="text-muted small">Добро пожаловать в панель управления</div>
+      </div>
+      <div class="d-flex">
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary px-4" target="_blank">
+          <i class="fas fa-external-link-alt me-2"></i>Перейти на сайт
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="bg-white rounded shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">Заказы</div>
+            <div class="h4 mb-0">{{ last_orders|length }}</div>
+          </div>
+          <div class="bg-primary bg-opacity-10 p-3 rounded">
+            <i class="fas fa-shopping-cart text-primary"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="bg-white rounded shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">Посетители сегодня</div>
+            <div class="h4 mb-0">{{ traffic.today_visits }}</div>
+          </div>
+          <div class="bg-success bg-opacity-10 p-3 rounded">
+            <i class="fas fa-users text-success"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="bg-white rounded shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">Посетители вчера</div>
+            <div class="h4 mb-0">{{ traffic.yesterday_visits }}</div>
+          </div>
+          <div class="bg-info bg-opacity-10 p-3 rounded">
+            <i class="fas fa-chart-line text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="bg-white rounded shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">Посетители за месяц</div>
+            <div class="h4 mb-0">{{ traffic.this_month_visits }}</div>
+          </div>
+          <div class="bg-warning bg-opacity-10 p-3 rounded">
+            <i class="fas fa-calendar-alt text-warning"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="row g-4">
+    <!-- Orders Section -->
+    <div class="col-lg-8">
+      <div class="bg-white rounded shadow-sm p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="mb-0">Последние заказы</h5>
+          <a href="{{ url_for('admin.admin_orders') }}" class="btn btn-sm btn-outline-primary">Все заказы</a>
+        </div>
+        
+        {% if last_orders %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+                <th class="text-end">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in last_orders %}
+              <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.created_at.strftime('%d.%m.%Y') if order.created_at else 'Н/Д' }}</td>
+                <td>{{ order.customer.name if order.customer else 'Гость' }}</td>
+                <td>{{ order.total_price }} {{ order.currency }}</td>
+                <td>
+                  <span class="badge bg-{% if order.status == 'completed' %}success{% elif order.status == 'processing' %}warning{% elif order.status == 'cancelled' %}danger{% else %}secondary{% endif %}-subtle text-{% if order.status == 'completed' %}success{% elif order.status == 'processing' %}warning{% elif order.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                    {{ order.status|capitalize if order.status else 'Новый' }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <a href="{{ url_for('admin.admin_order_view', order_id=order.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+          <div class="mb-3">
+            <i class="fas fa-shopping-cart fa-3x text-muted"></i>
+          </div>
+          <h6>Нет заказов</h6>
+          <p class="text-muted">Заказы будут отображаться здесь после их создания</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Quick Links -->
+    <div class="col-lg-4">
+      <div class="bg-white rounded shadow-sm p-4 mb-4">
+        <h5 class="mb-3">Быстрые ссылки</h5>
+        <div class="list-group">
+          <a href="{{ url_for('admin.admin_categories') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fas fa-folder me-3 text-primary"></i>
+              Категории
+            </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+          </a>
+          <a href="{{ url_for('admin.list_products') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fas fa-box me-3 text-primary"></i>
+              Товары
+            </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+          </a>
+          <a href="{{ url_for('admin.admin_posts') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fas fa-newspaper me-3 text-primary"></i>
+              Статьи
+            </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+          </a>
+          <a href="{{ url_for('admin.page_list') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fas fa-file-alt me-3 text-primary"></i>
+              Страницы
+            </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+          </a>
+          <a href="{{ url_for('admin.users') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fas fa-users me-3 text-primary"></i>
+              Пользователи
+            </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+          </a>
+          <a href="{{ url_for('admin.site_settings') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fas fa-cog me-3 text-primary"></i>
+              Настройки
+            </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- System Info -->
+      <div class="bg-white rounded shadow-sm p-4">
+        <h5 class="mb-3">Информация о системе</h5>
+        <ul class="list-unstyled">
+          <li class="mb-2 d-flex">
+            <span class="text-muted me-2">Версия:</span>
+            <span>1.0.0</span>
+          </li>
+          <li class="mb-2 d-flex">
+            <span class="text-muted me-2">Последнее обновление:</span>
+            <span>{{ datetime.now().strftime('%d.%m.%Y') }}</span>
+          </li>
+          <li class="mb-2 d-flex">
+            <span class="text-muted me-2">Пользователь:</span>
+            <span>{{ current_user.username }}</span>
+          </li>
+  </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_css %}
+<style>
+.h4 {
+  font-weight: 600;
+}
+
+.list-group-item {
+  border-left: none;
+  border-right: none;
+  padding: 0.75rem 1rem;
+}
+
+.list-group-item:first-child {
+  border-top: none;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.table > :not(caption) > * > * {
+  padding: 0.75rem;
+  background: none;
+  border-bottom-color: #f0f0f0;
+}
+
+.table > tbody > tr:hover {
+  background-color: rgba(250, 250, 250, 0.7);
+}
+</style>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,62 @@
+.rating-bar {
+	height: 6px;
+	background-color: #e5e5e5;
+	position: relative;
+	width: 285px;
+	border-radius: 3px;
+}
+.rating-fill {
+	height: 6px;
+	background-color: black;
+	position: absolute;
+	top: 0;
+	left: 0;
+	border-radius: 3px;
+}
+.rating-row {
+	display: flex;
+	align-items: center;
+	margin-bottom: 6px;
+	gap: 8px;
+}
+.rating-text {
+	width: 20px;
+}
+
+/*  */
+
+/* Цвета */
+.progress-scale__dot {
+	background-color: #d3d4dd;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background-color: #d3d4dd;
+	position: relative;
+	z-index: 2;
+}
+.progress-scale__dot.active {
+	background-color: #9a9db1;
+}
+
+.progress-scale__bar {
+	background-color: #9a9db1;
+}
+
+/* Белый кружок внутри активной точки */
+.progress-scale__dot.active::after {
+	content: "";
+	display: block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: white;
+	border: 2px solid black;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+.progress-scale__dot.visited {
+	background-color: #9a9db1;
+}

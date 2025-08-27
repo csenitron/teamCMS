@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>
+        {% if category %}
+        Редактирование категории #{{ category.id }}
+        {% else %}
+        Новая категория
+        {% endif %}
+    </h1>
+
+    <!-- Основная форма категории -->
+    <form method="post" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.slug.label(class="form-label") }}
+                    {{ form.slug(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.parent.label(class="form-label") }}
+                    {{ form.parent(class="form-select") }}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ form.sort_order.label(class="form-label") }}
+                    {{ form.sort_order(class="form-control") }}
+                </div>
+                <div class="form-check mb-3">
+                    {{ form.is_indexed(class="form-check-input") }}
+                    {{ form.is_indexed.label(class="form-check-label") }}
+                </div>
+
+                <!-- Отображение текущего изображения (если есть) -->
+                <div class="mb-3">
+                    <label class="form-label">Выбранное изображение</label>
+                    <div id="chosenImagePreview">
+                        {% if category and category.image_id %}
+                        <!-- Замените 'uploads/' на правильный путь к изображению, если нужно -->
+                        <img src="{{ url_for('static', filename='uploads/' ~ category.image.filename) }}"
+                             alt="Изображение" style="max-height:50px;">
+                        <span class="ms-2 text-muted">{{ category.image_id }}</span>
+                        {% else %}
+                        <span class="text-muted">(не выбрано)</span>
+                        {% endif %}
+
+                    </div>
+                    <input id="form-image_id" name="image_id" hidden>
+                    <button type="button" class="btn btn-outline-secondary mt-2"
+                            data-bs-toggle="modal" data-bs-target="#chooseImageModal">
+                        Выбрать / Загрузить изображение
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="col-12">
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", id="descriptionField") }}
+                </div>
+            </div>
+        </div>
+
+        <!-- SEO-блок -->
+        <h4 class="mt-4">SEO-настройки</h4>
+        <div class="mb-3">
+            {{ form.meta_title.label(class="form-label") }}
+            {{ form.meta_title(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.meta_keywords.label(class="form-label") }}
+            {{ form.meta_keywords(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.meta_description.label(class="form-label") }}
+            {{ form.meta_description(class="form-control") }}
+        </div>
+
+        <button type="submit" class="btn btn-success">{{ form.submit.label.text }}</button>
+    </form>
+</div>
+
+<!-- Модальное окно для выбора / загрузки изображения -->
+{% include 'admin/chooseImage.html' %}
+
+<script src="/static/js/tinymce/tinymce.min.js"></script>
+<script>
+    // Инициализация TinyMCE
+    tinymce.init({
+        selector: '#descriptionField',
+        height: 300,
+        plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor'],
+        toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | removeformat | help',
+        language: 'ru',
+        language_url: '/static/js/tinymce/langs/ru.js'
+    });
+    
+    // MediaManager настроен глобально в chooseImage.html
+</script>
+{% endblock %}

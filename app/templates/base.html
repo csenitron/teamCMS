@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- CSP: разрешаем локальные ресурсы и data: для изображений/шрифтов -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; media-src 'self'; object-src 'none'">
+    <title>{% block title %}Админ-панель{% endblock %}</title>
+    
+    <!-- jQuery -->
+    <script src="/static/js/code.jquery.com_jquery-3.7.0.js"></script>
+    
+    <!-- jQuery UI -->
+    <link rel="stylesheet" href="/static/css/jquery-ui.css">
+    <script src="/static/js/jquery-ui.min.js"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/static/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-width: 280px;
+        }
+        
+        body {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+
+        .auth-page {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .offcanvas-start {
+            width: var(--sidebar-width);
+        }
+
+        .nav-link {
+            color: #495057;
+            padding: 0.8rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #e9ecef;
+            color: #0d6efd;
+        }
+
+        .nav-link.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+        }
+
+        .nav-link i {
+            width: 1.25rem;
+            text-align: center;
+            margin-right: 0.5rem;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+{% block layout %}
+    {% if not hide_sidebar %}
+    <!-- Кнопка для открытия боковой панели -->
+    <div class="container-fluid p-3">
+        <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarLabel">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title" id="adminSidebarLabel">
+                <i class="fas fa-user-shield me-2"></i>Админ-панель
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="p-3">
+                <!-- User info -->
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-user-circle fa-2x text-primary me-2"></i>
+                        <div>
+                            <div class="fw-bold">{{ current_user.username if current_user.is_authenticated else 'Гость' }}</div>
+                            <small class="text-muted">Администратор</small>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm w-100">
+                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                    </a>
+                </div>
+                
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_index' %}active{% endif %}" 
+                           href="{{ url_for('admin.admin_index') }}">
+                            <i class="fas fa-home"></i> Главная
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_categories' %}active{% endif %}" 
+                           href="{{ url_for('admin.admin_categories') }}">
+                            <i class="fas fa-tags"></i> Категории
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_directories_view' %}active{% endif %}" 
+                           href="{{ url_for('admin.admin_directories_view') }}">
+                            <i class="fas fa-images"></i> Медиа-файлы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.list_products' %}active{% endif %}" 
+                           href="{{ url_for('admin.list_products') }}">
+                            <i class="fas fa-box"></i> Товары
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['admin.size_charts_list','admin.size_charts_form'] %}active{% endif %}"
+                           href="{{ url_for('admin.size_charts_list') }}">
+                            <i class="fas fa-ruler-combined"></i> Размерные сетки
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['admin.reviews_list','admin.review_form'] %}active{% endif %}"
+                           href="{{ url_for('admin.reviews_list') }}">
+                            <i class="fas fa-comments"></i> Отзывы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['admin.admin_orders','admin.admin_order_view'] %}active{% endif %}"
+                           href="{{ url_for('admin.admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Заказы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.modules_list' %}active{% endif %}" 
+                           href="{{ url_for('admin.modules_list') }}">
+                            <i class="fas fa-puzzle-piece"></i> Модули
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.page_list' %}active{% endif %}" 
+                           href="{{ url_for('admin.page_list') }}">
+                            <i class="fas fa-file-alt"></i> Страницы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_post_categories' %}active{% endif %}" 
+                           href="{{ url_for('admin.admin_post_categories') }}">
+                            <i class="fas fa-folder"></i> Категории статей
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_posts' %}active{% endif %}" 
+                           href="{{ url_for('admin.admin_posts') }}">
+                            <i class="fas fa-newspaper"></i> Статьи
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.site_settings' %}active{% endif %}" 
+                           href="{{ url_for('admin.site_settings') }}">
+                            <i class="fas fa-cog"></i> Настройки сайта
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.users' %}active{% endif %}" 
+                           href="{{ url_for('admin.users') }}">
+                            <i class="fas fa-users"></i> Пользователи
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Основной контент -->
+    <main class="{% if not hide_sidebar %}container mt-4{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+{% endblock %}
+
+<!-- Bootstrap Bundle с Popper -->
+<script src="/static/js/bootstrap.bundle.min.js"></script>
+
+<!-- Дополнительные скрипты -->
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>
