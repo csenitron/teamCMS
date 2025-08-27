@@ -103,21 +103,21 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
         <div class="container-fluid">
             <!-- Логотип по центру -->
-            <a class="navbar-brand mx-auto order-1 order-lg-2" href="#">{{ menu_title or 'LOGO' }}</a>
-            
+            <a class="navbar-brand mx-auto order-1 order-lg-2" href="#">{{ menu_title or 'PANGAIA' }}</a>
+
             <!-- Левая часть навигации -->
             <button class="navbar-toggler order-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
+
             <div class="collapse navbar-collapse order-2 order-lg-1" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% for item in menu_tree %}
                         {% if item.children %}
                             <!-- Пункт меню с мегаменю -->
                             <li class="nav-item dropdown dropdown-mega">
-                                <a class="nav-link dropdown-toggle" href="{{ item.url or '#' }}" 
+                                <a class="nav-link dropdown-toggle" href="{{ item.url or '#' }}"
                                    id="menu{{ loop.index }}" role="button" data-bs-toggle="dropdown"
                                    aria-expanded="false" {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
                                     {% if show_icons and item.icon %}
@@ -140,58 +140,120 @@
                                                 <!-- Контент слева -->
                                                 <div class="col-md-8">
                                                     <div class="row">
-                                                        {% for child in item.children %}
-                                                            <div class="col-md-6 mb-4">
-                                                                <h6 class="fw-bold mb-3">
-                                                                    <a href="{{ child.url or '#' }}" 
-                                                                       class="text-decoration-none text-dark"
-                                                                       {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                        {{ child.title }}
-                                                                    </a>
-                                                                </h6>
-                                                                {% if child.children %}
-                                                                    <ul class="list-unstyled mb-0">
-                                                                        {% for subchild in child.children %}
-                                                                            <li class="mb-2">
-                                                                                <a href="{{ subchild.url or '#' }}" 
-                                                                                   class="text-decoration-none text-muted"
-                                                                                   {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                                    {{ subchild.title }}
-                                                                                </a>
-                                                                            </li>
-                                                                        {% endfor %}
-                                                                    </ul>
-                                                                {% endif %}
-                                                            </div>
-                                                        {% endfor %}
+                                                        {% if item.children|length >= 4 %}
+                                                            <!-- 4 колонки для взрослых коллекций -->
+                                                            {% for child in item.children %}
+                                                                <div class="col-md-3 mb-4">
+                                                                    <h6 class="fw-bold mb-3">
+                                                                        <a href="{{ child.url or '#' }}"
+                                                                           class="text-decoration-none text-dark"
+                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                            {{ child.title }}
+                                                                        </a>
+                                                                    </h6>
+                                                                    {% if child.children %}
+                                                                        <ul class="list-unstyled mb-0">
+                                                                            {% for subchild in child.children %}
+                                                                                <li class="mb-2">
+                                                                                    <a href="{{ subchild.url or '#' }}"
+                                                                                       class="text-decoration-none text-muted"
+                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                                        {{ subchild.title }}
+                                                                                    </a>
+                                                                                </li>
+                                                                            {% endfor %}
+                                                                        </ul>
+                                                                    {% endif %}
+                                                                </div>
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <!-- 3 колонки для детской коллекции -->
+                                                            {% for child in item.children %}
+                                                                <div class="col-md-4 mb-4">
+                                                                    <h6 class="fw-bold mb-3">
+                                                                        <a href="{{ child.url or '#' }}"
+                                                                           class="text-decoration-none text-dark"
+                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                            {{ child.title }}
+                                                                        </a>
+                                                                    </h6>
+                                                                    {% if child.children %}
+                                                                        <ul class="list-unstyled mb-0">
+                                                                            {% for subchild in child.children %}
+                                                                                <li class="mb-2">
+                                                                                    <a href="{{ subchild.url or '#' }}"
+                                                                                       class="text-decoration-none text-muted"
+                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                                        {{ subchild.title }}
+                                                                                    </a>
+                                                                                </li>
+                                                                            {% endfor %}
+                                                                        </ul>
+                                                                    {% endif %}
+                                                                </div>
+                                                            {% endfor %}
+                                                        {% endif %}
                                                     </div>
                                                 </div>
                                             {% else %}
                                                 <!-- Только контент без видео -->
-                                                {% for child in item.children %}
-                                                    <div class="col-md-4 mb-4">
-                                                        <h6 class="fw-bold mb-3">
-                                                            <a href="{{ child.url or '#' }}" 
-                                                               class="text-decoration-none text-dark"
-                                                               {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                {{ child.title }}
-                                                            </a>
-                                                        </h6>
-                                                        {% if child.children %}
-                                                            <ul class="list-unstyled mb-0">
-                                                                {% for subchild in child.children %}
-                                                                    <li class="mb-2">
-                                                                        <a href="{{ subchild.url or '#' }}" 
-                                                                           class="text-decoration-none text-muted"
-                                                                           {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                            {{ subchild.title }}
+                                                <div class="col-md-12">
+                                                    <div class="row">
+                                                        {% if item.children|length >= 4 %}
+                                                            <!-- 4 колонки для взрослых коллекций -->
+                                                            {% for child in item.children %}
+                                                                <div class="col-md-3 mb-4">
+                                                                    <h6 class="fw-bold mb-3">
+                                                                        <a href="{{ child.url or '#' }}"
+                                                                           class="text-decoration-none text-dark"
+                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                            {{ child.title }}
                                                                         </a>
-                                                                    </li>
-                                                                {% endfor %}
-                                                            </ul>
+                                                                    </h6>
+                                                                    {% if child.children %}
+                                                                        <ul class="list-unstyled mb-0">
+                                                                            {% for subchild in child.children %}
+                                                                                <li class="mb-2">
+                                                                                    <a href="{{ subchild.url or '#' }}"
+                                                                                       class="text-decoration-none text-muted"
+                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                                        {{ subchild.title }}
+                                                                                    </a>
+                                                                                </li>
+                                                                            {% endfor %}
+                                                                        </ul>
+                                                                    {% endif %}
+                                                                </div>
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <!-- 3 колонки для детской коллекции -->
+                                                            {% for child in item.children %}
+                                                                <div class="col-md-4 mb-4">
+                                                                    <h6 class="fw-bold mb-3">
+                                                                        <a href="{{ child.url or '#' }}"
+                                                                           class="text-decoration-none text-dark"
+                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                            {{ child.title }}
+                                                                        </a>
+                                                                    </h6>
+                                                                    {% if child.children %}
+                                                                        <ul class="list-unstyled mb-0">
+                                                                            {% for subchild in child.children %}
+                                                                                <li class="mb-2">
+                                                                                    <a href="{{ subchild.url or '#' }}"
+                                                                                       class="text-decoration-none text-muted"
+                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                                        {{ subchild.title }}
+                                                                                    </a>
+                                                                                </li>
+                                                                            {% endfor %}
+                                                                        </ul>
+                                                                    {% endif %}
+                                                                </div>
+                                                            {% endfor %}
                                                         {% endif %}
                                                     </div>
-                                                {% endfor %}
+                                                </div>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -200,7 +262,7 @@
                         {% else %}
                             <!-- Обычный пункт меню -->
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ item.url or '#' }}" 
+                                <a class="nav-link" href="{{ item.url or '#' }}"
                                    {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
                                     {% if show_icons and item.icon %}
                                         <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-1" width="16" height="16">
@@ -212,7 +274,7 @@
                     {% endfor %}
                 </ul>
             </div>
-            
+
             <!-- Правая часть навигации -->
             <div class="d-flex ms-auto order-3">
                 <button class="btn btn-link p-2" type="button" aria-label="Search">
@@ -452,6 +514,7 @@
 .mega-content h6 {
     font-weight: 700;
     margin-bottom: 0.75rem;
+    color: #000;
 }
 
 .mega-content li {
@@ -474,6 +537,7 @@
 .mega-video {
     height: 100%;
     min-height: 300px;
+    background: #f8f9fa;
 }
 
 .mega-video video {
@@ -483,11 +547,35 @@
     border-radius: 0;
 }
 
-/* Навигация */
+/* Дополнительные стили для соответствия Pangaia */
+.mega-content .col-md-3 h6,
+.mega-content .col-md-4 h6 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+}
+
+.mega-content .list-unstyled li {
+    margin-bottom: 0.75rem;
+}
+
+.mega-content .text-muted {
+    color: #666 !important;
+    font-size: 0.9rem;
+}
+
+.mega-content .text-muted:hover {
+    color: #333 !important;
+}
+
+/* Навигация в стиле Pangaia */
 .navbar-brand {
     font-weight: 700;
     font-size: 1.5rem;
     color: #000;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .nav-link {
@@ -495,10 +583,27 @@
     font-weight: 500;
     padding: 0.5rem 1rem !important;
     transition: color 0.3s ease;
+    position: relative;
 }
 
 .nav-link:hover {
     color: #666 !important;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: #000;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+    width: 100%;
 }
 
 .dropdown-toggle::after {
@@ -510,6 +615,7 @@
     width: 16px;
     height: 16px;
     vertical-align: middle;
+    opacity: 0.8;
 }
 
 /* Кнопки справа */
@@ -518,10 +624,20 @@
     text-decoration: none;
     padding: 0.5rem;
     transition: color 0.3s ease;
+    border-radius: 0;
 }
 
 .btn-link:hover {
     color: #666;
+    background: transparent;
+}
+
+.btn-link svg {
+    transition: transform 0.3s ease;
+}
+
+.btn-link:hover svg {
+    transform: scale(1.1);
 }
 
 /* Адаптивность */
