@@ -473,6 +473,109 @@
     -webkit-transform: none !important;
 }
 
+/* Стили для мобильного offcanvas меню */
+.offcanvas {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 1055;
+    width: 300px;
+    max-width: 80vw;
+    background-color: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    visibility: hidden;
+}
+
+.offcanvas.show {
+    transform: translateX(0);
+    visibility: visible;
+}
+
+.offcanvas.offcanvas-end {
+    right: 0;
+    transform: translateX(100%);
+}
+
+.offcanvas.offcanvas-end.show {
+    transform: translateX(0);
+}
+
+.offcanvas-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.15s linear;
+}
+
+.offcanvas-backdrop.show {
+    opacity: 1;
+}
+
+.offcanvas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.offcanvas-title {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.btn-close {
+    width: 1em;
+    height: 1em;
+    padding: 0.25em;
+    background: transparent;
+    border: 0;
+    border-radius: 0.25rem;
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.btn-close:hover {
+    opacity: 0.75;
+}
+
+.offcanvas-body {
+    flex-grow: 1;
+    padding: 1rem 1rem;
+    overflow-y: auto;
+}
+
+/* Мобильная кнопка меню */
+.mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.mobile-menu-toggle:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+.mobile-menu-toggle i {
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
 .dropdown-mega .dropdown-menu.show {
     display: block !important;
     opacity: 1 !important;
@@ -756,7 +859,7 @@
 </style>
 
 <script>
-// JavaScript для мегаменю
+// JavaScript для мегаменю и мобильного меню
 document.addEventListener('DOMContentLoaded', function() {
     // Функция для установки ширины и позиции мега-меню
     function setMegaMenuDimensions() {
@@ -786,6 +889,70 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Вызываем при загрузке страницы
     setMegaMenuDimensions();
+
+    // Инициализация Bootstrap offcanvas компонентов
+    function initializeOffcanvas() {
+        // Находим все offcanvas элементы
+        const offcanvasElements = document.querySelectorAll('.offcanvas');
+
+        offcanvasElements.forEach(function(offcanvas) {
+            const backdrop = document.createElement('div');
+            backdrop.className = 'offcanvas-backdrop';
+            document.body.appendChild(backdrop);
+
+            // Находим кнопку открытия
+            const toggleBtn = document.querySelector('[data-bs-target="#' + offcanvas.id + '"]');
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    offcanvas.classList.add('show');
+                    backdrop.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+
+            // Находим кнопку закрытия
+            const closeBtn = offcanvas.querySelector('.btn-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    offcanvas.classList.remove('show');
+                    backdrop.classList.remove('show');
+                    document.body.style.overflow = '';
+                });
+            }
+
+            // Закрытие по клику на backdrop
+            backdrop.addEventListener('click', function() {
+                offcanvas.classList.remove('show');
+                backdrop.classList.remove('show');
+                document.body.style.overflow = '';
+            });
+
+            // Закрытие по нажатию клавиши Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && offcanvas.classList.contains('show')) {
+                    offcanvas.classList.remove('show');
+                    backdrop.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+    }
+
+    // Функция для закрытия всех открытых offcanvas меню
+    function closeAllOffcanvas() {
+        document.querySelectorAll('.offcanvas.show').forEach(function(offcanvas) {
+            offcanvas.classList.remove('show');
+        });
+        document.querySelectorAll('.offcanvas-backdrop.show').forEach(function(backdrop) {
+            backdrop.classList.remove('show');
+        });
+        document.body.style.overflow = '';
+    }
+
+    // Инициализируем offcanvas
+    initializeOffcanvas();
 
     // Обработка мегаменю
     const megaDropdowns = document.querySelectorAll('.dropdown-mega');
@@ -889,29 +1056,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Закрытие мегаменю при клике вне его
+    // Закрытие мегаменю и offcanvas при клике вне их
     document.addEventListener('click', function(event) {
-        // Проверяем, что клик был не на элементе мега-меню
-        if (!event.target.closest('.dropdown-mega') && !event.target.closest('.dropdown-menu')) {
+        // Проверяем, что клик был не на элементе мега-меню и не на offcanvas
+        if (!event.target.closest('.dropdown-mega') && !event.target.closest('.dropdown-menu') &&
+            !event.target.closest('.offcanvas') && !event.target.closest('.offcanvas-backdrop')) {
             clearTimeout(hideTimeout);
+            // Закрываем мега-меню на десктопе
             document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
                 if (window.innerWidth >= 992) {
                     menu.classList.remove('show');
                 }
             });
+            // Закрываем все offcanvas меню
+            closeAllOffcanvas();
         }
     });
 
     // Также добавляем обработчик для клика на пустом пространстве страницы
     document.addEventListener('mousedown', function(event) {
         // Если клик был на body или html (но не на других элементах)
-        if (event.target === document.body || event.target === document.documentElement) {
+        if ((event.target === document.body || event.target === document.documentElement) &&
+            !event.target.closest('.dropdown-mega') && !event.target.closest('.offcanvas')) {
             clearTimeout(hideTimeout);
             document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
                 if (window.innerWidth >= 992) {
                     menu.classList.remove('show');
                 }
             });
+            closeAllOffcanvas();
         }
     });
 
@@ -921,12 +1094,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Обновляем размеры при изменении окна
         setMegaMenuDimensions();
 
-        if (window.innerWidth >= 992) {
-            // Закрываем все открытые мобильные меню
-            document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
-                menu.classList.remove('show');
-            });
-        }
+        // Закрываем все открытые меню при изменении размера
+        document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
+            menu.classList.remove('show');
+        });
+        closeAllOffcanvas();
     });
 
     // Обработка скролла страницы для sticky navbar
