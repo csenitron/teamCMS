@@ -100,205 +100,169 @@
         
     {% elif menu_style == 'mega' %}
     <!-- Мегаменю в стиле Pangaia -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-        <div class="container-fluid">
-            <!-- Логотип по центру -->
-            <a class="navbar-brand mx-auto order-1 order-lg-2" href="#">{{ menu_title or 'PANGAIA' }}</a>
-
-            <!-- Левая часть навигации -->
-            <button class="navbar-toggler order-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse order-2 order-lg-1" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {% for item in menu_tree %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
+      <div class="container-fluid">
+        <!-- Основное меню для десктопа -->
+        <ul class="menu-list mega d-none d-lg-flex navbar-nav me-auto mb-2 mb-lg-0">
+            {% for item in menu_tree %}
+                <li class="nav-item dropdown dropdown-mega">
+                    <a href="{{ item.url or '#' }}"
+                       class="nav-link dropdown-toggle {{ item.custom_class }}{% if item.is_featured %} featured{% endif %}"
+                       {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}
+                       {% if item.children %}role="button" data-bs-toggle="dropdown" aria-expanded="false"{% endif %}>
+                        {% if show_icons and item.icon %}
+                            <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2">
+                        {% endif %}
+                        <span class="menu-text">{{ item.title }}</span>
                         {% if item.children %}
-                            <!-- Пункт меню с мегаменю -->
-                            <li class="nav-item dropdown dropdown-mega">
-                                <a class="nav-link dropdown-toggle" href="{{ item.url or '#' }}"
-                                   id="menu{{ loop.index }}" role="button" data-bs-toggle="dropdown"
-                                   aria-expanded="false" {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                    {% if show_icons and item.icon %}
-                                        <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-1" width="16" height="16">
+                            <i class="fas fa-chevron-down dropdown-arrow ms-1"></i>
+                        {% endif %}
+                    </a>
+                    {% if item.children %}
+                        <div class="dropdown-menu" aria-labelledby="{{ item.title|lower|replace(' ', '') }}Menu">
+                            <!-- Видео секция (абсолютное позиционирование) -->
+                            {% if enable_videos and item.video %}
+                            <div class="mega-video">
+                                <video autoplay muted loop playsinline>
+                                    <source src="{{ item.video.url }}" type="video/mp4">
+                                </video>
+                            </div>
+                            {% endif %}
+
+                            <!-- Контент секция -->
+                            <div class="mega-content-container">
+                                <div class="mega-content">
+                                <div class="row">
+                                    <!-- Featured секция -->
+                                    {% if item.children and item.children[0] %}
+                                    <div class="col-2">
+                                        <h6>Featured</h6>
+                                        <ul class="mb-4">
+                                            {% for child in item.children[:4] %}
+                                            <li>
+                                                <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                    {{ child.title }}
+                                                </a>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
                                     {% endif %}
-                                    {{ item.title }}
-                                </a>
-                                <div class="dropdown-menu" aria-labelledby="menu{{ loop.index }}">
-                                    <div class="container mega-content">
-                                        <div class="row">
-                                            {% if enable_videos and item.video %}
-                                                <!-- Видео справа -->
-                                                <div class="col-md-4 p-0">
-                                                    <div class="mega-video h-100">
-                                                        <video autoplay muted loop playsinline class="w-100 h-100" style="object-fit: cover;">
-                                                            <source src="{{ item.video.url }}" type="video/mp4">
-                                                        </video>
-                                                    </div>
-                                                </div>
-                                                <!-- Контент слева -->
-                                                <div class="col-md-8">
-                                                    <div class="row">
-                                                        {% if item.children|length >= 4 %}
-                                                            <!-- 4 колонки для взрослых коллекций -->
-                                                            {% for child in item.children %}
-                                                                <div class="col-md-3 mb-4">
-                                                                    <h6 class="fw-bold mb-3">
-                                                                        <a href="{{ child.url or '#' }}"
-                                                                           class="text-decoration-none text-dark"
-                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                            {{ child.title }}
-                                                                        </a>
-                                                                    </h6>
-                                                                    {% if child.children %}
-                                                                        <ul class="list-unstyled mb-0">
-                                                                            {% for subchild in child.children %}
-                                                                                <li class="mb-2">
-                                                                                    <a href="{{ subchild.url or '#' }}"
-                                                                                       class="text-decoration-none text-muted"
-                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                                        {{ subchild.title }}
-                                                                                    </a>
-                                                                                </li>
-                                                                            {% endfor %}
-                                                                        </ul>
-                                                                    {% endif %}
-                                                                </div>
-                                                            {% endfor %}
-                                                        {% else %}
-                                                            <!-- 3 колонки для детской коллекции -->
-                                                            {% for child in item.children %}
-                                                                <div class="col-md-4 mb-4">
-                                                                    <h6 class="fw-bold mb-3">
-                                                                        <a href="{{ child.url or '#' }}"
-                                                                           class="text-decoration-none text-dark"
-                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                            {{ child.title }}
-                                                                        </a>
-                                                                    </h6>
-                                                                    {% if child.children %}
-                                                                        <ul class="list-unstyled mb-0">
-                                                                            {% for subchild in child.children %}
-                                                                                <li class="mb-2">
-                                                                                    <a href="{{ subchild.url or '#' }}"
-                                                                                       class="text-decoration-none text-muted"
-                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                                        {{ subchild.title }}
-                                                                                    </a>
-                                                                                </li>
-                                                                            {% endfor %}
-                                                                        </ul>
-                                                                    {% endif %}
-                                                                </div>
-                                                            {% endfor %}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            {% else %}
-                                                <!-- Только контент без видео -->
-                                                <div class="col-md-12">
-                                                    <div class="row">
-                                                        {% if item.children|length >= 4 %}
-                                                            <!-- 4 колонки для взрослых коллекций -->
-                                                            {% for child in item.children %}
-                                                                <div class="col-md-3 mb-4">
-                                                                    <h6 class="fw-bold mb-3">
-                                                                        <a href="{{ child.url or '#' }}"
-                                                                           class="text-decoration-none text-dark"
-                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                            {{ child.title }}
-                                                                        </a>
-                                                                    </h6>
-                                                                    {% if child.children %}
-                                                                        <ul class="list-unstyled mb-0">
-                                                                            {% for subchild in child.children %}
-                                                                                <li class="mb-2">
-                                                                                    <a href="{{ subchild.url or '#' }}"
-                                                                                       class="text-decoration-none text-muted"
-                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                                        {{ subchild.title }}
-                                                                                    </a>
-                                                                                </li>
-                                                                            {% endfor %}
-                                                                        </ul>
-                                                                    {% endif %}
-                                                                </div>
-                                                            {% endfor %}
-                                                        {% else %}
-                                                            <!-- 3 колонки для детской коллекции -->
-                                                            {% for child in item.children %}
-                                                                <div class="col-md-4 mb-4">
-                                                                    <h6 class="fw-bold mb-3">
-                                                                        <a href="{{ child.url or '#' }}"
-                                                                           class="text-decoration-none text-dark"
-                                                                           {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                            {{ child.title }}
-                                                                        </a>
-                                                                    </h6>
-                                                                    {% if child.children %}
-                                                                        <ul class="list-unstyled mb-0">
-                                                                            {% for subchild in child.children %}
-                                                                                <li class="mb-2">
-                                                                                    <a href="{{ subchild.url or '#' }}"
-                                                                                       class="text-decoration-none text-muted"
-                                                                                       {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                                        {{ subchild.title }}
-                                                                                    </a>
-                                                                                </li>
-                                                                            {% endfor %}
-                                                                        </ul>
-                                                                    {% endif %}
-                                                                </div>
-                                                            {% endfor %}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            {% endif %}
-                                        </div>
+
+                                    <!-- Categories секция -->
+                                    {% if item.children %}
+                                    <div class="col-2">
+                                        <h6>Categories</h6>
+                                        <ul class="mb-4">
+                                            {% for child in item.children %}
+                                            <li>
+                                                <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                    {{ child.title }}
+                                                </a>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Shop by color секция -->
+                                    <div class="col-2">
+                                        <h6>Shop by color</h6>
+                                        <ul class="mb-4">
+                                            <li><a href="#">Black</a></li>
+                                            <li><a href="#">White</a></li>
+                                            <li><a href="#">Blue</a></li>
+                                            <li><a href="#">Grey</a></li>
+                                            <li><a href="#">Neutral</a></li>
+                                            <li><a href="#">Pink</a></li>
+                                            <li><a href="#">Purple</a></li>
+                                            <li><a href="#">Red</a></li>
+                                            <li><a href="#">Green</a></li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Capsule секция -->
+                                    <div class="col-2">
+                                        <h6>Capsule</h6>
+                                        <ul class="mb-4">
+                                            <li><a href="#">365 Heavyweight</a></li>
+                                            <li><a href="#">365 Midweight</a></li>
+                                            <li><a href="#">DNA</a></li>
+                                        </ul>
                                     </div>
                                 </div>
-                            </li>
-                        {% else %}
-                            <!-- Обычный пункт меню -->
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ item.url or '#' }}"
-                                   {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                    {% if show_icons and item.icon %}
-                                        <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-1" width="16" height="16">
-                                    {% endif %}
-                                    {{ item.title }}
-                                </a>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-            </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
 
-            <!-- Правая часть навигации -->
-            <div class="d-flex ms-auto order-3">
-                <button class="btn btn-link p-2" type="button" aria-label="Search">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search"
-                         viewBox="0 0 16 16">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.397h-.001l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zm-5.742 1.16a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
-                    </svg>
-                </button>
-                <button class="btn btn-link p-2" type="button" aria-label="Account">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-person"
-                         viewBox="0 0 16 16">
-                        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                        <path fill-rule="evenodd" d="M8 9a5 5 0 0 0-4.546 2.916C2.99 13.159 3.825 14 5 14h6c1.175 0 2.01-.841 1.546-2.084A5 5 0 0 0 8 9z"/>
-                    </svg>
-                </button>
-                <button class="btn btn-link p-2" type="button" aria-label="Cart">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bag"
-                         viewBox="0 0 16 16">
-                        <path d="M8 1.5A1.5 1.5 0 0 0 6.5 3v1h3V3A1.5 1.5 0 0 0 8 1.5zm-4 4A.5.5 0 0 1 4.5 5h.694l.554-1.106A1.5 1.5 0 0 1 7.172 3h1.656a1.5 1.5 0 0 1 1.425.894L10.806 5H11.5a.5.5 0 0 1 .5.5v7A2.5 2.5 0 0 1 9.5 15h-3A2.5 2.5 0 0 1 4 12.5v-7z"/>
-                    </svg>
-                </button>
+        <!-- Мобильное меню на offcanvas Bootstrap -->
+        <div class="d-lg-none">
+            <button class="btn btn-outline-dark mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenuOffcanvas" aria-controls="mobileMenuOffcanvas">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenuOffcanvas" aria-labelledby="mobileMenuOffcanvasLabel">
+                <div class="offcanvas-header border-bottom">
+                    <h5 class="offcanvas-title" id="mobileMenuOffcanvasLabel">{{ menu_title or 'Меню' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body p-0">
+                    <div class="accordion accordion-flush" id="mobileMenuAccordion">
+                        {% for item in menu_tree %}
+                            <div class="accordion-item">
+                                {% if item.children %}
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index0 }}">
+                                            {% if show_icons and item.icon %}
+                                                <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
+                                            {% endif %}
+                                            {{ item.title }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ loop.index0 }}" class="accordion-collapse collapse" data-bs-parent="#mobileMenuAccordion">
+                                        <div class="accordion-body p-0">
+                                            {% for child in item.children %}
+                                                <a href="{{ child.url or '#' }}" 
+                                                   class="d-block p-3 text-decoration-none text-dark border-bottom"
+                                                   {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                    {{ child.title }}
+                                                </a>
+                                                {% if child.children %}
+                                                    <div class="ps-4">
+                                                        {% for subchild in child.children %}
+                                                            <a href="{{ subchild.url or '#' }}" 
+                                                               class="d-block p-2 text-decoration-none text-muted small border-bottom"
+                                                               {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                {{ subchild.title }}
+                                                            </a>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="p-3 border-bottom">
+                                        <a href="{{ item.url or '#' }}" 
+                                           class="text-decoration-none text-dark d-flex align-items-center"
+                                           {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                            {% if show_icons and item.icon %}
+                                                <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
+                                            {% endif %}
+                                            {{ item.title }}
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
+    </div>
         
     {% elif menu_style == 'mobile' %}
         <!-- Мобильное меню -->
@@ -493,28 +457,60 @@
     color: #007bff;
 }
 
-/* Мегаменю в стиле Pangaia */
-.dropdown-mega {
-    position: static;
-}
-
+/* Мегаменю в стиле Pangaia - базовые стили, размеры устанавливает JS */
 .dropdown-mega .dropdown-menu {
-    width: 100%;
-    margin-top: 0;
+    /* Ширина, позиция и position устанавливаются JavaScript */
+    margin: 0;
+    padding: 0;
     border-radius: 0;
     border: none;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 1050;
+    overflow: hidden;
+    min-height: 300px;
+    /* Убираем трансформации которые могут мешать */
+    transform: none !important;
+    -webkit-transform: none !important;
+}
+
+.dropdown-mega .dropdown-menu.show {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Контейнер без Bootstrap отступов */
+.mega-content-container {
+    width: 100%;
     padding: 0;
+    margin: 0;
+    margin-right: 400px; /* Отступ для видео */
 }
 
 .mega-content {
-    padding: 2rem 2rem;
+    padding: 2rem;
+    margin: 0;
+    width: 100%;
+}
+
+/* Минимальные переопределения Bootstrap для корректной работы */
+.dropdown-mega .container,
+.dropdown-mega .container-fluid {
+    /* Убираем отступы которые могут мешать позиционированию */
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}/* Переопределяем отступы navbar только для мегаменю */
+.dropdown-mega .navbar .container-fluid {
+    padding-left: 0 !important;
 }
 
 .mega-content h6 {
     font-weight: 700;
     margin-bottom: 0.75rem;
     color: #000;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .mega-content li {
@@ -525,139 +521,76 @@
 .mega-content a {
     color: #000;
     text-decoration: none;
-    transition: color 0.3s ease;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
 }
 
 .mega-content a:hover {
-    color: #666;
     text-decoration: underline;
+    color: #007bff;
+}
+
+.mega-content ul {
+    margin: 0;
+    padding: 0;
 }
 
 /* Видео в мегаменю */
 .mega-video {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 400px;
     height: 100%;
-    min-height: 300px;
-    background: #f8f9fa;
+    overflow: hidden;
 }
 
 .mega-video video {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 0;
 }
 
-/* Дополнительные стили для соответствия Pangaia */
-.mega-content .col-md-3 h6,
-.mega-content .col-md-4 h6 {
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 1rem;
-}
-
-.mega-content .list-unstyled li {
-    margin-bottom: 0.75rem;
-}
-
-.mega-content .text-muted {
-    color: #666 !important;
-    font-size: 0.9rem;
-}
-
-.mega-content .text-muted:hover {
-    color: #333 !important;
-}
-
-/* Навигация в стиле Pangaia */
-.navbar-brand {
-    font-weight: 700;
-    font-size: 1.5rem;
-    color: #000;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.nav-link {
-    color: #000 !important;
-    font-weight: 500;
-    padding: 0.5rem 1rem !important;
-    transition: color 0.3s ease;
-    position: relative;
-}
-
-.nav-link:hover {
-    color: #666 !important;
-}
-
-.nav-link::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 2px;
-    background: #000;
-    transition: all 0.3s ease;
-    transform: translateX(-50%);
-}
-
-.nav-link:hover::after {
-    width: 100%;
-}
-
-.dropdown-toggle::after {
-    margin-left: 0.5rem;
-}
-
-/* Иконки в меню */
-.menu-icon {
-    width: 16px;
-    height: 16px;
-    vertical-align: middle;
-    opacity: 0.8;
-}
-
-/* Кнопки справа */
-.btn-link {
-    color: #000;
-    text-decoration: none;
-    padding: 0.5rem;
-    transition: color 0.3s ease;
-    border-radius: 0;
-}
-
-.btn-link:hover {
-    color: #666;
-    background: transparent;
-}
-
-.btn-link svg {
-    transition: transform 0.3s ease;
-}
-
-.btn-link:hover svg {
-    transform: scale(1.1);
-}
-
-/* Адаптивность */
-@media (max-width: 991.98px) {
-    .dropdown-mega .dropdown-menu {
-        width: 100%;
-        margin-top: 0;
+/* Адаптивность для мегаменю */
+@media (max-width: 992px) {
+    .mega-content-container {
+        margin-right: 0; /* Убираем отступ для видео на мобильных */
     }
-    
+
+    .mega-content {
+        max-width: none;
+    }
+
+    .mega-video {
+        display: none; /* Скрываем видео на мобильных */
+    }
+
+    /* Также убираем все отступы на мобильных */
+    .dropdown-mega .container,
+    .dropdown-mega .container-fluid,
+    .dropdown-mega .row {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+}
+
+@media (max-width: 768px) {
     .mega-content {
         padding: 1rem;
     }
-    
-    .mega-video {
-        min-height: 200px;
-        margin-top: 1rem;
-    }
-}
 
-/* Мобильное меню */
+    .mega-content .col-2 {
+        margin-bottom: 1rem;
+    }
+
+    .dropdown-mega .dropdown-menu {
+        /* Размеры устанавливаются JavaScript */
+        left: 0;
+        margin-left: 0;
+    }
+}/* Мобильное меню */
 .mobile-menu-toggle {
     display: flex;
     flex-direction: column;
@@ -823,11 +756,194 @@
 </style>
 
 <script>
+// JavaScript для мегаменю
+document.addEventListener('DOMContentLoaded', function() {
+    // Функция для установки ширины и позиции мега-меню
+    function setMegaMenuDimensions() {
+        // Используем viewport размеры вместо body для точного позиционирования
+        const viewportWidth = window.innerWidth;
+
+        // Находим navbar с учетом его позиции на странице
+        const navbar = document.querySelector('.navbar');
+        let navbarTop = 0;
+        if (navbar) {
+            const navbarRect = navbar.getBoundingClientRect();
+            navbarTop = navbarRect.bottom; // Используем нижнюю границу navbar
+        }
+
+        // Применяем к всем мега-меню
+        document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
+            menu.style.width = viewportWidth + 'px';
+            menu.style.position = 'fixed';
+            menu.style.left = '0px';
+            menu.style.top = navbarTop + 'px';
+            menu.style.right = 'auto';
+            menu.style.marginLeft = '0px';
+            // Добавляем pointer-events для корректной работы событий мыши
+            menu.style.pointerEvents = 'auto';
+        });
+    }
+
+    // Вызываем при загрузке страницы
+    setMegaMenuDimensions();
+
+    // Обработка мегаменю
+    const megaDropdowns = document.querySelectorAll('.dropdown-mega');
+    let hideTimeout;
+
+    megaDropdowns.forEach(function(dropdown) {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        const menu = dropdown.querySelector('.dropdown-menu');
+
+        if (toggle && menu) {
+            // Обработка наведения мыши для десктопа
+            dropdown.addEventListener('mouseenter', function() {
+                if (window.innerWidth >= 992) { // Только на десктопе
+                    clearTimeout(hideTimeout);
+                    // Устанавливаем размеры перед показом
+                    setMegaMenuDimensions();
+                    menu.classList.add('show');
+                }
+            });
+
+            // Обработка ухода мыши с главного пункта
+            dropdown.addEventListener('mouseleave', function(e) {
+                if (window.innerWidth >= 992) { // Только на десктопе
+                    // Увеличиваем задержку скрытия до 700мс для более плавной работы
+                    hideTimeout = setTimeout(() => {
+                        // Проверяем, находится ли курсор в разумной близости от меню
+                        const rect = menu.getBoundingClientRect();
+                        const mouseX = e.clientX;
+                        const mouseY = e.clientY;
+
+                        // Создаем зону комфорта 50px вокруг меню
+                        const comfortZone = 50;
+                        const extendedRect = {
+                            left: rect.left - comfortZone,
+                            right: rect.right + comfortZone,
+                            top: rect.top - comfortZone,
+                            bottom: rect.bottom + comfortZone
+                        };
+
+                        // Скрываем только если курсор далеко от меню
+                        if (mouseX < extendedRect.left || mouseX > extendedRect.right ||
+                            mouseY < extendedRect.top || mouseY > extendedRect.bottom) {
+                            menu.classList.remove('show');
+                        }
+                    }, 700); // Увеличили задержку для плавности
+                }
+            });
+
+            // Обработка наведения на само меню
+            menu.addEventListener('mouseenter', function() {
+                if (window.innerWidth >= 992) {
+                    clearTimeout(hideTimeout);
+                }
+            });
+
+            // Обработка ухода мыши с меню
+            menu.addEventListener('mouseleave', function(e) {
+                if (window.innerWidth >= 992) {
+                    // Добавляем дополнительную задержку для плавности
+                    hideTimeout = setTimeout(() => {
+                        // Сначала проверяем, не перешли ли мы на другой элемент мега-меню
+                        const relatedTarget = e.relatedTarget;
+                        const isMovingToAnotherMenu = relatedTarget &&
+                            (relatedTarget.closest('.dropdown-mega') === dropdown ||
+                             relatedTarget.closest('.dropdown-menu') === menu);
+
+                        if (!isMovingToAnotherMenu) {
+                            // Если не перешли на другой элемент, проверяем расстояние курсора
+                            const rect = menu.getBoundingClientRect();
+                            const mouseX = e.clientX;
+                            const mouseY = e.clientY;
+
+                            // Создаем зону комфорта 30px вокруг меню
+                            const comfortZone = 30;
+                            const extendedRect = {
+                                left: rect.left - comfortZone,
+                                right: rect.right + comfortZone,
+                                top: rect.top - comfortZone,
+                                bottom: rect.bottom + comfortZone
+                            };
+
+                            // Скрываем только если курсор далеко от меню
+                            if (mouseX < extendedRect.left || mouseX > extendedRect.right ||
+                                mouseY < extendedRect.top || mouseY > extendedRect.bottom) {
+                                menu.classList.remove('show');
+                            }
+                        }
+                    }, 800); // Увеличили задержку для более плавной работы
+                }
+            });
+
+            // Обработка клика для мобильных устройств
+            toggle.addEventListener('click', function(e) {
+                if (window.innerWidth < 992) { // Только на мобильных
+                    e.preventDefault();
+                    // Устанавливаем размеры перед показом
+                    setMegaMenuDimensions();
+                    menu.classList.toggle('show');
+                }
+            });
+        }
+    });
+
+    // Закрытие мегаменю при клике вне его
+    document.addEventListener('click', function(event) {
+        // Проверяем, что клик был не на элементе мега-меню
+        if (!event.target.closest('.dropdown-mega') && !event.target.closest('.dropdown-menu')) {
+            clearTimeout(hideTimeout);
+            document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
+                if (window.innerWidth >= 992) {
+                    menu.classList.remove('show');
+                }
+            });
+        }
+    });
+
+    // Также добавляем обработчик для клика на пустом пространстве страницы
+    document.addEventListener('mousedown', function(event) {
+        // Если клик был на body или html (но не на других элементах)
+        if (event.target === document.body || event.target === document.documentElement) {
+            clearTimeout(hideTimeout);
+            document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
+                if (window.innerWidth >= 992) {
+                    menu.classList.remove('show');
+                }
+            });
+        }
+    });
+
+    // Обработка изменения размера окна
+    window.addEventListener('resize', function() {
+        clearTimeout(hideTimeout);
+        // Обновляем размеры при изменении окна
+        setMegaMenuDimensions();
+
+        if (window.innerWidth >= 992) {
+            // Закрываем все открытые мобильные меню
+            document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
+                menu.classList.remove('show');
+            });
+        }
+    });
+
+    // Обработка скролла страницы для sticky navbar
+    window.addEventListener('scroll', function() {
+        // Обновляем позицию меню при скролле, если оно открыто
+        const openMenus = document.querySelectorAll('.dropdown-mega .dropdown-menu.show');
+        if (openMenus.length > 0) {
+            setMegaMenuDimensions();
+        }
+    });
+});
+
 // JavaScript для мобильного меню
 function toggleMobileMenu() {
     const overlay = document.getElementById('mobileMenuOverlay');
     const content = document.getElementById('mobileMenuContent');
-    
+
     overlay.classList.toggle('show');
     content.classList.toggle('show');
 }
@@ -835,7 +951,7 @@ function toggleMobileMenu() {
 function closeMobileMenu() {
     const overlay = document.getElementById('mobileMenuOverlay');
     const content = document.getElementById('mobileMenuContent');
-    
+
     overlay.classList.remove('show');
     content.classList.remove('show');
 }
@@ -843,7 +959,7 @@ function closeMobileMenu() {
 function toggleMobileSubmenu(index) {
     const submenu = document.getElementById(`submenu-${index}`);
     const toggle = submenu.previousElementSibling.querySelector('.mobile-submenu-toggle i');
-    
+
     submenu.classList.toggle('show');
     toggle.classList.toggle('fa-chevron-down');
     toggle.classList.toggle('fa-chevron-up');
@@ -853,9 +969,9 @@ function toggleMobileSubmenu(index) {
 document.addEventListener('click', function(event) {
     const menuContent = document.getElementById('mobileMenuContent');
     const menuToggle = document.querySelector('.mobile-menu-toggle');
-    
-    if (menuContent && menuToggle && 
-        !menuContent.contains(event.target) && 
+
+    if (menuContent && menuToggle &&
+        !menuContent.contains(event.target) &&
         !menuToggle.contains(event.target)) {
         closeMobileMenu();
     }
