@@ -882,8 +882,9 @@ document.addEventListener('DOMContentLoaded', function() {
             menu.style.top = navbarTop + 'px';
             menu.style.right = 'auto';
             menu.style.marginLeft = '0px';
-            // Добавляем pointer-events для корректной работы событий мыши
+            // Убеждаемся, что меню не блокирует клики
             menu.style.pointerEvents = 'auto';
+            menu.style.zIndex = '1050';
         });
     }
 
@@ -896,9 +897,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const offcanvasElements = document.querySelectorAll('.offcanvas');
 
         offcanvasElements.forEach(function(offcanvas) {
-            const backdrop = document.createElement('div');
-            backdrop.className = 'offcanvas-backdrop';
-            document.body.appendChild(backdrop);
+            // Создаем backdrop только когда нужно
+            let backdrop = null;
 
             // Находим кнопку открытия
             const toggleBtn = document.querySelector('[data-bs-target="#' + offcanvas.id + '"]');
@@ -906,9 +906,45 @@ document.addEventListener('DOMContentLoaded', function() {
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function(e) {
                     e.preventDefault();
+
+                    // Создаем backdrop при первом открытии
+                    if (!backdrop) {
+                        backdrop = document.createElement('div');
+                        backdrop.className = 'offcanvas-backdrop';
+                        backdrop.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            z-index: 1040;
+                            width: 100vw;
+                            height: 100vh;
+                            background-color: rgba(0, 0, 0, 0.5);
+                            opacity: 0;
+                            transition: opacity 0.15s linear;
+                            pointer-events: auto;
+                        `;
+                        document.body.appendChild(backdrop);
+
+                        // Убеждаемся, что backdrop не блокирует клики по умолчанию
+                        backdrop.style.pointerEvents = 'auto';
+                    }
+
                     offcanvas.classList.add('show');
                     backdrop.classList.add('show');
                     document.body.style.overflow = 'hidden';
+
+                    // Добавляем обработчик клика на backdrop для закрытия
+                    backdrop.addEventListener('click', function() {
+                        offcanvas.classList.remove('show');
+                        backdrop.classList.remove('show');
+                        setTimeout(() => {
+                            if (backdrop && backdrop.parentNode) {
+                                backdrop.parentNode.removeChild(backdrop);
+                                backdrop = null;
+                            }
+                        }, 150);
+                        document.body.style.overflow = '';
+                    });
                 });
             }
 
@@ -917,23 +953,33 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeBtn) {
                 closeBtn.addEventListener('click', function() {
                     offcanvas.classList.remove('show');
-                    backdrop.classList.remove('show');
+                    if (backdrop) {
+                        backdrop.classList.remove('show');
+                        // Удаляем backdrop через некоторое время
+                        setTimeout(() => {
+                            if (backdrop && backdrop.parentNode) {
+                                backdrop.parentNode.removeChild(backdrop);
+                                backdrop = null;
+                            }
+                        }, 150);
+                    }
                     document.body.style.overflow = '';
                 });
             }
-
-            // Закрытие по клику на backdrop
-            backdrop.addEventListener('click', function() {
-                offcanvas.classList.remove('show');
-                backdrop.classList.remove('show');
-                document.body.style.overflow = '';
-            });
 
             // Закрытие по нажатию клавиши Escape
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && offcanvas.classList.contains('show')) {
                     offcanvas.classList.remove('show');
-                    backdrop.classList.remove('show');
+                    if (backdrop) {
+                        backdrop.classList.remove('show');
+                        setTimeout(() => {
+                            if (backdrop && backdrop.parentNode) {
+                                backdrop.parentNode.removeChild(backdrop);
+                                backdrop = null;
+                            }
+                        }, 150);
+                    }
                     document.body.style.overflow = '';
                 }
             });
@@ -945,11 +991,29 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.offcanvas.show').forEach(function(offcanvas) {
             offcanvas.classList.remove('show');
         });
-        document.querySelectorAll('.offcanvas-backdrop.show').forEach(function(backdrop) {
+        document.querySelectorAll('.offcanvas-backdrop').forEach(function(backdrop) {
             backdrop.classList.remove('show');
+            // Удаляем backdrop через некоторое время
+            setTimeout(() => {
+                if (backdrop && backdrop.parentNode) {
+                    backdrop.parentNode.removeChild(backdrop);
+                }
+            }, 150);
         });
         document.body.style.overflow = '';
     }
+
+    // Очистка существующих backdrop элементов при загрузке
+    function cleanupExistingBackdrops() {
+        document.querySelectorAll('.offcanvas-backdrop').forEach(function(backdrop) {
+            if (backdrop.parentNode) {
+                backdrop.parentNode.removeChild(backdrop);
+            }
+        });
+    }
+
+    // Вызываем очистку перед инициализацией
+    cleanupExistingBackdrops();
 
     // Инициализируем offcanvas
     initializeOffcanvas();
@@ -1099,6 +1163,13 @@ document.addEventListener('DOMContentLoaded', function() {
             menu.classList.remove('show');
         });
         closeAllOffcanvas();
+        cleanupExistingBackdrops();
+    });
+
+    // Обработка выгрузки страницы для очистки
+    window.addEventListener('beforeunload', function() {
+        closeAllOffcanvas();
+        cleanupExistingBackdrops();
     });
 
     // Обработка скролла страницы для sticky navbar
