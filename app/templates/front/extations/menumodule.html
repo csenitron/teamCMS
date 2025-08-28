@@ -101,18 +101,18 @@
     {% elif menu_style == 'mega' %}
     <!-- Мегаменю в стиле Pangaia -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white">
-      <div class="container-fluid">
+        <div class="container-fluid">
         <!-- Основное меню для десктопа -->
         <ul class="menu-list mega d-none d-lg-flex navbar-nav me-auto mb-2 mb-lg-0">
-            {% for item in menu_tree %}
-                <li class="nav-item dropdown dropdown-mega">
+                    {% for item in menu_tree %}
+                            <li class="nav-item dropdown dropdown-mega">
                     <a href="{{ item.url or '#' }}"
                        class="nav-link dropdown-toggle {{ item.custom_class }}{% if item.is_featured %} featured{% endif %}"
                        {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}
                        {% if item.children %}role="button" data-bs-toggle="dropdown" aria-expanded="false"{% endif %}>
-                        {% if show_icons and item.icon %}
+                                    {% if show_icons and item.icon %}
                             <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2">
-                        {% endif %}
+                                    {% endif %}
                         <span class="menu-text">{{ item.title }}</span>
                         {% if item.children %}
                             <i class="fas fa-chevron-down dropdown-arrow ms-1"></i>
@@ -121,18 +121,18 @@
                     {% if item.children %}
                         <div class="dropdown-menu" aria-labelledby="{{ item.title|lower|replace(' ', '') }}Menu">
                             <!-- Видео секция (абсолютное позиционирование) -->
-                            {% if enable_videos and item.video %}
+                                            {% if enable_videos and item.video %}
                             <div class="mega-video">
                                 <video autoplay muted loop playsinline>
-                                    <source src="{{ item.video.url }}" type="video/mp4">
-                                </video>
-                            </div>
+                                                            <source src="{{ item.video.url }}" type="video/mp4">
+                                                        </video>
+                                                    </div>
                             {% endif %}
 
                             <!-- Контент секция -->
                             <div class="mega-content-container">
                                 <div class="mega-content">
-                                <div class="row">
+                                                    <div class="row">
                                     <!-- Featured секция -->
                                     {% if item.children and item.children[0] %}
                                     <div class="col-2">
@@ -154,16 +154,16 @@
                                     <div class="col-2">
                                         <h6>Categories</h6>
                                         <ul class="mb-4">
-                                            {% for child in item.children %}
+                                                        {% for child in item.children %}
                                             <li>
                                                 <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                    {{ child.title }}
-                                                </a>
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
+                                                                        {{ child.title }}
+                                                                                </a>
+                                                                            </li>
+                                                                        {% endfor %}
+                                                                    </ul>
                                     </div>
-                                    {% endif %}
+                                                                {% endif %}
 
                                     <!-- Shop by color секция -->
                                     <div class="col-2">
@@ -179,7 +179,7 @@
                                             <li><a href="#">Red</a></li>
                                             <li><a href="#">Green</a></li>
                                         </ul>
-                                    </div>
+                                                            </div>
 
                                     <!-- Capsule секция -->
                                     <div class="col-2">
@@ -189,8 +189,8 @@
                                             <li><a href="#">365 Midweight</a></li>
                                             <li><a href="#">DNA</a></li>
                                         </ul>
-                                    </div>
-                                </div>
+                                                    </div>
+                                                </div>
                                 </div>
                             </div>
                         </div>
@@ -203,6 +203,7 @@
         <div class="d-lg-none">
             <button class="btn btn-outline-dark mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenuOffcanvas" aria-controls="mobileMenuOffcanvas">
                 <i class="fas fa-bars"></i>
+                <span class="visually-hidden">Меню</span>
             </button>
             <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenuOffcanvas" aria-labelledby="mobileMenuOffcanvasLabel">
                 <div class="offcanvas-header border-bottom">
@@ -224,43 +225,43 @@
                                     </h2>
                                     <div id="collapse{{ loop.index0 }}" class="accordion-collapse collapse" data-bs-parent="#mobileMenuAccordion">
                                         <div class="accordion-body p-0">
-                                            {% for child in item.children %}
-                                                <a href="{{ child.url or '#' }}" 
+                                                {% for child in item.children %}
+                                                            <a href="{{ child.url or '#' }}" 
                                                    class="d-block p-3 text-decoration-none text-dark border-bottom"
-                                                   {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                    {{ child.title }}
-                                                </a>
-                                                {% if child.children %}
-                                                    <div class="ps-4">
-                                                        {% for subchild in child.children %}
-                                                            <a href="{{ subchild.url or '#' }}" 
-                                                               class="d-block p-2 text-decoration-none text-muted small border-bottom"
-                                                               {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                {{ subchild.title }}
+                                                               {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                {{ child.title }}
                                                             </a>
-                                                        {% endfor %}
+                                                        {% if child.children %}
+                                                    <div class="ps-4">
+                                                                {% for subchild in child.children %}
+                                                                        <a href="{{ subchild.url or '#' }}" 
+                                                               class="d-block p-2 text-decoration-none text-muted small border-bottom"
+                                                                           {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                                            {{ subchild.title }}
+                                                                        </a>
+                                                                {% endfor %}
                                                     </div>
-                                                {% endif %}
+                                            {% endif %}
                                             {% endfor %}
                                         </div>
                                     </div>
-                                {% else %}
+                        {% else %}
                                     <div class="p-3 border-bottom">
                                         <a href="{{ item.url or '#' }}" 
                                            class="text-decoration-none text-dark d-flex align-items-center"
-                                           {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                            {% if show_icons and item.icon %}
+                                   {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                    {% if show_icons and item.icon %}
                                                 <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
-                                            {% endif %}
-                                            {{ item.title }}
-                                        </a>
+                                    {% endif %}
+                                    {{ item.title }}
+                                </a>
                                     </div>
-                                {% endif %}
+                        {% endif %}
                             </div>
-                        {% endfor %}
-                    </div>
-                </div>
+                    {% endfor %}
             </div>
+            </div>
+        </div>
         </div>
     </div>
         
@@ -475,17 +476,18 @@
 
 /* Стили для мобильного offcanvas меню */
 .offcanvas {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    z-index: 1055;
-    width: 300px;
-    max-width: 80vw;
-    background-color: #fff;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-    visibility: hidden;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    z-index: 1060 !important;
+    width: 320px !important;
+    max-width: 85vw !important;
+    background-color: #fff !important;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15) !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    visibility: hidden !important;
+    border-left: 1px solid #e9ecef !important;
 }
 
 .offcanvas.show {
@@ -554,26 +556,68 @@
 
 /* Мобильная кнопка меню */
 .mobile-menu-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    border: 1px solid #dee2e6;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: all 0.15s ease-in-out;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    background: #fff !important;
+    border: 2px solid #6c757d !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    position: relative !important;
+    z-index: 1051 !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
+    margin: 0 8px !important;
 }
 
 .mobile-menu-toggle:hover {
-    background-color: #f8f9fa;
-    border-color: #adb5bd;
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+    transform: scale(1.08) !important;
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3) !important;
+}
+
+.mobile-menu-toggle:active {
+    transform: scale(0.95) !important;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.2) !important;
+}
+
+.mobile-menu-toggle:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25) !important;
 }
 
 .mobile-menu-toggle i {
-    font-size: 1.2rem;
-    color: #6c757d;
+    font-size: 1.5rem !important;
+    color: #495057 !important;
+    transition: color 0.2s ease !important;
+    font-weight: bold !important;
+}
+
+.mobile-menu-toggle:hover i {
+    color: #fff !important;
+}
+
+/* Визуальная индикация кликабельности */
+.mobile-menu-toggle::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-radius: 50% !important;
+    background: rgba(0,123,255,0.1) !important;
+    transform: translate(-50%, -50%) !important;
+    transition: width 0.3s ease, height 0.3s ease !important;
+    pointer-events: none !important;
+}
+
+.mobile-menu-toggle:active::after {
+    width: 60px !important;
+    height: 60px !important;
 }
 
 .dropdown-mega .dropdown-menu.show {
@@ -584,13 +628,13 @@
 
 /* Контейнер без Bootstrap отступов */
 .mega-content-container {
-    width: 100%;
+        width: 100%;
     padding: 0;
     margin: 0;
     margin-right: 400px; /* Отступ для видео */
-}
-
-.mega-content {
+    }
+    
+    .mega-content {
     padding: 2rem;
     margin: 0;
     width: 100%;
@@ -693,122 +737,6 @@
         left: 0;
         margin-left: 0;
     }
-}/* Мобильное меню */
-.mobile-menu-toggle {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    width: 30px;
-    height: 30px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-
-.hamburger {
-    width: 30px;
-    height: 3px;
-    background: #333;
-    border-radius: 2px;
-    transition: all 0.3s ease;
-}
-
-.mobile-menu-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
-
-.mobile-menu-overlay.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-.mobile-menu-content {
-    position: fixed;
-    top: 0;
-    right: -300px;
-    width: 300px;
-    height: 100%;
-    background: #fff;
-    z-index: 1000;
-    overflow-y: auto;
-    transition: all 0.3s ease;
-}
-
-.mobile-menu-content.show {
-    right: 0;
-}
-
-.mobile-menu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.mobile-menu-close {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-.mobile-menu-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.mobile-menu-link-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.mobile-menu-link {
-    display: flex;
-    align-items: center;
-    padding: 15px 20px;
-    color: #333;
-    flex: 1;
-}
-
-.mobile-submenu-toggle {
-    background: none;
-    border: none;
-    padding: 15px 20px;
-    cursor: pointer;
-}
-
-.mobile-submenu {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    background: #f8f9fa;
-    max-height: 0;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-.mobile-submenu.show {
-    max-height: 500px;
-}
-
-.mobile-submenu-link {
-    display: block;
-    padding: 12px 40px;
-    color: #666;
-    font-size: 0.9em;
 }
 
 /* Выделенные пункты */
@@ -842,13 +770,51 @@
     }
 }
 
+@media (max-width: 992px) {
+    /* Скрываем десктопное меню на планшетах и мобильных */
+    .mega-menu .menu-list.mega {
+        display: none !important;
+    }
+
+    /* Показываем мобильную кнопку меню */
+    .d-lg-none {
+        display: block !important;
+    }
+
+    /* Стили для мобильного offcanvas */
+    .offcanvas {
+        width: 280px !important;
+        max-width: 85vw !important;
+    }
+
+    /* Увеличиваем кнопку меню для лучшей доступности */
+    .mobile-menu-toggle {
+        width: 50px !important;
+        height: 50px !important;
+        margin: 0 10px !important;
+    }
+
+    .mobile-menu-toggle i {
+        font-size: 1.6rem !important;
+    }
+}
+
 @media (max-width: 768px) {
     .horizontal-menu { display: none; }
-    /* скрываем только десктопный список, сам контейнер мегаменю оставляем для offcanvas */
-    .mega-menu .menu-list.mega { display: none !important; }
-    .mobile-menu { display: block; }
     .mega-categories { 
-        grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 12px; }
+        grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 12px;
+    }
+
+    /* Дополнительные стили для маленьких экранов */
+    .offcanvas {
+        width: 260px !important;
+        max-width: 90vw !important;
+    }
+
+    .mobile-menu-toggle {
+        width: 48px !important;
+        height: 48px !important;
+    }
 }
 
 @media (min-width: 769px) {
@@ -904,8 +870,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const toggleBtn = document.querySelector('[data-bs-target="#' + offcanvas.id + '"]');
 
             if (toggleBtn) {
+                // Убеждаемся, что кнопка видима и кликабельна
+                toggleBtn.style.display = 'flex';
+                toggleBtn.style.alignItems = 'center';
+                toggleBtn.style.justifyContent = 'center';
+
                 toggleBtn.addEventListener('click', function(e) {
                     e.preventDefault();
+                    e.stopPropagation();
 
                     // Создаем backdrop при первом открытии
                     if (!backdrop) {
@@ -1017,6 +989,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Инициализируем offcanvas
     initializeOffcanvas();
+
+    // Дополнительная инициализация для мобильных устройств
+    function initializeMobileMenu() {
+        // Проверяем, что мы на мобильном устройстве
+        if (window.innerWidth < 992) {
+            const mobileButtons = document.querySelectorAll('.mobile-menu-toggle');
+
+            mobileButtons.forEach(function(button) {
+                // Убеждаемся, что кнопка правильно отображается
+                button.style.display = 'flex';
+                button.style.visibility = 'visible';
+                button.style.opacity = '1';
+
+                // Добавляем визуальную индикацию кликабельности
+                button.style.position = 'relative';
+                button.style.zIndex = '20';
+            });
+        }
+    }
+
+    // Вызываем инициализацию мобильного меню
+    initializeMobileMenu();
+
+    // Повторная инициализация при изменении размера окна
+    window.addEventListener('resize', function() {
+        initializeMobileMenu();
+    });
 
     // Обработка мегаменю
     const megaDropdowns = document.querySelectorAll('.dropdown-mega');
@@ -1186,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function toggleMobileMenu() {
     const overlay = document.getElementById('mobileMenuOverlay');
     const content = document.getElementById('mobileMenuContent');
-
+    
     overlay.classList.toggle('show');
     content.classList.toggle('show');
 }
@@ -1194,7 +1193,7 @@ function toggleMobileMenu() {
 function closeMobileMenu() {
     const overlay = document.getElementById('mobileMenuOverlay');
     const content = document.getElementById('mobileMenuContent');
-
+    
     overlay.classList.remove('show');
     content.classList.remove('show');
 }
@@ -1202,7 +1201,7 @@ function closeMobileMenu() {
 function toggleMobileSubmenu(index) {
     const submenu = document.getElementById(`submenu-${index}`);
     const toggle = submenu.previousElementSibling.querySelector('.mobile-submenu-toggle i');
-
+    
     submenu.classList.toggle('show');
     toggle.classList.toggle('fa-chevron-down');
     toggle.classList.toggle('fa-chevron-up');
@@ -1212,9 +1211,9 @@ function toggleMobileSubmenu(index) {
 document.addEventListener('click', function(event) {
     const menuContent = document.getElementById('mobileMenuContent');
     const menuToggle = document.querySelector('.mobile-menu-toggle');
-
-    if (menuContent && menuToggle &&
-        !menuContent.contains(event.target) &&
+    
+    if (menuContent && menuToggle && 
+        !menuContent.contains(event.target) && 
         !menuToggle.contains(event.target)) {
         closeMobileMenu();
     }
