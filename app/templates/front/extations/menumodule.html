@@ -199,8 +199,11 @@
             {% endfor %}
         </ul>
 
-                <!-- Мобильное меню в стиле Pangaia (управляется navbar-toggler) -->
-        <div class="mobile-menu-overlay d-lg-none" id="mobileMenuOverlay" style="display: none;">
+                <!-- Затемнение фона -->
+        <div class="mobile-menu-backdrop" id="mobileMenuBackdrop"></div>
+
+        <!-- Мобильное меню в стиле Pangaia (выезжает сбоку) -->
+        <div class="mobile-menu-drawer d-lg-none" id="mobileMenuDrawer">
             <div class="mobile-menu-container">
                 <!-- Кнопка закрытия -->
                 <button class="mobile-menu-close" id="mobileMenuClose">
@@ -525,43 +528,31 @@
     -webkit-transform: none !important;
 }
 
-/* Стили для мобильного overlay меню */
-.mobile-menu-overlay {
+/* Стили для мобильного выезжающего меню */
+.mobile-menu-drawer {
     position: fixed;
     top: 0;
-    left: 0;
-    width: 100vw;
+    right: -400px;
+    width: 350px;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
+    background: white;
     z-index: 1050;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
+    transition: right 0.3s ease;
+    display: none;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
 }
 
-.mobile-menu-overlay.show {
-    opacity: 1;
-    visibility: visible;
+.mobile-menu-drawer.show {
+    right: 0;
 }
 
 .mobile-menu-container {
     position: relative;
-    width: 90vw;
-    max-width: 400px;
-    height: 80vh;
-    max-height: 600px;
-    background: white;
-    border-radius: 12px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    transform: scale(0.9);
-    transition: transform 0.3s ease;
-}
-
-.mobile-menu-overlay.show .mobile-menu-container {
-    transform: scale(1);
 }
 
 /* Кнопка закрытия */
@@ -587,6 +578,25 @@
 .mobile-menu-close:hover {
     background: #f8f9fa;
     color: #495057;
+}
+
+/* Затемнение фона при открытом меню */
+.mobile-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1049;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-backdrop.show {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Стили для секций меню */
@@ -892,27 +902,22 @@
         display: none !important;
     }
 
-    /* Скрываем стандартный collapse контент */
-    #navbarSupportedContent {
-        display: none !important;
-    }
-
-    /* Показываем мобильное меню overlay */
-    .mobile-menu-overlay {
-        display: flex !important;
+    /* Показываем мобильное меню выезжающее сбоку */
+    .mobile-menu-drawer {
+        display: block !important;
     }
 }
 
 @media (max-width: 768px) {
     .horizontal-menu { display: none; }
-    .mega-categories { 
+    .mega-categories {
         grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 12px;
     }
 
-    /* Дополнительные стили для маленьких экранов */
-    .mobile-menu-container {
-        width: 95vw !important;
-        height: 85vh !important;
+    /* Адаптация мобильного меню для маленьких экранов */
+    .mobile-menu-drawer {
+        width: 300px !important;
+        right: -300px !important;
     }
 
     .mobile-menu-tabs {
@@ -923,6 +928,24 @@
     .mobile-menu-tab {
         padding: 0.4rem 0.8rem !important;
         font-size: 0.8rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Для очень маленьких экранов */
+    .mobile-menu-drawer {
+        width: 280px !important;
+        right: -280px !important;
+    }
+
+    .mobile-menu-tabs {
+        padding: 0.4rem !important;
+        gap: 0.2rem !important;
+    }
+
+    .mobile-menu-tab {
+        padding: 0.3rem 0.6rem !important;
+        font-size: 0.75rem !important;
     }
 }
 
@@ -970,13 +993,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeMobileMenu() {
         // Обработка клика на navbar-toggler для показа мобильного меню
         const navbarToggler = document.querySelector('.navbar-toggler');
-        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuDrawer = document.getElementById('mobileMenuDrawer');
         const mobileMenuClose = document.getElementById('mobileMenuClose');
 
-        if (navbarToggler && mobileMenuOverlay) {
+        const mobileMenuBackdrop = document.getElementById('mobileMenuBackdrop');
+
+        if (navbarToggler && mobileMenuDrawer) {
             navbarToggler.addEventListener('click', function(e) {
                 e.preventDefault();
-                mobileMenuOverlay.classList.add('show');
+                mobileMenuDrawer.classList.add('show');
+                if (mobileMenuBackdrop) {
+                    mobileMenuBackdrop.classList.add('show');
+                }
                 document.body.style.overflow = 'hidden';
             });
         }
@@ -984,18 +1012,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // Обработка закрытия меню
         if (mobileMenuClose) {
             mobileMenuClose.addEventListener('click', function() {
-                mobileMenuOverlay.classList.remove('show');
+                mobileMenuDrawer.classList.remove('show');
+                if (mobileMenuBackdrop) {
+                    mobileMenuBackdrop.classList.remove('show');
+                }
                 document.body.style.overflow = '';
             });
         }
 
-        // Закрытие меню по клику на overlay
-        if (mobileMenuOverlay) {
-            mobileMenuOverlay.addEventListener('click', function(e) {
-                if (e.target === mobileMenuOverlay) {
-                    mobileMenuOverlay.classList.remove('show');
-                    document.body.style.overflow = '';
-                }
+        // Закрытие меню по клику на backdrop
+        if (mobileMenuBackdrop) {
+            mobileMenuBackdrop.addEventListener('click', function() {
+                mobileMenuDrawer.classList.remove('show');
+                mobileMenuBackdrop.classList.remove('show');
+                document.body.style.overflow = '';
             });
         }
 
@@ -1030,8 +1060,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.mobile-menu-list a').forEach(function(link) {
             link.addEventListener('click', function() {
                 // Закрываем мобильное меню после клика на ссылку
-                if (mobileMenuOverlay) {
-                    mobileMenuOverlay.classList.remove('show');
+                if (mobileMenuDrawer) {
+                    mobileMenuDrawer.classList.remove('show');
+                    if (mobileMenuBackdrop) {
+                        mobileMenuBackdrop.classList.remove('show');
+                    }
                     document.body.style.overflow = '';
                 }
             });
