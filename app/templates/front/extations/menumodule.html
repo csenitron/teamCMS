@@ -199,129 +199,120 @@
             {% endfor %}
         </ul>
 
-                <!-- Мобильное меню в стиле Pangaia -->
-        <div class="d-lg-none">
-            <button class="btn btn-outline-dark mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMegaMenu" aria-controls="mobileMegaMenu">
-                <i class="fas fa-bars"></i>
-                <span class="visually-hidden">Меню</span>
-            </button>
+                <!-- Мобильное меню в стиле Pangaia (управляется navbar-toggler) -->
+        <div class="mobile-menu-overlay d-lg-none" id="mobileMenuOverlay" style="display: none;">
+            <div class="mobile-menu-container">
+                <!-- Кнопка закрытия -->
+                <button class="mobile-menu-close" id="mobileMenuClose">
+                    <i class="fas fa-times"></i>
+                </button>
 
-            <!-- Мобильное мега-меню -->
-            <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMegaMenu" aria-labelledby="mobileMegaMenuLabel">
-                <div class="offcanvas-header border-bottom">
-                    <h5 class="offcanvas-title" id="mobileMegaMenuLabel">Меню</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body p-0">
-                    <div class="mobile-menu-container">
-                        {% for item in menu_tree %}
-                            {% if item.children %}
-                                <!-- Главная категория -->
-                                <div class="mobile-menu-section" data-category="{{ loop.index0 }}">
-                                    <!-- Заголовок категории -->
-                                    <div class="mobile-category-header">
-                                        <button class="mobile-category-toggle" data-category="{{ loop.index0 }}">
-                                            {% if show_icons and item.icon %}
-                                                <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
-                                            {% endif %}
-                                            {{ item.title }}
+                {% for item in menu_tree %}
+                    {% if item.children %}
+                        <!-- Главная категория -->
+                        <div class="mobile-menu-section" data-category="{{ loop.index0 }}">
+                            <!-- Заголовок категории -->
+                            <div class="mobile-category-header">
+                                <button class="mobile-category-toggle" data-category="{{ loop.index0 }}">
+                                    {% if show_icons and item.icon %}
+                                        <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
+                                    {% endif %}
+                                    {{ item.title }}
+                                </button>
+                            </div>
+
+                            <!-- Контент категории -->
+                            <div class="mobile-category-content active" id="category-content-{{ loop.index0 }}">
+                                <!-- Основное меню с табами -->
+                                <div class="mobile-menu-main">
+                                    <!-- Табированные колонки -->
+                                    <div class="mobile-menu-tabs">
+                                        <!-- Featured таб -->
+                                        {% if item.children %}
+                                        <button class="mobile-menu-tab active" data-tab="featured">
+                                            Featured
+                                        </button>
+                                        {% endif %}
+
+                                        <!-- Categories таб -->
+                                        <button class="mobile-menu-tab" data-tab="categories">
+                                            Categories
+                                        </button>
+
+                                        <!-- Shop by color таб -->
+                                        <button class="mobile-menu-tab" data-tab="colors">
+                                            Shop by color
+                                        </button>
+
+                                        <!-- Capsule таб -->
+                                        <button class="mobile-menu-tab" data-tab="capsule">
+                                            Capsule
                                         </button>
                                     </div>
 
-                                    <!-- Контент категории -->
-                                    <div class="mobile-category-content" id="category-content-{{ loop.index0 }}">
-                                        <!-- Основное меню с табами -->
-                                        <div class="mobile-menu-main">
-                                            <!-- Табированные колонки -->
-                                            <div class="mobile-menu-tabs">
-                                                <!-- Featured таб -->
-                                                {% if item.children %}
-                                                <button class="mobile-menu-tab active" data-tab="featured">
-                                                    Featured
-                                                </button>
-                                                {% endif %}
-
-                                                <!-- Categories таб -->
-                                                <button class="mobile-menu-tab" data-tab="categories">
-                                                    Categories
-                                                </button>
-
-                                                <!-- Shop by color таб -->
-                                                <button class="mobile-menu-tab" data-tab="colors">
-                                                    Shop by color
-                                                </button>
-
-                                                <!-- Capsule таб -->
-                                                <button class="mobile-menu-tab" data-tab="capsule">
-                                                    Capsule
-                                                </button>
-                                            </div>
-
-                                            <!-- Контент табов -->
-                                            <div class="mobile-menu-tab-content">
-                                                <!-- Featured контент -->
-                                                {% if item.children %}
-                                                <div class="mobile-tab-pane active" data-tab="featured">
-                                                    <h6>Featured</h6>
-                                                    <ul class="mobile-menu-list">
-                                                        {% for child in item.children[:4] %}
-                                                        <li>
-                                                            <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                {{ child.title }}
-                                                            </a>
-                                                        </li>
-                                                        {% endfor %}
-                                                    </ul>
-                                                </div>
-                                                {% endif %}
-
-                                                <!-- Categories контент -->
-                                                <div class="mobile-tab-pane" data-tab="categories">
-                                                    <h6>Categories</h6>
-                                                    <ul class="mobile-menu-list">
-                                                        {% for child in item.children %}
-                                                        <li>
-                                                            <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                {{ child.title }}
-                                                            </a>
-                                                        </li>
-                                                        {% endfor %}
-                                                    </ul>
-                                                </div>
-
-                                                <!-- Shop by color контент -->
-                                                <div class="mobile-tab-pane" data-tab="colors">
-                                                    <h6>Shop by color</h6>
-                                                    <ul class="mobile-menu-list">
-                                                        <li><a href="#">Black</a></li>
-                                                        <li><a href="#">White</a></li>
-                                                        <li><a href="#">Blue</a></li>
-                                                        <li><a href="#">Grey</a></li>
-                                                        <li><a href="#">Neutral</a></li>
-                                                        <li><a href="#">Pink</a></li>
-                                                        <li><a href="#">Purple</a></li>
-                                                        <li><a href="#">Red</a></li>
-                                                        <li><a href="#">Green</a></li>
-                                                    </ul>
-                                                </div>
-
-                                                <!-- Capsule контент -->
-                                                <div class="mobile-tab-pane" data-tab="capsule">
-                                                    <h6>Capsule</h6>
-                                                    <ul class="mobile-menu-list">
-                                                        <li><a href="#">365 Heavyweight</a></li>
-                                                        <li><a href="#">365 Midweight</a></li>
-                                                        <li><a href="#">DNA</a></li>
-                                                    </ul>
-                                                </div>
-                                            </div>
+                                    <!-- Контент табов -->
+                                    <div class="mobile-menu-tab-content">
+                                        <!-- Featured контент -->
+                                        {% if item.children %}
+                                        <div class="mobile-tab-pane active" data-tab="featured">
+                                            <h6>Featured</h6>
+                                            <ul class="mobile-menu-list">
+                                                {% for child in item.children[:4] %}
+                                                <li>
+                                                    <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                        {{ child.title }}
+                                </a>
+                            </li>
+                                                {% endfor %}
+                                            </ul>
                                         </div>
+                        {% endif %}
+
+                                        <!-- Categories контент -->
+                                        <div class="mobile-tab-pane" data-tab="categories">
+                                            <h6>Categories</h6>
+                                            <ul class="mobile-menu-list">
+                                                {% for child in item.children %}
+                                                <li>
+                                                    <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                        {{ child.title }}
+                                                    </a>
+                                                </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+                                        <!-- Shop by color контент -->
+                                        <div class="mobile-tab-pane" data-tab="colors">
+                                            <h6>Shop by color</h6>
+                                            <ul class="mobile-menu-list">
+                                                <li><a href="#">Black</a></li>
+                                                <li><a href="#">White</a></li>
+                                                <li><a href="#">Blue</a></li>
+                                                <li><a href="#">Grey</a></li>
+                                                <li><a href="#">Neutral</a></li>
+                                                <li><a href="#">Pink</a></li>
+                                                <li><a href="#">Purple</a></li>
+                                                <li><a href="#">Red</a></li>
+                                                <li><a href="#">Green</a></li>
+                                            </ul>
+            </div>
+
+                                        <!-- Capsule контент -->
+                                        <div class="mobile-tab-pane" data-tab="capsule">
+                                            <h6>Capsule</h6>
+                                            <ul class="mobile-menu-list">
+                                                <li><a href="#">365 Heavyweight</a></li>
+                                                <li><a href="#">365 Midweight</a></li>
+                                                <li><a href="#">DNA</a></li>
+                                            </ul>
+        </div>
                                     </div>
                                 </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
         </div>
         
@@ -534,22 +525,82 @@
     -webkit-transform: none !important;
 }
 
-/* Стили для мобильного мега-меню в стиле Pangaia */
+/* Стили для мобильного overlay меню */
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
 .mobile-menu-container {
+    position: relative;
+    width: 90vw;
+    max-width: 400px;
+    height: 80vh;
+    max-height: 600px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.mobile-menu-overlay.show .mobile-menu-container {
+    transform: scale(1);
+}
+
+/* Кнопка закрытия */
+.mobile-menu-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-close:hover {
+    background: #f8f9fa;
+    color: #495057;
+}
+
+/* Стили для секций меню */
+.mobile-menu-section {
     height: 100%;
     display: flex;
     flex-direction: column;
-}
-
-.mobile-menu-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    position: relative;
 }
 
 .mobile-category-header {
     padding: 1rem;
     border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
 }
 
 .mobile-category-toggle {
@@ -569,16 +620,15 @@
     transform: translateY(-1px);
 }
 
-.mobile-category-toggle i {
-    margin-right: 0.5rem;
-}
-
 .mobile-category-content {
     flex: 1;
-    display: flex;
+    display: none;
     flex-direction: column;
-    position: relative;
     overflow: hidden;
+}
+
+.mobile-category-content.active {
+    display: flex;
 }
 
 .mobile-menu-main {
@@ -591,10 +641,10 @@
 .mobile-menu-tabs {
     display: flex;
     overflow-x: auto;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
     gap: 0.5rem;
     border-bottom: 1px solid #e9ecef;
-    background: #f8f9fa;
+    background: white;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -624,18 +674,6 @@
 .mobile-menu-tab.active {
     background: #007bff;
     color: white;
-}
-
-.mobile-menu-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 20px;
-    height: 2px;
-    background: #007bff;
-    border-radius: 1px;
 }
 
 .mobile-menu-tab-content {
@@ -696,121 +734,7 @@
     letter-spacing: 0.05em;
 }
 
-/* Анимация переходов между табами */
-.mobile-tab-pane.slide-left {
-    transform: translateX(-100%);
-}
 
-.mobile-tab-pane.slide-right {
-    transform: translateX(100%);
-}
-
-/* Кнопка назад для подменю */
-.mobile-submenu-back {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    z-index: 10;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    transition: all 0.2s ease;
-}
-
-.mobile-submenu-back:hover {
-    background: #0056b3;
-    transform: scale(1.1);
-}
-
-.mobile-submenu-content {
-    position: absolute;
-    top: 0;
-    left: 100%;
-    right: 0;
-    bottom: 0;
-    background: white;
-    transform: translateX(0);
-    transition: transform 0.3s ease;
-    padding: 4rem 1rem 1rem 1rem;
-    overflow-y: auto;
-}
-
-.mobile-submenu-content.active {
-    transform: translateX(-100%);
-}
-
-/* Мобильная кнопка меню */
-.mobile-menu-toggle {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 48px !important;
-    height: 48px !important;
-    background: #fff !important;
-    border: 2px solid #6c757d !important;
-    border-radius: 10px !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease-in-out !important;
-    position: relative !important;
-    z-index: 1051 !important;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
-    margin: 0 8px !important;
-}
-
-.mobile-menu-toggle:hover {
-    background-color: #007bff !important;
-    border-color: #007bff !important;
-    transform: scale(1.08) !important;
-    box-shadow: 0 4px 12px rgba(0,123,255,0.3) !important;
-}
-
-.mobile-menu-toggle:active {
-    transform: scale(0.95) !important;
-    box-shadow: 0 2px 4px rgba(0,123,255,0.2) !important;
-}
-
-.mobile-menu-toggle:focus {
-    outline: none !important;
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.25) !important;
-}
-
-.mobile-menu-toggle i {
-    font-size: 1.5rem !important;
-    color: #495057 !important;
-    transition: color 0.2s ease !important;
-    font-weight: bold !important;
-}
-
-.mobile-menu-toggle:hover i {
-    color: #fff !important;
-}
-
-/* Визуальная индикация кликабельности */
-.mobile-menu-toggle::after {
-    content: "" !important;
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 0 !important;
-    height: 0 !important;
-    border-radius: 50% !important;
-    background: rgba(0,123,255,0.1) !important;
-    transform: translate(-50%, -50%) !important;
-    transition: width 0.3s ease, height 0.3s ease !important;
-    pointer-events: none !important;
-}
-
-.mobile-menu-toggle:active::after {
-    width: 60px !important;
-    height: 60px !important;
-}
 
 .dropdown-mega .dropdown-menu.show {
     display: block !important;
@@ -968,49 +892,37 @@
         display: none !important;
     }
 
-    /* Показываем мобильную кнопку меню */
-    .d-lg-none {
-        display: block !important;
+    /* Скрываем стандартный collapse контент */
+    #navbarSupportedContent {
+        display: none !important;
     }
 
-    /* Увеличиваем кнопку меню для лучшей доступности */
-    .mobile-menu-toggle {
-        width: 50px !important;
-        height: 50px !important;
-        margin: 0 10px !important;
-    }
-
-    .mobile-menu-toggle i {
-        font-size: 1.6rem !important;
-    }
-
-    /* Стили для мобильного offcanvas */
-    .offcanvas {
-        width: 320px !important;
-        max-width: 90vw !important;
+    /* Показываем мобильное меню overlay */
+    .mobile-menu-overlay {
+        display: flex !important;
     }
 }
 
 @media (max-width: 768px) {
     .horizontal-menu { display: none; }
-    .mega-categories {
+    .mega-categories { 
         grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 12px;
     }
 
     /* Дополнительные стили для маленьких экранов */
-    .offcanvas {
-        width: 300px !important;
-        max-width: 95vw !important;
+    .mobile-menu-container {
+        width: 95vw !important;
+        height: 85vh !important;
     }
 
-    .mobile-menu-toggle {
-        width: 48px !important;
-        height: 48px !important;
-        margin: 0 8px !important;
+    .mobile-menu-tabs {
+        padding: 0.5rem !important;
+        gap: 0.25rem !important;
     }
 
-    .mobile-menu-toggle i {
-        font-size: 1.5rem !important;
+    .mobile-menu-tab {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.8rem !important;
     }
 }
 
@@ -1054,25 +966,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Вызываем при загрузке страницы
     setMegaMenuDimensions();
 
-    // Инициализация мобильного мега-меню
-    function initializeMobileMegaMenu() {
-        // Обработка переключения категорий
-        document.querySelectorAll('.mobile-category-toggle').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const categoryId = this.dataset.category;
-                const categoryContent = document.getElementById('category-content-' + categoryId);
+    // Инициализация мобильного меню
+    function initializeMobileMenu() {
+        // Обработка клика на navbar-toggler для показа мобильного меню
+        const navbarToggler = document.querySelector('.navbar-toggler');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuClose = document.getElementById('mobileMenuClose');
 
-                // Скрываем все категории
-                document.querySelectorAll('.mobile-category-content').forEach(function(content) {
-                    content.style.display = 'none';
-                });
+        if (navbarToggler && mobileMenuOverlay) {
+            navbarToggler.addEventListener('click', function(e) {
+                e.preventDefault();
+                mobileMenuOverlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            });
+        }
 
-                // Показываем выбранную категорию
-                if (categoryContent) {
-                    categoryContent.style.display = 'flex';
+        // Обработка закрытия меню
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', function() {
+                mobileMenuOverlay.classList.remove('show');
+                document.body.style.overflow = '';
+            });
+        }
+
+        // Закрытие меню по клику на overlay
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', function(e) {
+                if (e.target === mobileMenuOverlay) {
+                    mobileMenuOverlay.classList.remove('show');
+                    document.body.style.overflow = '';
                 }
             });
-        });
+        }
 
         // Обработка табов
         document.querySelectorAll('.mobile-menu-tab').forEach(function(tab) {
@@ -1101,49 +1026,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Обработка кликов по элементам меню для показа подменю
+        // Обработка кликов по элементам меню
         document.querySelectorAll('.mobile-menu-list a').forEach(function(link) {
-            link.addEventListener('click', function(e) {
-                // Если это не просто ссылка, а заголовок категории
-                if (this.textContent.trim() && !this.href.includes('#')) {
-                    e.preventDefault();
-
-                    const menuMain = this.closest('.mobile-menu-main');
-                    const submenuContent = document.createElement('div');
-                    submenuContent.className = 'mobile-submenu-content';
-                    submenuContent.innerHTML = `
-                        <button class="mobile-submenu-back">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <h6>${this.textContent}</h6>
-                        <ul class="mobile-menu-list">
-                            <li><a href="#">Подпункт 1</a></li>
-                            <li><a href="#">Подпункт 2</a></li>
-                            <li><a href="#">Подпункт 3</a></li>
-                        </ul>
-                    `;
-
-                    menuMain.appendChild(submenuContent);
-
-                    // Анимация появления подменю
-                    setTimeout(() => {
-                        submenuContent.classList.add('active');
-                    }, 10);
-
-                    // Обработка кнопки назад
-                    submenuContent.querySelector('.mobile-submenu-back').addEventListener('click', function() {
-                        submenuContent.classList.remove('active');
-                        setTimeout(() => {
-                            menuMain.removeChild(submenuContent);
-                        }, 300);
-                    });
+            link.addEventListener('click', function() {
+                // Закрываем мобильное меню после клика на ссылку
+                if (mobileMenuOverlay) {
+                    mobileMenuOverlay.classList.remove('show');
+                    document.body.style.overflow = '';
                 }
             });
         });
     }
 
-    // Вызываем инициализацию мобильного мега-меню
-    initializeMobileMegaMenu();
+    // Вызываем инициализацию мобильного меню
+    initializeMobileMenu();
 
     // Обработка мегаменю
     const megaDropdowns = document.querySelectorAll('.dropdown-mega');
