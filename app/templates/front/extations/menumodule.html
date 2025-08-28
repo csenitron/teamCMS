@@ -141,12 +141,12 @@
                                             {% for child in item.children[:4] %}
                                             <li>
                                                 <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                    {{ child.title }}
-                                                </a>
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
-                                    </div>
+                                                                        {{ child.title }}
+                                                                                </a>
+                                                                            </li>
+                                                                        {% endfor %}
+                                                                    </ul>
+                                                            </div>
                                     {% endif %}
 
                                     <!-- Categories секция -->
@@ -154,16 +154,16 @@
                                     <div class="col-2">
                                         <h6>Categories</h6>
                                         <ul class="mb-4">
-                                                        {% for child in item.children %}
+                                                {% for child in item.children %}
                                             <li>
                                                 <a href="{{ child.url or '#' }}" {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                        {{ child.title }}
-                                                                                </a>
-                                                                            </li>
-                                                                        {% endfor %}
-                                                                    </ul>
-                                    </div>
-                                                                {% endif %}
+                                                                {{ child.title }}
+                                                                        </a>
+                                                                    </li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                    </div>
+                                            {% endif %}
 
                                     <!-- Shop by color секция -->
                                     <div class="col-2">
@@ -179,7 +179,7 @@
                                             <li><a href="#">Red</a></li>
                                             <li><a href="#">Green</a></li>
                                         </ul>
-                                                            </div>
+                                        </div>
 
                                     <!-- Capsule секция -->
                                     <div class="col-2">
@@ -189,81 +189,60 @@
                                             <li><a href="#">365 Midweight</a></li>
                                             <li><a href="#">DNA</a></li>
                                         </ul>
-                                                    </div>
-                                                </div>
+                                    </div>
+                                </div>
                                 </div>
                             </div>
                         </div>
                     {% endif %}
-                </li>
+                            </li>
             {% endfor %}
         </ul>
 
-        <!-- Мобильное меню на offcanvas Bootstrap -->
+                <!-- Мобильное меню как на Pangaia - обычное dropdown -->
         <div class="d-lg-none">
-            <button class="btn btn-outline-dark mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenuOffcanvas" aria-controls="mobileMenuOffcanvas">
-                <i class="fas fa-bars"></i>
-                <span class="visually-hidden">Меню</span>
-            </button>
-            <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenuOffcanvas" aria-labelledby="mobileMenuOffcanvasLabel">
-                <div class="offcanvas-header border-bottom">
-                    <h5 class="offcanvas-title" id="mobileMenuOffcanvasLabel">{{ menu_title or 'Меню' }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body p-0">
-                    <div class="accordion accordion-flush" id="mobileMenuAccordion">
-                        {% for item in menu_tree %}
-                            <div class="accordion-item">
-                                {% if item.children %}
-                                    <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index0 }}">
-                                            {% if show_icons and item.icon %}
-                                                <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
-                                            {% endif %}
-                                            {{ item.title }}
-                                        </button>
-                                    </h2>
-                                    <div id="collapse{{ loop.index0 }}" class="accordion-collapse collapse" data-bs-parent="#mobileMenuAccordion">
-                                        <div class="accordion-body p-0">
-                                                {% for child in item.children %}
-                                                            <a href="{{ child.url or '#' }}" 
-                                                   class="d-block p-3 text-decoration-none text-dark border-bottom"
-                                                               {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                {{ child.title }}
-                                                            </a>
-                                                        {% if child.children %}
-                                                    <div class="ps-4">
-                                                                {% for subchild in child.children %}
-                                                                        <a href="{{ subchild.url or '#' }}" 
-                                                               class="d-block p-2 text-decoration-none text-muted small border-bottom"
-                                                                           {% if subchild.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
-                                                                            {{ subchild.title }}
-                                                                        </a>
-                                                                {% endfor %}
-                                                    </div>
-                                            {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-dark mobile-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bars"></i>
+                    <span class="visually-hidden">Меню</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end mobile-menu-dropdown">
+                    {% for item in menu_tree %}
+                        <li>
+                            {% if item.children %}
+                                <div class="dropdown-submenu">
+                                    <a href="#" class="dropdown-item dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#mobile-submenu-{{ loop.index0 }}" aria-expanded="false">
+                                        {% if show_icons and item.icon %}
+                                            <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
+                                        {% endif %}
+                                        {{ item.title }}
+                                    </a>
+                                    <ul class="collapse list-unstyled ms-3 mt-2" id="mobile-submenu-{{ loop.index0 }}">
+                                        {% for child in item.children %}
+                                            <li>
+                                                <a href="{{ child.url or '#' }}" class="dropdown-item"
+                                                   {% if child.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+                                                    {{ child.title }}
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
                         {% else %}
-                                    <div class="p-3 border-bottom">
-                                        <a href="{{ item.url or '#' }}" 
-                                           class="text-decoration-none text-dark d-flex align-items-center"
+                                <a href="{{ item.url or '#' }}" class="dropdown-item"
                                    {% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
                                     {% if show_icons and item.icon %}
-                                                <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
+                                        <img src="{{ item.icon.url }}" alt="{{ item.title }}" class="menu-icon me-2" width="20" height="20">
                                     {% endif %}
                                     {{ item.title }}
                                 </a>
-                                    </div>
                         {% endif %}
-                            </div>
+                        </li>
                     {% endfor %}
+                </ul>
             </div>
             </div>
         </div>
-        </div>
-    </div>
         
     {% elif menu_style == 'mobile' %}
         <!-- Мобильное меню -->
@@ -474,84 +453,67 @@
     -webkit-transform: none !important;
 }
 
-/* Стили для мобильного offcanvas меню */
-.offcanvas {
-    position: fixed !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    z-index: 1060 !important;
-    width: 320px !important;
-    max-width: 85vw !important;
+/* Стили для мобильного dropdown меню */
+.mobile-menu-dropdown {
+    min-width: 280px !important;
+    max-width: 90vw !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     background-color: #fff !important;
-    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15) !important;
-    transform: translateX(100%) !important;
-    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    visibility: hidden !important;
-    border-left: 1px solid #e9ecef !important;
+    padding: 0.5rem 0 !important;
 }
 
-.offcanvas.show {
-    transform: translateX(0);
-    visibility: visible;
+.mobile-menu-dropdown .dropdown-item {
+    padding: 0.75rem 1rem !important;
+    color: #495057 !important;
+    text-decoration: none !important;
+    transition: background-color 0.15s ease !important;
+    font-size: 0.9rem !important;
 }
 
-.offcanvas.offcanvas-end {
-    right: 0;
-    transform: translateX(100%);
+.mobile-menu-dropdown .dropdown-item:hover {
+    background-color: #f8f9fa !important;
+    color: #007bff !important;
 }
 
-.offcanvas.offcanvas-end.show {
-    transform: translateX(0);
+.mobile-menu-dropdown .dropdown-submenu {
+    position: relative !important;
 }
 
-.offcanvas-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1040;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    transition: opacity 0.15s linear;
+.mobile-menu-dropdown .dropdown-submenu .dropdown-toggle::after {
+    content: "▶" !important;
+    position: absolute !important;
+    right: 1rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #6c757d !important;
+    font-size: 0.8rem !important;
+    border: none !important;
+    width: auto !important;
+    height: auto !important;
+    background: none !important;
 }
 
-.offcanvas-backdrop.show {
-    opacity: 1;
+.mobile-menu-dropdown .dropdown-submenu .dropdown-toggle:hover::after {
+    color: #007bff !important;
 }
 
-.offcanvas-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1rem;
-    border-bottom: 1px solid #dee2e6;
+.mobile-menu-dropdown .collapse {
+    background-color: #f8f9fa !important;
+    border-radius: 4px !important;
+    margin-top: 0.25rem !important;
 }
 
-.offcanvas-title {
-    margin: 0;
-    line-height: 1.5;
+.mobile-menu-dropdown .collapse .dropdown-item {
+    padding: 0.5rem 1.5rem !important;
+    font-size: 0.85rem !important;
+    color: #6c757d !important;
 }
 
-.btn-close {
-    width: 1em;
-    height: 1em;
-    padding: 0.25em;
-    background: transparent;
-    border: 0;
-    border-radius: 0.25rem;
-    opacity: 0.5;
-    cursor: pointer;
-}
-
-.btn-close:hover {
-    opacity: 0.75;
-}
-
-.offcanvas-body {
-    flex-grow: 1;
-    padding: 1rem 1rem;
-    overflow-y: auto;
+.mobile-menu-dropdown .collapse .dropdown-item:hover {
+    background-color: #e9ecef !important;
+    color: #495057 !important;
 }
 
 /* Мобильная кнопка меню */
@@ -781,12 +743,6 @@
         display: block !important;
     }
 
-    /* Стили для мобильного offcanvas */
-    .offcanvas {
-        width: 280px !important;
-        max-width: 85vw !important;
-    }
-
     /* Увеличиваем кнопку меню для лучшей доступности */
     .mobile-menu-toggle {
         width: 50px !important;
@@ -857,140 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Вызываем при загрузке страницы
     setMegaMenuDimensions();
 
-    // Инициализация Bootstrap offcanvas компонентов
-    function initializeOffcanvas() {
-        // Находим все offcanvas элементы
-        const offcanvasElements = document.querySelectorAll('.offcanvas');
-
-        offcanvasElements.forEach(function(offcanvas) {
-            // Создаем backdrop только когда нужно
-            let backdrop = null;
-
-            // Находим кнопку открытия
-            const toggleBtn = document.querySelector('[data-bs-target="#' + offcanvas.id + '"]');
-
-            if (toggleBtn) {
-                // Убеждаемся, что кнопка видима и кликабельна
-                toggleBtn.style.display = 'flex';
-                toggleBtn.style.alignItems = 'center';
-                toggleBtn.style.justifyContent = 'center';
-
-                toggleBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Создаем backdrop при первом открытии
-                    if (!backdrop) {
-                        backdrop = document.createElement('div');
-                        backdrop.className = 'offcanvas-backdrop';
-                        backdrop.style.cssText = `
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            z-index: 1040;
-                            width: 100vw;
-                            height: 100vh;
-                            background-color: rgba(0, 0, 0, 0.5);
-                            opacity: 0;
-                            transition: opacity 0.15s linear;
-                            pointer-events: auto;
-                        `;
-                        document.body.appendChild(backdrop);
-
-                        // Убеждаемся, что backdrop не блокирует клики по умолчанию
-                        backdrop.style.pointerEvents = 'auto';
-                    }
-
-                    offcanvas.classList.add('show');
-                    backdrop.classList.add('show');
-                    document.body.style.overflow = 'hidden';
-
-                    // Добавляем обработчик клика на backdrop для закрытия
-                    backdrop.addEventListener('click', function() {
-                        offcanvas.classList.remove('show');
-                        backdrop.classList.remove('show');
-                        setTimeout(() => {
-                            if (backdrop && backdrop.parentNode) {
-                                backdrop.parentNode.removeChild(backdrop);
-                                backdrop = null;
-                            }
-                        }, 150);
-                        document.body.style.overflow = '';
-                    });
-                });
-            }
-
-            // Находим кнопку закрытия
-            const closeBtn = offcanvas.querySelector('.btn-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', function() {
-                    offcanvas.classList.remove('show');
-                    if (backdrop) {
-                        backdrop.classList.remove('show');
-                        // Удаляем backdrop через некоторое время
-                        setTimeout(() => {
-                            if (backdrop && backdrop.parentNode) {
-                                backdrop.parentNode.removeChild(backdrop);
-                                backdrop = null;
-                            }
-                        }, 150);
-                    }
-                    document.body.style.overflow = '';
-                });
-            }
-
-            // Закрытие по нажатию клавиши Escape
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && offcanvas.classList.contains('show')) {
-                    offcanvas.classList.remove('show');
-                    if (backdrop) {
-                        backdrop.classList.remove('show');
-                        setTimeout(() => {
-                            if (backdrop && backdrop.parentNode) {
-                                backdrop.parentNode.removeChild(backdrop);
-                                backdrop = null;
-                            }
-                        }, 150);
-                    }
-                    document.body.style.overflow = '';
-                }
-            });
-        });
-    }
-
-    // Функция для закрытия всех открытых offcanvas меню
-    function closeAllOffcanvas() {
-        document.querySelectorAll('.offcanvas.show').forEach(function(offcanvas) {
-            offcanvas.classList.remove('show');
-        });
-        document.querySelectorAll('.offcanvas-backdrop').forEach(function(backdrop) {
-            backdrop.classList.remove('show');
-            // Удаляем backdrop через некоторое время
-            setTimeout(() => {
-                if (backdrop && backdrop.parentNode) {
-                    backdrop.parentNode.removeChild(backdrop);
-                }
-            }, 150);
-        });
-        document.body.style.overflow = '';
-    }
-
-    // Очистка существующих backdrop элементов при загрузке
-    function cleanupExistingBackdrops() {
-        document.querySelectorAll('.offcanvas-backdrop').forEach(function(backdrop) {
-            if (backdrop.parentNode) {
-                backdrop.parentNode.removeChild(backdrop);
-            }
-        });
-    }
-
-    // Вызываем очистку перед инициализацией
-    cleanupExistingBackdrops();
-
-    // Инициализируем offcanvas
-    initializeOffcanvas();
-
-    // Дополнительная инициализация для мобильных устройств
+    // Инициализация мобильного меню
     function initializeMobileMenu() {
         // Проверяем, что мы на мобильном устройстве
         if (window.innerWidth < 992) {
@@ -1119,35 +942,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Закрытие мегаменю и offcanvas при клике вне их
+    // Закрытие меню при клике вне их
     document.addEventListener('click', function(event) {
-        // Проверяем, что клик был не на элементе мега-меню и не на offcanvas
+        // Проверяем, что клик был не на элементе меню
         if (!event.target.closest('.dropdown-mega') && !event.target.closest('.dropdown-menu') &&
-            !event.target.closest('.offcanvas') && !event.target.closest('.offcanvas-backdrop')) {
+            !event.target.closest('.mobile-menu-dropdown')) {
             clearTimeout(hideTimeout);
-            // Закрываем мега-меню на десктопе
+            // Закрываем все открытые меню
             document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
-                if (window.innerWidth >= 992) {
-                    menu.classList.remove('show');
-                }
+                menu.classList.remove('show');
             });
-            // Закрываем все offcanvas меню
-            closeAllOffcanvas();
-        }
-    });
-
-    // Также добавляем обработчик для клика на пустом пространстве страницы
-    document.addEventListener('mousedown', function(event) {
-        // Если клик был на body или html (но не на других элементах)
-        if ((event.target === document.body || event.target === document.documentElement) &&
-            !event.target.closest('.dropdown-mega') && !event.target.closest('.offcanvas')) {
-            clearTimeout(hideTimeout);
-            document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
-                if (window.innerWidth >= 992) {
-                    menu.classList.remove('show');
-                }
+            document.querySelectorAll('.mobile-menu-dropdown').forEach(function(menu) {
+                menu.classList.remove('show');
             });
-            closeAllOffcanvas();
         }
     });
 
@@ -1161,15 +968,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.dropdown-mega .dropdown-menu').forEach(function(menu) {
             menu.classList.remove('show');
         });
-        closeAllOffcanvas();
-        cleanupExistingBackdrops();
+        // Закрываем мобильные dropdown меню
+        document.querySelectorAll('.mobile-menu-dropdown').forEach(function(menu) {
+            menu.classList.remove('show');
+        });
     });
 
-    // Обработка выгрузки страницы для очистки
-    window.addEventListener('beforeunload', function() {
-        closeAllOffcanvas();
-        cleanupExistingBackdrops();
-    });
+
 
     // Обработка скролла страницы для sticky navbar
     window.addEventListener('scroll', function() {
